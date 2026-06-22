@@ -165,20 +165,7 @@ export default function VoiceDashboardPage() {
                     </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                    <Select value={providerFilter} onValueChange={setProviderFilter}>
-                        <SelectTrigger style={{
-                            height: 38, width: 120, borderRadius: 10,
-                            background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)',
-                            color: 'var(--label-primary)', fontSize: 13, fontWeight: 500
-                        }}>
-                            <SelectValue placeholder="Provider" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="vapi">Vapi</SelectItem>
-                            <SelectItem value="maqsam">Maqsam</SelectItem>
-                            <SelectItem value="twilio">Twilio</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    
 
                     <button
                         onClick={() => refreshVoiceMetrics({ from: dateRange?.from, to: dateRange?.to, includeElevenLabs: false, force: true })}
