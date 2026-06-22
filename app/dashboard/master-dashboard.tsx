@@ -95,7 +95,7 @@ function WalletModal({ isOpen, onClose, type, details, calls }: any) {
 
 /* ── Liquid Glass Metric Tile ── */
 function MetricTile({
-    title, value, subLabel, subLabelColor = 'rgba(255,255,255,0.28)', accentColor,
+    title, value, subLabel, subLabelColor = 'var(--label-tertiary)', accentColor,
     icon, onClick,
 }: {
     title: string;
@@ -108,9 +108,8 @@ function MetricTile({
 }) {
     return (
         <div
+            className="liquid-card"
             style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '0.5px solid rgba(255,255,255,0.09)',
                 borderRadius: '10px',
                 padding: '14px',
                 display: 'flex',
@@ -131,7 +130,7 @@ function MetricTile({
         >
             {/* Row: label on left, icon on right */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', fontWeight: 400 }}>
+                <span style={{ fontSize: 10, color: 'var(--label-tertiary)', fontWeight: 400 }}>
                     {title}
                 </span>
                 <div style={{ color: accentColor, width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -140,7 +139,7 @@ function MetricTile({
             </div>
 
             {/* Large number */}
-            <div style={{ fontSize: 22, fontWeight: 500, color: '#f1f5f9', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
+            <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
                 {value}
             </div>
 
@@ -196,10 +195,10 @@ function BusinessSection({ title, icon, iconBg, iconColor, loading, metrics }: {
                 }}>
                     {icon}
                 </div>
-                <h2 style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.55)', whiteSpace: 'nowrap' }}>
+                <h2 style={{ fontSize: 13, fontWeight: 500, color: 'var(--label-secondary)', whiteSpace: 'nowrap' }}>
                     {title}
                 </h2>
-                <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.06)', width: '100%', marginLeft: 8 }} />
+                <div style={{ height: '0.5px', background: 'var(--separator)', width: '100%', marginLeft: 8 }} />
             </div>
 
             {/* Grid Layout */}
@@ -432,8 +431,8 @@ export default function MasterDashboard() {
                         { title: "WA Reachouts", value: totalWaReachoutsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
                         { title: "SMS Reachouts", value: crmSmsReachouts.toLocaleString(), subLabel: "Real-time", accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                         { title: "Voice Calls", value: totalVoiceCallsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
-                        { title: "WA Replies", value: totalWaRepliesCRM.toLocaleString(), subLabel: `${replyRateCRM}% reply rate`, subLabelColor: Number(replyRateCRM) > 0 ? '#a78bfa' : 'rgba(255,255,255,0.28)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Replies", value: crmSmsReplies.toLocaleString(), subLabel: `${crmSmsReplyRate}% reply rate`, subLabelColor: Number(crmSmsReplyRate) > 0 ? '#ec4899' : 'rgba(255,255,255,0.28)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
+                        { title: "WA Replies", value: totalWaRepliesCRM.toLocaleString(), subLabel: `${replyRateCRM}% reply rate`, subLabelColor: Number(replyRateCRM) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
+                        { title: "SMS Replies", value: crmSmsReplies.toLocaleString(), subLabel: `${crmSmsReplyRate}% reply rate`, subLabelColor: Number(crmSmsReplyRate) > 0 ? '#ec4899' : 'var(--label-tertiary)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                     ]}
                 />
 
@@ -450,8 +449,8 @@ export default function MasterDashboard() {
                         { title: "WA Reachouts", value: totalWaReachoutsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
                         { title: "SMS Reachouts", value: crmSmsReachouts.toLocaleString(), subLabel: "Real-time", accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                         { title: "Voice Calls", value: totalVoiceCallsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
-                        { title: "WA Replies", value: totalWaRepliesCRM.toLocaleString(), subLabel: `${replyRateCRM}% reply rate`, subLabelColor: Number(replyRateCRM) > 0 ? '#a78bfa' : 'rgba(255,255,255,0.28)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Replies", value: crmSmsReplies.toLocaleString(), subLabel: `${crmSmsReplyRate}% reply rate`, subLabelColor: Number(crmSmsReplyRate) > 0 ? '#ec4899' : 'rgba(255,255,255,0.28)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
+                        { title: "WA Replies", value: totalWaRepliesCRM.toLocaleString(), subLabel: `${replyRateCRM}% reply rate`, subLabelColor: Number(replyRateCRM) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
+                        { title: "SMS Replies", value: crmSmsReplies.toLocaleString(), subLabel: `${crmSmsReplyRate}% reply rate`, subLabelColor: Number(crmSmsReplyRate) > 0 ? '#ec4899' : 'var(--label-tertiary)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                     ]}
                 />
 
@@ -468,8 +467,8 @@ export default function MasterDashboard() {
                         { title: "WA Reachouts", value: totalWaReachoutsGen.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
                         { title: "SMS Reachouts", value: smsOwnerReachouts.toLocaleString(), subLabel: "Real-time", accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                         { title: "Voice Calls", value: totalVoiceCallsGen.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
-                        { title: "WA Replies", value: totalWaRepliesGen.toLocaleString(), subLabel: `${replyRateGen}% reply rate`, subLabelColor: Number(replyRateGen) > 0 ? '#a78bfa' : 'rgba(255,255,255,0.28)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Replies", value: smsOwnerReplies.toLocaleString(), subLabel: `${smsReplyRateGen}% reply rate`, subLabelColor: Number(smsReplyRateGen) > 0 ? '#ec4899' : 'rgba(255,255,255,0.28)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
+                        { title: "WA Replies", value: totalWaRepliesGen.toLocaleString(), subLabel: `${replyRateGen}% reply rate`, subLabelColor: Number(replyRateGen) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
+                        { title: "SMS Replies", value: smsOwnerReplies.toLocaleString(), subLabel: `${smsReplyRateGen}% reply rate`, subLabelColor: Number(smsReplyRateGen) > 0 ? '#ec4899' : 'var(--label-tertiary)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                     ]}
                 />
 
@@ -486,8 +485,8 @@ export default function MasterDashboard() {
                         { title: "WA Reachouts", value: totalWaReachoutsGen.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
                         { title: "SMS Reachouts", value: smsOwnerReachouts.toLocaleString(), subLabel: "Real-time", accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                         { title: "Voice Calls", value: totalVoiceCallsGen.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
-                        { title: "WA Replies", value: totalWaRepliesGen.toLocaleString(), subLabel: `${replyRateGen}% reply rate`, subLabelColor: Number(replyRateGen) > 0 ? '#a78bfa' : 'rgba(255,255,255,0.28)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Replies", value: smsOwnerReplies.toLocaleString(), subLabel: `${smsReplyRateGen}% reply rate`, subLabelColor: Number(smsReplyRateGen) > 0 ? '#ec4899' : 'rgba(255,255,255,0.28)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
+                        { title: "WA Replies", value: totalWaRepliesGen.toLocaleString(), subLabel: `${replyRateGen}% reply rate`, subLabelColor: Number(replyRateGen) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
+                        { title: "SMS Replies", value: smsOwnerReplies.toLocaleString(), subLabel: `${smsReplyRateGen}% reply rate`, subLabelColor: Number(smsReplyRateGen) > 0 ? '#ec4899' : 'var(--label-tertiary)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                     ]}
                 />
 
