@@ -105,7 +105,7 @@ function BusinessSection({ title, icon, iconBg, iconColor, loading, metrics }: {
 
 export default function VoiceDashboardPage() {
     const router = useRouter();
-    const providerFilter = "vapi";
+    const [providerFilter, setProviderFilter] = useState("vapi");
     const { dateRange, setDateRange } = useData();
 
     const { voiceMetrics, loadingVoiceMetrics, refreshVoiceMetrics } = useData();
@@ -142,7 +142,7 @@ export default function VoiceDashboardPage() {
                 <div style={{
                     position: 'absolute', inset: 0, zIndex: 50,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(var(--bg-app-rgb, 242,242,247),0.60)',
+                    background: 'var(--bg-layer2)',
                     backdropFilter: 'blur(4px)',
                 }}>
                     <div className="liquid-card" style={{ padding: '20px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
@@ -158,13 +158,28 @@ export default function VoiceDashboardPage() {
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                 <div>
                     <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.022em', color: 'var(--label-primary)', marginBottom: 4 }}>
-                        Voice Agent
+                        Voice Agent Dashboard
                     </h1>
                     <p style={{ fontSize: 14, color: 'var(--label-secondary)' }}>
-                        Monitor AI voice agent performance across all accounts.
+                        Monitor your AI voice agent performance across all accounts.
                     </p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <Select value={providerFilter} onValueChange={setProviderFilter}>
+                        <SelectTrigger style={{
+                            height: 38, width: 120, borderRadius: 10,
+                            background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)',
+                            color: 'var(--label-primary)', fontSize: 13, fontWeight: 500
+                        }}>
+                            <SelectValue placeholder="Provider" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="vapi">Vapi</SelectItem>
+                            <SelectItem value="maqsam">Maqsam</SelectItem>
+                            <SelectItem value="twilio">Twilio</SelectItem>
+                        </SelectContent>
+                    </Select>
+
                     <button
                         onClick={() => refreshVoiceMetrics({ from: dateRange?.from, to: dateRange?.to, includeElevenLabs: false, force: true })}
                         disabled={loading}
@@ -173,135 +188,106 @@ export default function VoiceDashboardPage() {
                             background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)',
                             display: 'flex', alignItems: 'center', gap: 6,
                             fontSize: 13, fontWeight: 500, color: 'var(--label-secondary)',
-                            cursor: 'default', transition: 'background 130ms ease',
+                            cursor: 'pointer', transition: 'background 130ms ease',
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-secondary)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'var(--fill-tertiary)')}
+                        className="hover:bg-[var(--fill-secondary)]"
                     >
                         <RefreshCw size={13} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
                         Refresh
                     </button>
+
+                    <DateRangePicker onUpdate={r => setDateRange(r.range)} />
                 </div>
             </div>
 
-            {/* Channels Overview */}
-            <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                    <div style={{
-                        width: 30, height: 30, borderRadius: 8,
-                        background: 'rgba(59,91,219,0.12)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'var(--blue)',
-                    }}>
-                        <LayoutDashboard size={14} />
+            {/* 4 Business Banners */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+                {/* Bennett Bootcamps */}
+                <div className="liquid-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, borderLeft: '4px solid var(--orange)' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(230,126,34,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--orange)' }}>
+                        <GraduationCap size={20} />
                     </div>
-                    <h2 style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)' }}>
-                        Channels
-                    </h2>
-                </div>
-                <div className="metric-grid">
-                    <MetricTile
-                        title="Email"
-                        value="—"
-                        accentColor="var(--purple)"
-                        icon={<Mail size={17} />}
-                        onClick={() => router.push('/dashboard/email')}
-                    />
-                    <MetricTile
-                        title="WhatsApp"
-                        value="—"
-                        accentColor="var(--green)"
-                        icon={<MessageCircle size={17} />}
-                        onClick={() => router.push('/dashboard/whatsapp')}
-                    />
-                    <MetricTile
-                        title="SMS"
-                        value="—"
-                        accentColor="#D6336C"
-                        icon={<MessageSquare size={17} />}
-                        onClick={() => router.push('/dashboard/sms')}
-                    />
-                    <MetricTile
-                        title="Voice"
-                        value={`${(m?.totalCalls ?? 0).toLocaleString()} calls`}
-                        accentColor="var(--cyan)"
-                        icon={<Phone size={17} />}
-                    />
-                </div>
-            </div>
-
-            {/* Key Metrics */}
-            <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                    <div style={{
-                        width: 30, height: 30, borderRadius: 8,
-                        background: 'rgba(8,145,178,0.12)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'var(--cyan)',
-                    }}>
-                        <TrendingUp size={14} />
+                    <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: 2 }}>
+                            Bennett Bootcamps
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 300, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                            {normalCalls.toLocaleString()}
+                        </div>
                     </div>
-                    <h2 style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)' }}>
-                        Key Metrics
-                    </h2>
                 </div>
 
-                {/* ── Bennett Bootcamps ── */}
-                <BusinessSection
-                    title="Bennett Bootcamps"
-                    icon={<GraduationCap size={11} />}
-                    iconBg="rgba(230,126,34,0.15)"
-                    iconColor="#f59e0b"
-                    loading={loading}
-                    metrics={[
-                        { title: "Total Calls", value: `${normalCalls.toLocaleString()} calls`, accentColor: "var(--orange)", icon: <Phone size={17} /> },
-                        { title: "Calls Connected", value: `${(m?.normalConnected ?? 0).toLocaleString()} calls`, accentColor: "var(--green)", icon: <Phone size={17} /> },
-                        { title: "Pick-up Rate", value: `${(m?.normalPickupRate ?? 0).toFixed(1)}%`, accentColor: "var(--purple)", icon: <Phone size={17} /> },
-                    ]}
-                />
+                {/* Bennett Realty Solutions */}
+                <div className="liquid-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, borderLeft: '4px solid var(--blue)' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(59,91,219,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--blue)' }}>
+                        <Home size={20} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--blue)', marginBottom: 2 }}>
+                            Bennett Realty
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 300, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                            {normalCalls.toLocaleString()}
+                        </div>
+                    </div>
+                </div>
 
-                {/* ── Bennett Realty Solutions ── */}
-                <BusinessSection
-                    title="Bennett Realty Solutions"
-                    icon={<Home size={11} />}
-                    iconBg="rgba(59,91,219,0.15)"
-                    iconColor="#6366f1"
-                    loading={loading}
-                    metrics={[
-                        { title: "Total Calls", value: `${normalCalls.toLocaleString()} calls`, accentColor: "var(--blue)", icon: <Phone size={17} /> },
-                        { title: "Calls Connected", value: `${(m?.normalConnected ?? 0).toLocaleString()} calls`, accentColor: "var(--green)", icon: <Phone size={17} /> },
-                        { title: "Pick-up Rate", value: `${(m?.normalPickupRate ?? 0).toFixed(1)}%`, accentColor: "var(--purple)", icon: <Phone size={17} /> },
-                    ]}
-                />
+                {/* Bennett Wealth Builder */}
+                <div className="liquid-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, borderLeft: '4px solid var(--green)' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(15,157,88,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--green)' }}>
+                        <Coins size={20} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--green)', marginBottom: 2 }}>
+                            Bennett Wealth
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 300, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                            {ownerCalls.toLocaleString()}
+                        </div>
+                    </div>
+                </div>
 
-                {/* ── Bennett Wealth Builder ── */}
-                <BusinessSection
-                    title="Bennett Wealth Builder"
-                    icon={<Coins size={11} />}
-                    iconBg="rgba(15,157,88,0.15)"
-                    iconColor="#22c55e"
-                    loading={loading}
-                    metrics={[
-                        { title: "Total Calls", value: `${ownerCalls.toLocaleString()} calls`, accentColor: "var(--green)", icon: <Phone size={17} /> },
-                        { title: "Calls Connected", value: `${(m?.ownerConnected ?? 0).toLocaleString()} calls`, accentColor: "var(--green)", icon: <Phone size={17} /> },
-                        { title: "Pick-up Rate", value: `${(m?.ownerPickupRate ?? 0).toFixed(1)}%`, accentColor: "var(--purple)", icon: <Phone size={17} /> },
-                    ]}
-                />
+                {/* Platinum & Elite Coaching */}
+                <div className="liquid-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, borderLeft: '4px solid var(--purple)' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(175,82,222,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--purple)' }}>
+                        <Crown size={20} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--purple)', marginBottom: 2 }}>
+                            Platinum Coaching
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 300, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                            {ownerCalls.toLocaleString()}
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                {/* ── Platinum & Elite Coaching ── */}
-                <BusinessSection
-                    title="Platinum & Elite Coaching"
-                    icon={<Crown size={11} />}
-                    iconBg="rgba(175,82,222,0.15)"
-                    iconColor="#a78bfa"
-                    loading={loading}
-                    metrics={[
-                        { title: "Total Calls", value: `${ownerCalls.toLocaleString()} calls`, accentColor: "var(--purple)", icon: <Phone size={17} /> },
-                        { title: "Calls Connected", value: `${(m?.ownerConnected ?? 0).toLocaleString()} calls`, accentColor: "var(--green)", icon: <Phone size={17} /> },
-                        { title: "Pick-up Rate", value: `${(m?.ownerPickupRate ?? 0).toFixed(1)}%`, accentColor: "var(--purple)", icon: <Phone size={17} /> },
-                    ]}
+            {/* Global Metrics */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+                <MetricTile
+                    title="Total Calls"
+                    value={`${(m?.totalCalls ?? 0).toLocaleString()} calls`}
+                    accentColor="var(--label-secondary)"
+                    icon={<Phone size={17} />}
+                />
+                <MetricTile
+                    title="Total Duration"
+                    value={formatDuration(m?.totalDuration ?? 0)}
+                    accentColor="var(--label-secondary)"
+                    icon={<Clock size={17} />}
+                />
+                <MetricTile
+                    title="Average Duration"
+                    value={`${Math.round(m?.avgDuration ?? 0)}s`}
+                    accentColor="var(--label-secondary)"
+                    icon={<Timer size={17} />}
                 />
             </div>
+
+
+
+            
 
             {/* Charts */}
             <div className="charts-grid">
