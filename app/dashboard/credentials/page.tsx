@@ -73,8 +73,8 @@ export default function CredentialsPage() {
                     title="Email Integration"
                     description="Active sender accounts detected from your campaigns."
                     icon={Mail}
-                    iconColor="text-rose-600"
-                    iconBg="bg-rose-50"
+                    iconColor="text-[var(--red)]"
+                    iconBg="badge-red"
                 >
                     <div className="grid gap-6 md:grid-cols-2">
                         {loading ? (
@@ -94,8 +94,8 @@ export default function CredentialsPage() {
                     title="WhatsApp Business API"
                     description="Meta Business API credentials for WhatsApp CRM."
                     icon={MessageCircle}
-                    iconColor="text-emerald-600"
-                    iconBg="bg-emerald-50"
+                    iconColor="text-[var(--green)]"
+                    iconBg="badge-green"
                 >
                     <div className="grid gap-6 md:grid-cols-2">
                         <ReadOnlyField label="WhatsApp Account 1 " value="+971 52 563 3027" />
@@ -108,8 +108,8 @@ export default function CredentialsPage() {
                     title="Provisioned Phone Numbers"
                     description="Active telephony lines for Voice and WhatsApp."
                     icon={Phone}
-                    iconColor="text-cyan-600"
-                    iconBg="bg-cyan-50"
+                    iconColor="text-[var(--teal)]"
+                    iconBg="badge-teal"
                     className="md:col-span-2"
                 >
                     <div className="grid gap-8 md:grid-cols-3">
@@ -138,15 +138,15 @@ export default function CredentialsPage() {
                     title="Voice Agent (Vapi)"
                     description="AI Voice configuration and wallet balances."
                     icon={Mic}
-                    iconColor="text-blue-600"
-                    iconBg="bg-blue-50"
+                    iconColor="text-[var(--blue)]"
+                    iconBg="badge-blue"
                     action={
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50 gap-2" onClick={() => router.push('/dashboard/voice/logs')}>
+                            <Button variant="outline" className="border-[var(--glass-border)] text-[var(--blue)] hover:bg-[var(--fill-secondary)] gap-2" onClick={() => router.push('/dashboard/voice/logs')}>
                                 <BarChart3 className="h-4 w-4" />
                                 Detailed Cost Analysis
                             </Button>
-                            <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2" onClick={() => window.open('https://dashboard.vapi.ai/login', '_blank')}>
+                            <Button className="bg-[var(--blue)] hover:opacity-90 text-white gap-2" onClick={() => window.open('https://dashboard.vapi.ai/login', '_blank')}>
                                 <Wallet className="h-4 w-4" />
                                 Vapi Wallet
                             </Button>
@@ -173,10 +173,10 @@ export default function CredentialsPage() {
                     title="Maqsam Telephony"
                     description="VoIP and Telephony provider credentials."
                     icon={Phone}
-                    iconColor="text-cyan-600"
-                    iconBg="bg-cyan-50"
+                    iconColor="text-[var(--teal)]"
+                    iconBg="badge-teal"
                     action={
-                        <Button className="bg-cyan-600 hover:bg-cyan-700 text-white gap-2" onClick={() => window.open('https://maqsam.com', '_blank')}>
+                        <Button className="bg-[var(--teal)] hover:opacity-90 text-white gap-2" onClick={() => window.open('https://maqsam.com', '_blank')}>
                             <Wallet className="h-4 w-4" />
                             Manage Billing
                         </Button>
@@ -191,11 +191,11 @@ export default function CredentialsPage() {
                     title="Twilio Telephony"
                     description="Real-time balance and usage records for Twilio."
                     icon={Smartphone}
-                    iconColor="text-rose-600"
-                    iconBg="bg-rose-50"
+                    iconColor="text-[var(--red)]"
+                    iconBg="badge-red"
                     className="md:col-span-2"
                     action={
-                        <Button className="bg-rose-600 hover:bg-rose-700 text-white gap-2" onClick={() => window.open('https://console.twilio.com', '_blank')}>
+                        <Button className="bg-[var(--red)] hover:opacity-90 text-white gap-2" onClick={() => window.open('https://console.twilio.com', '_blank')}>
                             <ExternalLink className="h-4 w-4" />
                             Twilio Console
                         </Button>
@@ -205,7 +205,7 @@ export default function CredentialsPage() {
                         <div className="bg-[var(--fill-quaternary)] rounded-lg p-4 border border-[var(--glass-border)] flex items-center justify-between shadow-sm">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-[var(--fill-secondary)] rounded-md border border-[var(--glass-border)]">
-                                    <Smartphone className="h-5 w-5 text-rose-600" />
+                                    <Smartphone className="h-5 w-5 text-[var(--red)]" />
                                 </div>
                                 <div>
                                     <p className="text-sm font-bold text-[var(--label-primary)]">Twilio Account</p>
@@ -214,7 +214,7 @@ export default function CredentialsPage() {
                             </div>
                             <div className="text-right">
                                 <p className="text-xs text-[var(--label-tertiary)] uppercase font-bold tracking-wider">Available Balance</p>
-                                <p className="text-2xl font-black text-rose-600">
+                                <p className="text-2xl font-black text-[var(--red)]">
                                     {twilioBalance?.balance !== undefined ? `$${twilioBalance.balance.toFixed(2)}` : '---'}
                                 </p>
                             </div>

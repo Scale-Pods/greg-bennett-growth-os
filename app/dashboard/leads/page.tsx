@@ -145,7 +145,7 @@ function ProgressBreakdown({ lead }: { lead: Lead }) {
                         </div>
                         <span className="font-bold text-[var(--label-primary)]">{progress}%</span>
                     </div>
-                    <Progress value={progress} className="h-2 bg-[var(--fill-secondary)] group-hover:bg-[var(--blue)]/5 group-hover:ring-2 group-hover:ring-[var(--blue)]/10 transition-all" indicatorClassName="bg-gradient-to-r from-blue-500 to-cyan-500" />
+                    <Progress value={progress} className="h-2 bg-[var(--fill-secondary)] group-hover:bg-[var(--blue)]/5 transition-all" indicatorClassName="bg-[var(--blue)]" />
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-[var(--fill-secondary)] text-[var(--label-primary)] text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-[var(--glass-border)]">
                         View Journey
                     </div>
@@ -189,7 +189,7 @@ function ProgressBreakdown({ lead }: { lead: Lead }) {
                         <div className="space-y-2">
                             {breakdown.map((step, i) => (
                                 <div key={i} className="flex items-center gap-2 text-sm">
-                                    <div className={`h-2 w-2 rounded-full ${step.isCompleted ? 'bg-emerald-500' : 'bg-[var(--fill-secondary)]'}`} />
+                                    <div className={`h-2 w-2 rounded-full ${step.isCompleted ? 'bg-[var(--green)]' : 'bg-[var(--fill-secondary)]'}`} />
                                     <span className={step.isCompleted ? 'text-[var(--label-primary)] font-medium' : 'text-[var(--label-tertiary)]'}>
                                         {step.name}
                                     </span>
@@ -428,7 +428,7 @@ export default function LeadsPage() {
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="text-[var(--label-secondary)] hover:text-rose-600 h-10 px-3 hover:bg-[var(--fill-secondary)] rounded-md"
+                                    className="text-[var(--label-secondary)] hover:text-[var(--red)] h-10 px-3 hover:bg-[var(--fill-secondary)] rounded-md"
                                     onClick={() => {
                                         setSearchQuery("");
                                         setLoopFilter("all");
@@ -485,12 +485,12 @@ export default function LeadsPage() {
                                                         <TableCell className="text-center">
                                                             <div className="flex flex-col items-center gap-1.5">
                                                                 {lead.email && lead.email !== "No Email" && (
-                                                                    <Badge variant="secondary" className="bg-[var(--blue)]/10 text-[var(--blue)] hover:bg-[var(--blue)]/10 border-[var(--blue)]/20 text-[12px] font-medium h-5 px-1.5 w-full justify-center">
+                                                                    <Badge variant="secondary" className="badge-blue border-none text-[12px] font-medium h-5 px-1.5 w-full justify-center">
                                                                         Email
                                                                     </Badge>
                                                                 )}
                                                                 {lead.phone && (
-                                                                    <Badge variant="secondary" className="bg-[var(--green)]/10 text-[var(--green)] hover:bg-[var(--green)]/10 border-[var(--green)]/20 text-[12px] font-medium h-5 px-1.5 w-full justify-center">
+                                                                    <Badge variant="secondary" className="badge-green border-none text-[12px] font-medium h-5 px-1.5 w-full justify-center">
                                                                         WhatsApp
                                                                     </Badge>
                                                                 )}
@@ -500,13 +500,13 @@ export default function LeadsPage() {
                                                             {lead.email === "No Email" ? "No Email" : lead.email}
                                                         </TableCell>
                                                         <TableCell>
-                                                            <Badge variant="outline" className="bg-[var(--blue)]/10 text-[var(--blue)] hover:bg-[var(--blue)]/10 border-[var(--blue)]/20 uppercase text-[10px] font-bold tracking-wider">
+                                                            <Badge variant="outline" className="badge-blue border-none uppercase text-[10px] font-bold tracking-wider">
                                                                 {lead.source_loop === 'followup' ? 'FOLLOW UP' : lead.source_loop === 'nr_wf' || lead.source_loop === 'Intro' ? 'INTRO' : (lead.display_loop || lead.current_loop || lead.source_loop || "").toUpperCase()}
                                                             </Badge>
                                                         </TableCell>
                                                         <TableCell>
                                                             <Badge variant={(lead.replied === "Yes" || (lead.email_replied && lead.email_replied !== "No") || (lead.whatsapp_replied && lead.whatsapp_replied !== "No")) ? "default" : "secondary"}
-                                                                className={(lead.replied === "Yes" || (lead.email_replied && lead.email_replied !== "No") || (lead.whatsapp_replied && lead.whatsapp_replied !== "No")) ? "bg-[var(--green)]/10 text-[var(--green)] border-[var(--green)]/20 shadow-none font-bold capitalize" : "capitalize text-[var(--label-secondary)] bg-[var(--fill-secondary)] border-[var(--glass-border)]"}>
+                                                                className={(lead.replied === "Yes" || (lead.email_replied && lead.email_replied !== "No") || (lead.whatsapp_replied && lead.whatsapp_replied !== "No")) ? "badge-green border-none shadow-none font-bold capitalize" : "capitalize text-[var(--label-secondary)] bg-[var(--fill-secondary)] border-[var(--glass-border)]"}>
                                                                 {(lead.email_replied && lead.email_replied !== "No") ? "Replied" : (lead.whatsapp_replied && lead.whatsapp_replied !== "No") ? "Replied" : lead.replied === "No" ? "Sent" : lead.replied}
                                                             </Badge>
                                                         </TableCell>
@@ -568,7 +568,7 @@ export default function LeadsPage() {
                                                 <div key={template.id || idx} className="liquid-card border-none overflow-hidden" style={{ padding: 0 }}>
                                                     <div style={{ background: 'var(--fill-quaternary)', borderBottom: '1px solid var(--separator)', padding: '12px 16px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                                                         <div className="flex items-center gap-3">
-                                                            <div className={`p-2 rounded-md ${template.type === 'email' ? 'bg-[var(--blue)]/10 text-[var(--blue)]' : 'bg-[var(--green)]/10 text-[var(--green)]'}`}>
+                                                            <div className={`p-2 rounded-md ${template.type === 'email' ? 'badge-blue' : 'badge-green'}`}>
                                                                 {template.type === 'email' ? <Mail className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
                                                             </div>
                                                             <div className="font-semibold text-[var(--label-primary)]">
