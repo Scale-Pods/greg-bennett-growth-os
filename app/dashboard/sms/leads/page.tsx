@@ -26,12 +26,11 @@ import {
     Dialog,
     DialogContent,
     DialogHeader,
-    DialogTitle,
 } from "@/components/ui/dialog";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { SmsChatDetail } from "@/components/dashboard/sms-chat-detail";
 import { SmsOwnerChatDetail } from "@/components/dashboard/sms-owner-chat-detail";
+import { SmsChatDetail } from "@/components/dashboard/sms-chat-detail";
 import { BennettLoader } from "@/components/bennett-loader";
+import { useData } from "@/context/DataContext";
 
 // Raw shape returned by /api/sms-leads
 interface SmsLead {
@@ -88,10 +87,7 @@ export default function SmsLeadsPage() {
     const leadsPerPage = 10;
     const [activeTab, setActiveTab] = useState<"leads" | "owners">("leads");
 
-    const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
+    const { dateRange } = useData();
 
     const [activeFilters, setActiveFilters] = useState<{
         replyStatus: string[];
@@ -239,7 +235,6 @@ export default function SmsLeadsPage() {
                     {(activeFilters.replyStatus.length > 0 || activeFilters.loops.length > 0 || searchQuery) && (
                         <button onClick={resetFilters} style={{ fontSize: 11, fontWeight: 700, color: '#D6336C', background: 'none', border: 'none', cursor: 'default' }}>RESET FILTERS</button>
                     )}
-                    <DateRangePicker onUpdate={({ range }) => setDateRange({ from: range?.from, to: range?.to })} />
                 </div>
             </div>
 

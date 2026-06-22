@@ -17,7 +17,7 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { format, subDays } from "date-fns";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+
 import { useData } from "@/context/DataContext";
 
 export default function ReceivedEmailsPage() {
@@ -26,7 +26,7 @@ export default function ReceivedEmailsPage() {
     const loading = loadingLeads;
     const [loopFilter, setLoopFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
-    const [dateRange, setDateRange] = useState<any>({ from: subDays(new Date(), 7), to: new Date() });
+    const { dateRange } = useData();
     const [sortBy, setSortBy] = useState("newest");
 
     useEffect(() => {
@@ -141,7 +141,7 @@ export default function ReceivedEmailsPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <DateRangePicker className="w-full md:w-[260px]" onUpdate={(values) => setDateRange(values.range)} />
+
                 </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
@@ -165,7 +165,7 @@ export default function ReceivedEmailsPage() {
                         style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: 'var(--label-secondary)', background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', padding: '5px 12px', borderRadius: 'var(--radius-sm)', cursor: 'default', height: 32 }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-secondary)')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'var(--fill-tertiary)')}
-                        onClick={() => { setSearchQuery(""); setDateRange(undefined); setLoopFilter("all"); setSortBy("newest"); }}
+                        onClick={() => { setSearchQuery(""); setLoopFilter("all"); setSortBy("newest"); }}
                     >
                         Reset Filters
                     </button>

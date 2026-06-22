@@ -28,8 +28,8 @@ import {
     Building2
 } from "lucide-react";
 import { BennettLoader } from "@/components/bennett-loader";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { subDays, startOfDay, endOfDay } from "date-fns";
+import { useData } from "@/context/DataContext";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 
 // --- Sorting & Activity Helpers ---
@@ -275,10 +275,7 @@ export default function SmsChatPage() {
         return result;
     };
 
-    const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
+    const { dateRange } = useData();
 
     useEffect(() => {
         if (!dateRange?.from) return;
@@ -678,7 +675,7 @@ export default function SmsChatPage() {
                             </button>
                         ))}
                     </div>
-                    <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
+
                     <button
                         onClick={() => { window.location.reload(); }}
                         style={{

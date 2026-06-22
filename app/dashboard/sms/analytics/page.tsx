@@ -13,7 +13,7 @@ import {
     Bar,
     Legend,
 } from "recharts";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { useData } from "@/context/DataContext";
 import { TrendingUp, Users, MessageSquare, Send, RefreshCw, Building2, Info, Reply } from "lucide-react";
 import {
     Tooltip as UITooltip,
@@ -26,10 +26,7 @@ import { BennettLoader } from "@/components/bennett-loader";
 
 
 export default function SmsAnalyticsPage() {
-    const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
-        from: subDays(new Date(), 7),
-        to: new Date()
-    });
+    const { dateRange } = useData();
 
     const [loopData, setLoopData] = useState<{ nr_wf: any[]; followup: any[]; nurture: any[]; owners: any[] } | null>(null);
     const [loading, setLoading] = useState(true);
@@ -163,7 +160,7 @@ export default function SmsAnalyticsPage() {
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Track campaign performance and lead engagement</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <DateRangePicker onUpdate={({ range }) => setDateRange({ from: range?.from, to: range?.to })} />
+
                     <button
                         onClick={() => { if (dateRange?.from) fetchData(dateRange.from, dateRange.to || dateRange.from); }}
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}

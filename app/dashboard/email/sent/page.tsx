@@ -25,7 +25,7 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { format, subDays } from "date-fns";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+
 import { useData } from "@/context/DataContext";
 import { BennettLoader } from "@/components/bennett-loader";
 
@@ -34,10 +34,7 @@ const ITEMS_PER_PAGE = 7;
 export default function SentEmailsPage() {
     const { leads: allLeads, loadingLeads } = useData();
     const [page, setPage] = useState(1);
-    const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
+    const { dateRange } = useData();
     const [sentEmails, setSentEmails] = useState<any[]>([]);
     const loading = loadingLeads;
     const [searchQuery, setSearchQuery] = useState("");
@@ -174,7 +171,7 @@ export default function SentEmailsPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <DateRangePicker className="w-full md:w-[260px]" onUpdate={(values) => setDateRange(values.range)} />
+
                 </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
@@ -210,7 +207,7 @@ export default function SentEmailsPage() {
                         style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: 'var(--label-secondary)', background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', padding: '5px 12px', borderRadius: 'var(--radius-sm)', cursor: 'default', height: 32 }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-secondary)')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'var(--fill-tertiary)')}
-                        onClick={() => { setSearchQuery(""); setDateRange(undefined); setFilters({ campaign: "all", sender: "all", type: "all" }); setPage(1); }}
+                        onClick={() => { setSearchQuery(""); setFilters({ campaign: "all", sender: "all", type: "all" }); setPage(1); }}
                     >
                         Reset Filters
                     </button>

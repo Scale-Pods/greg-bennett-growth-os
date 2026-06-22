@@ -6,7 +6,7 @@ import { subDays } from "date-fns";
 import { useData } from "@/context/DataContext";
 import { UserMinus, Search, Mail, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function UnsubscribedPage() {
@@ -15,7 +15,7 @@ export default function UnsubscribedPage() {
     const loading = loadingLeads;
 
     const [searchTerm, setSearchTerm] = useState("");
-    const [dateRange, setDateRange] = useState<any>({ from: subDays(new Date(), 7), to: new Date() });
+    const { dateRange } = useData();
     const [sourceLoopFilter, setSourceLoopFilter] = useState("all");
     const [repliedFilter, setRepliedFilter] = useState("all");
 
@@ -63,7 +63,7 @@ export default function UnsubscribedPage() {
                     </h1>
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>View detailed list of users who opted out of email marketing</p>
                 </div>
-                <DateRangePicker onUpdate={(range: any) => setDateRange(range.range)} />
+
             </div>
 
             {/* Table Card */}

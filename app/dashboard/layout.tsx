@@ -9,7 +9,7 @@ import {
     Key, ExternalLink, Sun, Moon, Inbox, AlertCircle, UserMinus,
     MessageSquare, Phone, Activity, Globe
 } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DataProvider, useData } from "@/context/DataContext";
 import { MaqsamBalanceDetail } from "@/components/dashboard/maqsam-balance-detail";
@@ -96,6 +96,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         isOpen: false, type: 'vapi',
     });
     const [isChannelDropdownOpen, setIsChannelDropdownOpen] = useState(false);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const isExpanded = isHovered;
 
@@ -129,6 +130,104 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         }).reduce((acc: number, call: any) => acc + (call.breakdown?.telephony || call.costValue || 0), 0);
     }, [calls]);
 
+    // Canvas Background loop for Dark Mode only
+    useEffect(() => {
+        if (!dark) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let animationFrameId: number;
+        let pulse = 0;
+        let scanLines = [0, 130, 260];
+
+        const resizeCanvas = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const animate = () => {
+            pulse += 0.008;
+            const W = canvas.width;
+            const H = canvas.height;
+
+            // Page Background in dark mode
+            ctx.fillStyle = '#040812';
+            ctx.fillRect(0, 0, W, H);
+
+            const vp = { x: W / 2, y: -H * 0.3 };
+            const baseAlpha = 0.06 + Math.sin(pulse) * 0.04;
+
+            // 1. VERTICAL LINES
+            ctx.strokeStyle = `rgba(99, 102, 241, ${baseAlpha})`;
+            ctx.lineWidth = 0.6;
+            const numLines = 15;
+            for (let i = 0; i < numLines; i++) {
+                const xBottom = (W / (numLines - 1)) * i;
+                ctx.beginPath();
+                ctx.moveTo(vp.x, vp.y);
+                ctx.lineTo(xBottom, H);
+                ctx.stroke();
+            }
+
+            // 2. HORIZONTAL LINES
+            const rows = 10;
+            ctx.lineWidth = 0.5;
+            for (let j = 1; j <= rows; j++) {
+                const frac = j / rows;
+                const ty = vp.y + (H - vp.y) * Math.pow(frac, 0.7);
+                if (ty < 0) continue;
+
+                const rowAlpha = baseAlpha * Math.pow(frac, 0.5);
+                ctx.strokeStyle = `rgba(99, 102, 241, ${rowAlpha})`;
+
+                const spread = 0.05 + frac * 0.95;
+                const x1 = vp.x - (W / 2) * spread;
+                const x2 = vp.x + (W / 2) * spread;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, ty);
+                ctx.lineTo(x2, ty);
+                ctx.stroke();
+            }
+
+            // 3. SCAN PULSES
+            for (let i = 0; i < scanLines.length; i++) {
+                scanLines[i] += 0.4;
+                if (scanLines[i] > H) {
+                    scanLines[i] = 0;
+                }
+                const sy = scanLines[i];
+                const grad = ctx.createLinearGradient(0, sy - 22, 0, sy + 22);
+                grad.addColorStop(0, 'rgba(99, 102, 241, 0)');
+                grad.addColorStop(0.5, 'rgba(99, 102, 241, 0.09)');
+                grad.addColorStop(1, 'rgba(99, 102, 241, 0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, sy - 22, W, 44);
+            }
+
+            // 4. VIGNETTE
+            const vigGrad = ctx.createLinearGradient(0, 0, 0, H);
+            vigGrad.addColorStop(0, 'rgba(4, 8, 18, 0)');
+            vigGrad.addColorStop(1, 'rgba(4, 8, 18, 0.55)');
+            ctx.fillStyle = vigGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            animationFrameId = requestAnimationFrame(animate);
+        };
+
+        animate();
+
+        return () => {
+            window.removeEventListener('resize', resizeCanvas);
+            cancelAnimationFrame(animationFrameId);
+        };
+    }, [dark]);
+
     let currentContext = "master";
     if (pathname.startsWith("/dashboard/email")) currentContext = "email";
     else if (pathname.startsWith("/dashboard/whatsapp")) currentContext = "whatsapp";
@@ -145,6 +244,20 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex h-screen overflow-hidden ambient-bg">
+            {/* Canvas background for dark mode */}
+            {dark && (
+                <canvas
+                    ref={canvasRef}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 0,
+                        pointerEvents: 'none',
+                        width: '100%',
+                        height: '100%',
+                    }}
+                />
+            )}
             
             {/* Sidebar Placeholder to push content */}
             <div style={{ width: '80px', flexShrink: 0, transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }} className="hidden md:block" />

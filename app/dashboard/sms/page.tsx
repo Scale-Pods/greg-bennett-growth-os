@@ -17,6 +17,7 @@ import {
     Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { BennettLoader } from "@/components/bennett-loader";
+import { useData } from "@/context/DataContext";
 
 /* ── Apple Metric Tile ── */
 function MetricTile({ title, value, accentColor, icon, onClick, info }: {
@@ -128,7 +129,7 @@ function BusinessSection({ title, icon, iconBg, iconColor, loading, metrics }: {
 
 export default function SmsDashboardPage() {
     const router = useRouter();
-    const [dateRange, setDateRange] = useState<any>({ from: subDays(new Date(), 7), to: new Date() });
+    const { dateRange } = useData();
     const [smsData, setSmsData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -222,7 +223,6 @@ export default function SmsDashboardPage() {
                         Real-time engagement insights and SMS campaign totals
                     </p>
                 </div>
-                <DateRangePicker onUpdate={range => setDateRange(range.range)} />
             </div>
 
             {/* Channels Overview */}

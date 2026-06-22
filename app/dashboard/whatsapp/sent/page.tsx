@@ -6,14 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import React, { useState, useEffect } from "react";
-import { subDays } from "date-fns";
 import { consolidateLeads } from "@/lib/leads-utils";
 import { BennettLoader } from "@/components/bennett-loader";
 import { useData } from "@/context/DataContext";
 
 export default function WhatsappSentPage() {
-    const { leads: allLeads, loadingLeads } = useData();
-    const [dateRange, setDateRange] = useState<any>({ from: subDays(new Date(), 7), to: new Date() });
+    const { leads: allLeads, loadingLeads, dateRange } = useData();
     const [messages, setMessages] = useState<any[]>([]);
     const loading = loadingLeads;
     const [searchQuery, setSearchQuery] = useState("");
@@ -104,26 +102,26 @@ export default function WhatsappSentPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">Total Sent Messages</h1>
-                    <p className="text-slate-500">History of all outbound WhatsApp communications</p>
+                    <h1 className="text-2xl font-bold" style={{ color: 'var(--label-primary)' }}>Total Sent Messages</h1>
+                    <p style={{ color: 'var(--label-secondary)' }}>History of all outbound WhatsApp communications</p>
                 </div>
-                <DateRangePicker onUpdate={(val) => setDateRange(val.range)} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <StatCard title="Total Sent" value={loading ? "..." : stats.total.toLocaleString()} icon={<Send className="h-4 w-4" />} color="text-blue-600" bg="bg-blue-50" />
-                <StatCard title="Delivered" value={loading ? "..." : stats.delivered.toLocaleString()} icon={<CheckCheck className="h-4 w-4" />} color="text-emerald-600" bg="bg-emerald-50" />
-                <StatCard title="Read" value={loading ? "..." : stats.read.toLocaleString()} icon={<CheckCheck className="h-4 w-4 text-blue-500" />} color="text-amber-600" bg="bg-amber-50" />
-                <StatCard title="Failed" value={loading ? "..." : stats.failed.toLocaleString()} icon={<XCircle className="h-4 w-4" />} color="text-rose-600" bg="bg-rose-50" />
+                <StatCard title="Total Sent" value={loading ? "..." : stats.total.toLocaleString()} icon={<Send className="h-4 w-4" />} color="var(--blue)" bg="rgba(99,102,241,0.12)" />
+                <StatCard title="Delivered" value={loading ? "..." : stats.delivered.toLocaleString()} icon={<CheckCheck className="h-4 w-4" />} color="var(--green)" bg="rgba(34,197,94,0.12)" />
+                <StatCard title="Read" value={loading ? "..." : stats.read.toLocaleString()} icon={<CheckCheck className="h-4 w-4 text-blue-500" />} color="var(--purple)" bg="rgba(167,139,250,0.12)" />
+                <StatCard title="Failed" value={loading ? "..." : stats.failed.toLocaleString()} icon={<XCircle className="h-4 w-4" />} color="var(--red)" bg="rgba(239,68,68,0.12)" />
             </div>
 
-            <Card className="border-slate-200">
-                <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between py-4">
-                    <CardTitle className="text-lg">Message History</CardTitle>
+            <Card style={{ background: 'var(--bg-layer1)', border: '0.5px solid var(--glass-border)' }}>
+                <CardHeader style={{ borderBottom: '0.5px solid var(--glass-border)' }} className="flex flex-row items-center justify-between py-4">
+                    <CardTitle className="text-lg" style={{ color: 'var(--label-primary)' }}>Message History</CardTitle>
                     <div className="relative w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input
                             className="pl-10 h-9"
+                            style={{ background: 'var(--fill-secondary)', color: 'var(--label-primary)', border: '0.5px solid var(--glass-border)' }}
                             placeholder="Search recipients..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -131,17 +129,17 @@ export default function WhatsappSentPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="p-0 relative min-h-[300px]">
-                    <div className="divide-y divide-slate-100">
+                    <div className="divide-y divide-slate-100" style={{ borderColor: 'var(--glass-border)' }}>
                         {loading ? (
                             <BennettLoader />
                         ) : filteredMessages.length > 0 ? (
                             filteredMessages.map((msg) => (
-                                <div key={msg.id} className="p-4 hover:bg-slate-50 transition-colors flex items-start justify-between">
+                                <div key={msg.id} className="p-4 hover:bg-[var(--fill-primary)] transition-colors flex items-start justify-between" style={{ borderBottom: '0.5px solid var(--glass-border)' }}>
                                     <div className="space-y-1">
-                                        <p className="font-bold text-slate-950">{msg.recipient}</p>
-                                        <p className="text-sm text-slate-600 max-w-xl">{msg.message}</p>
+                                        <p className="font-bold" style={{ color: 'var(--label-primary)' }}>{msg.recipient}</p>
+                                        <p className="text-sm" style={{ color: 'var(--label-secondary)' }}>{msg.message}</p>
                                         <div className="flex items-center gap-3 mt-2">
-                                            <span className="text-[10px] text-slate-400 uppercase font-bold">{msg.time}</span>
+                                            <span className="text-[10px] uppercase font-bold" style={{ color: 'var(--label-tertiary)' }}>{msg.time}</span>
                                             <span className={`flex items-center gap-1 text-[10px] font-bold uppercase ${msg.status === 'Read' ? 'text-blue-500' :
                                                 msg.status === 'Delivered' ? 'text-emerald-500' :
                                                     msg.status === 'Failed' ? 'text-rose-500' : 'text-slate-400'
@@ -153,11 +151,11 @@ export default function WhatsappSentPage() {
                                             </span>
                                         </div>
                                     </div>
-                                    <Button variant="ghost" size="sm">Details</Button>
+                                    <Button variant="ghost" size="sm" style={{ color: 'var(--label-secondary)' }}>Details</Button>
                                 </div>
                             ))
                         ) : (
-                            <div className="p-12 text-center text-slate-400">
+                            <div className="p-12 text-center" style={{ color: 'var(--label-tertiary)' }}>
                                 No messages found.
                             </div>
                         )}
@@ -170,15 +168,14 @@ export default function WhatsappSentPage() {
 
 function StatCard({ title, value, icon, color, bg }: any) {
     return (
-        <Card className="border-slate-200">
+        <Card style={{ background: 'var(--bg-layer1)', border: '0.5px solid var(--glass-border)' }}>
             <CardContent className="p-4 flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${bg} ${color}`}>{icon}</div>
+                <div className="p-3 rounded-lg flex items-center justify-center" style={{ background: bg, color: color }}>{icon}</div>
                 <div>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{title}</p>
-                    <p className="text-xl font-bold text-slate-900">{value}</p>
+                    <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--label-secondary)' }}>{title}</p>
+                    <p className="text-xl font-bold" style={{ color: 'var(--label-primary)' }}>{value}</p>
                 </div>
             </CardContent>
         </Card>
     );
 }
-

@@ -106,7 +106,7 @@ function BusinessSection({ title, icon, iconBg, iconColor, loading, metrics }: {
 export default function VoiceDashboardPage() {
     const router = useRouter();
     const providerFilter = "vapi";
-    const [dateRange, setDateRange] = useState<any>({ from: subDays(new Date(), 7), to: new Date() });
+    const { dateRange, setDateRange } = useData();
 
     const { voiceMetrics, loadingVoiceMetrics, refreshVoiceMetrics } = useData();
     const loading = loadingVoiceMetrics;
@@ -181,8 +181,6 @@ export default function VoiceDashboardPage() {
                         <RefreshCw size={13} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
                         Refresh
                     </button>
-
-                    <DateRangePicker onUpdate={v => setDateRange(v.range)} />
                 </div>
             </div>
 

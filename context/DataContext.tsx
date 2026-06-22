@@ -81,6 +81,8 @@ interface DataContextType {
     maqsamBalance: any;
     twilioBalance: any;
     error: string | null;
+    dateRange: { from: Date; to: Date };
+    setDateRange: React.Dispatch<React.SetStateAction<any>>;
     refreshLeads: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
     refreshCalls: (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean; provider?: string; force?: boolean }) => Promise<void>;
     refreshOwners: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
@@ -95,6 +97,10 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
+    const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+        from: subDays(new Date(), 7),
+        to: new Date()
+    });
     const [leads, setLeads] = useState<ConsolidatedLead[]>([]);
     const [calls, setCalls] = useState<any[]>([]);
     const [allTimeVoiceCount, setAllTimeVoiceCount] = useState(0);
@@ -384,9 +390,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         leads, ownerLeads, fetchLeads, fetchOwners]);
 
     useEffect(() => {
-        // Master Dashboard strategy: Fetch everything on mount
-        refreshAll({ includeElevenLabs: false });
+        if (dateRange?.from) {
+            refreshAll({ from: dateRange.from, to: dateRange.to || dateRange.from, includeElevenLabs: false });
+        }
+    }, [dateRange, refreshAll]);
 
+    useEffect(() => {
         // Session Monitor: Checks every 1 minute if the session is still valid
         const checkSession = async () => {
             try {
@@ -404,7 +413,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
         const interval = setInterval(checkSession, 60000); // Check every 60 seconds
         return () => clearInterval(interval);
-    }, [refreshAll, router]);
+    }, [router]);
 
     const computeWPReplies = useCallback((dateRange?: { from?: Date; to?: Date } | null): number => {
         if (!leads) return 0;
@@ -485,6 +494,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             maqsamBalance,
             twilioBalance,
             error,
+            dateRange,
+            setDateRange,
             refreshLeads: fetchLeads,
             refreshCalls: fetchCalls,
             refreshOwners: fetchOwners,

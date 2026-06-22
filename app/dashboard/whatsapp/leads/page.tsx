@@ -28,9 +28,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { WhatsAppChatDetail } from "@/components/dashboard/whatsapp-chat-detail";
 import { BennettLoader } from "@/components/bennett-loader";
+import { useData } from "@/context/DataContext";
 
 // Raw shape returned by /api/whatsapp-leads
 interface WALead {
@@ -76,6 +76,7 @@ function getLeadDate(lead: WALead): Date | null {
 }
 
 export default function WhatsappLeadsPage() {
+    const { dateRange } = useData();
     const [waLeads, setWaLeads] = useState<WALead[]>([]);
     const [waOwners, setWaOwners] = useState<WAOwner[]>([]);
     const [loading, setLoading] = useState(true);
@@ -86,11 +87,6 @@ export default function WhatsappLeadsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const leadsPerPage = 10;
     const [activeTab, setActiveTab] = useState<"leads" | "owners">("leads");
-
-    const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
 
     const [activeFilters, setActiveFilters] = useState<{
         replyStatus: string[];
@@ -239,7 +235,6 @@ export default function WhatsappLeadsPage() {
                     {(activeFilters.replyStatus.length > 0 || activeFilters.loops.length > 0 || searchQuery) && (
                         <button onClick={resetFilters} style={{ fontSize: 11, fontWeight: 700, color: 'var(--blue)', background: 'none', border: 'none', cursor: 'default' }}>RESET FILTERS</button>
                     )}
-                    <DateRangePicker onUpdate={({ range }) => setDateRange({ from: range?.from, to: range?.to })} />
                 </div>
             </div>
 

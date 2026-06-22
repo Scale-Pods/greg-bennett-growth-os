@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { format, subDays, subMonths, subYears, startOfMonth, endOfMonth, startOfDay } from "date-fns"
+import { format, subDays, subMonths, subYears, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
 
@@ -15,13 +15,15 @@ import {
 
 export interface DateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
     onUpdate?: (values: { range: DateRange | undefined, label?: string }) => void;
+    value?: DateRange;
 }
 
 export function DateRangePicker({
     className,
     onUpdate,
+    value,
 }: DateRangePickerProps) {
-    const [date, setDate] = React.useState<DateRange | undefined>({
+    const [date, setDate] = React.useState<DateRange | undefined>(value || {
         from: subDays(new Date(), 7),
         to: new Date(),
     })
@@ -34,6 +36,12 @@ export function DateRangePicker({
     React.useEffect(() => {
         setIsMounted(true)
     }, [])
+
+    React.useEffect(() => {
+        if (value) {
+            setDate(value)
+        }
+    }, [value])
 
     React.useEffect(() => {
         if (open) {
@@ -54,6 +62,13 @@ export function DateRangePicker({
             }
         },
         {
+            label: "Yesterday",
+            getValue: () => {
+                const today = new Date();
+                return { from: startOfDay(subDays(today, 1)), to: endOfDay(subDays(today, 1)) };
+            }
+        },
+        {
             label: "Last 7 days",
             getValue: () => {
                 const today = new Date();
@@ -68,31 +83,10 @@ export function DateRangePicker({
             }
         },
         {
-            label: "This Month",
+            label: "This month",
             getValue: () => {
                 const today = new Date();
                 return { from: startOfDay(startOfMonth(today)), to: endOfMonth(today) };
-            }
-        },
-        {
-            label: "Last 3 Months",
-            getValue: () => {
-                const today = new Date();
-                return { from: startOfDay(subMonths(today, 3)), to: today };
-            }
-        },
-        {
-            label: "Last 6 Months",
-            getValue: () => {
-                const today = new Date();
-                return { from: startOfDay(subMonths(today, 6)), to: today };
-            }
-        },
-        {
-            label: "Last 1 year",
-            getValue: () => {
-                const today = new Date();
-                return { from: startOfDay(subYears(today, 1)), to: today };
             }
         },
     ];

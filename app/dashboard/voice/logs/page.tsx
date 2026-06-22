@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { CallDetailsModal } from "@/components/voice/call-details-modal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { format, subDays } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
@@ -107,13 +106,12 @@ const DynamicRowCells = ({ call, leads, telephonyCost }: { call: any, leads: any
 };
 
 export default function VoiceLogsPage() {
-    const { calls: globalCalls, loadingCalls, refreshCalls, leads, loadingLeads } = useData();
+    const { calls: globalCalls, loadingCalls, refreshCalls, leads, loadingLeads, dateRange } = useData();
     const [allCallsMapped, setAllCallsMapped] = useState<any[]>([]);
     const [calls, setCalls] = useState<any[]>([]);
     const loading = loadingCalls;
     const [selectedCall, setSelectedCall] = useState<any>(null);
     const [modalOpen, setModalOpen] = useState(false);
-    const [dateRange, setDateRange] = useState<any>({ from: subDays(new Date(), 7), to: new Date() });
     const [statusFilter, setStatusFilter] = useState("all");
     const [typeFilter, setTypeFilter] = useState("all");
     const [accountFilter, setAccountFilter] = useState("vapi");
@@ -123,10 +121,6 @@ export default function VoiceLogsPage() {
     const [costModalOpen, setCostModalOpen] = useState(false);
     const [telephonyCosts, setTelephonyCosts] = useState<Record<string, number>>({});
     const [exporting, setExporting] = useState(false);
-
-    useEffect(() => {
-        setDateRange({ from: subDays(new Date(), 7), to: new Date() });
-    }, []);
 
     useEffect(() => {
         if (!refreshCalls) return;
@@ -314,7 +308,6 @@ export default function VoiceLogsPage() {
                     >
                         <Download style={{ width: 13, height: 13 }} /> {exporting ? 'Exporting...' : 'Export'}
                     </button>
-                    <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
                     <button
                         style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', fontSize: 12, fontWeight: 500, cursor: 'default' }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-secondary)')}

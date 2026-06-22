@@ -27,8 +27,8 @@ import {
     RefreshCw,
     Building2
 } from "lucide-react";
+import { useData } from "@/context/DataContext";
 import { BennettLoader } from "@/components/bennett-loader";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 
@@ -285,10 +285,7 @@ export default function WhatsappChatPage() {
         return result;
     };
 
-    const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
+    const { dateRange } = useData();
 
     // Re-fetch from the WA-specific endpoint when date range changes.
     // This filters by "W.P_1 TS" (nr_wf), "W.P_1  TS" (followup), and "Whatsapp_1_Date" (owners)
@@ -720,7 +717,6 @@ export default function WhatsappChatPage() {
                             </button>
                         ))}
                     </div>
-                    <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
                     <button
                         onClick={() => { window.location.reload(); }}
                         style={{

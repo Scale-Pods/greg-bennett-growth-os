@@ -18,17 +18,12 @@ import {
     ResponsiveContainer,
     Legend
 } from "recharts";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { DateRange } from "react-day-picker";
 import { subDays, format } from "date-fns";
 import { useData } from "@/context/DataContext";
 
 export default function EmailAnalyticsPage() {
     const { leads: allLeads, loadingLeads } = useData();
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: subDays(new Date(), 30),
-        to: new Date(),
-    });
+    const { dateRange } = useData();
 
     const leadStats = useMemo(() => {
         if (loadingLeads) return { totalSent: 0, totalReplies: 0, totalUnsubscribed: 0, totalLeads: 0 };
@@ -119,7 +114,7 @@ export default function EmailAnalyticsPage() {
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Comprehensive campaign and outreach performance</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <DateRangePicker onUpdate={({ range }) => setDateRange(range)} />
+
                 </div>
             </div>
 

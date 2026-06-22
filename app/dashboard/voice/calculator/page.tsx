@@ -2,20 +2,14 @@
 
 import React, { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Calculator, Activity, Crown, Info, RefreshCw, Phone } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { format, subDays } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { BennettLoader } from "@/components/bennett-loader";
-import { DateRange } from "react-day-picker";
 
 export default function VoiceCalculatorPage() {
-    const { refreshCalls, calls: rawCalls, loadingCalls } = useData();
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
+    const { refreshCalls, calls: rawCalls, loadingCalls, dateRange } = useData();
     const [accountFilter, setAccountFilter] = useState("vapi");
     const [calculating, setCalculating] = useState(false);
     const [results, setResults] = useState<{
@@ -134,7 +128,9 @@ export default function VoiceCalculatorPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <label style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)' }}>Date Range</label>
-                        <DateRangePicker onUpdate={(values) => setDateRange(values.range)} />
+                        <div style={{ padding: '8px 12px', fontSize: 13, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-secondary)', borderRadius: 'var(--radius-md)' }}>
+                            Selected in top bar
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
