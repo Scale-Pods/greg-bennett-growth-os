@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/tooltip";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
 import { BennettLoader } from "@/components/bennett-loader";
-
+import { useData } from "@/context/DataContext";
 
 export default function WhatsappAnalyticsPage() {
     const { dateRange } = useData();

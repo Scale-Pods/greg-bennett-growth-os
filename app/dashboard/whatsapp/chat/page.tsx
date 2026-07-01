@@ -686,7 +686,7 @@ export default function WhatsappChatPage() {
                 <div>
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>WhatsApp Chats</h1>
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>
-                        {activeTab === 'crm' ? 'Bennett Bootcamps' :
+                        {activeTab === 'bootcamps' ? 'Bennett Bootcamps' :
                          activeTab === 'realty' ? 'Bennett Realty Solutions' :
                          activeTab === 'wealth' ? 'Bennett Wealth Builders Foundation' :
                          ''} — Real-time engagement
