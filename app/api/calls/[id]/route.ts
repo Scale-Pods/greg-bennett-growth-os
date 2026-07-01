@@ -12,8 +12,8 @@ export async function GET(
         const { id } = await context.params;
 
         // Fetch Leads for name resolution
-        const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
-        const secretKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+        const supabaseUrl = ((process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL_Realty) || "").trim();
+        const secretKey = ((process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY_Realty) || "").trim();
         const leadsMap = new Map<string, string>();
         if (supabaseUrl && secretKey) {
             try {

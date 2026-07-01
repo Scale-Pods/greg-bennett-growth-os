@@ -20,8 +20,8 @@ function endOfDay(iso: string): string {
 }
 
 export async function GET(req: Request) {
-    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim().replace(/\/$/, '');
-    const secretKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+    const supabaseUrl = ((process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL_Realty) || '').trim().replace(/\/$/, '');
+    const secretKey = ((process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY_Realty) || '').trim();
 
     if (!supabaseUrl || !secretKey) {
         return NextResponse.json({ error: 'Config missing' }, { status: 500 });

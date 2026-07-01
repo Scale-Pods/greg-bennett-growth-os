@@ -646,18 +646,17 @@ export default function SmsChatPage() {
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>
                         {activeTab === 'bootcamps' ? 'Bennett Bootcamps' :
                          activeTab === 'realty' ? 'Bennett Realty Solutions' :
-                         activeTab === 'wealth' ? 'Bennett Wealth Builder' :
-                         'Platinum & Elite Coaching'} — Real-time SMS engagement
+                         activeTab === 'wealth' ? 'Bennett Wealth Builders Foundation' :
+                         ''} — Real-time SMS engagement
                     </p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                    {/* Tab Switcher - 4 Businesses */}
+                    {/* Tab Switcher - 3 Businesses */}
                     <div style={{ display: 'flex', background: 'var(--fill-tertiary)', borderRadius: 'var(--radius-md)', padding: 3, gap: 2, flexWrap: 'wrap' }}>
                         {[
                             { key: 'bootcamps', label: 'Bennett Bootcamps', color: '#D6336C' },
                             { key: 'realty', label: 'Bennett Realty Solutions', color: 'var(--blue)' },
-                            { key: 'wealth', label: 'Bennett Wealth Builder', color: 'var(--green)' },
-                            { key: 'coaching', label: 'Platinum & Elite Coaching', color: 'var(--purple)' },
+                            { key: 'wealth', label: 'Bennett Wealth Builders Foundation', color: 'var(--green)' }
                         ].map(tab => (
                             <button
                                 key={tab.key}

@@ -340,8 +340,7 @@ export default function VoiceLogsPage() {
                         <SelectItem value="vapi">All Businesses</SelectItem>
                         <SelectItem value="bootcamps">Bennett Bootcamps</SelectItem>
                         <SelectItem value="realty">Bennett Realty Solutions</SelectItem>
-                        <SelectItem value="wealth">Bennett Wealth Builder</SelectItem>
-                        <SelectItem value="coaching">Platinum & Elite Coaching</SelectItem>
+                        <SelectItem value="wealth">Bennett Wealth Builders Foundation</SelectItem>
                     </SelectContent>
                 </Select>
 

@@ -253,6 +253,21 @@ export default function MasterDashboard() {
     const [waReplies, setWaReplies] = useState<number | null>(null);
     const [waReplyLeads, setWaReplyLeads] = useState<any[]>([]);
 
+    /* Inbound Leads stats */
+    const [inboundMetrics, setInboundMetrics] = useState<{ totalCount: number; wealthCount: number; realtyCount: number; bootcampsCount: number } | null>(null);
+
+    const fetchInboundMetrics = useCallback(async () => {
+        try {
+            const res = await fetch('/api/metrics/inbound-leads');
+            if (res.ok) {
+                const data = await res.json();
+                setInboundMetrics(data);
+            }
+        } catch (e) {
+            console.error('Error fetching inbound metrics', e);
+        }
+    }, []);
+
     const fetchWaStats = useCallback(async (from: Date, to: Date) => {
         const fromISO = startOfDay(from).toISOString();
         const toISO = endOfDay(to).toISOString();
@@ -326,6 +341,10 @@ export default function MasterDashboard() {
         fetchWaStats(dateRange.from, dateRange.to || dateRange.from);
         fetchSmsStats(dateRange.from, dateRange.to || dateRange.from);
     }, [dateRange, fetchWaStats, fetchSmsStats]);
+
+    useEffect(() => {
+        fetchInboundMetrics();
+    }, [fetchInboundMetrics]);
 
     const loading = loadingMasterMetrics;
     const acquisitionChartData = useMemo(() => {
@@ -418,10 +437,51 @@ export default function MasterDashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28, position: 'relative' }}>
             {loading && <BennettLoader />}
 
+            {/* Inbound Leads Row */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 20, height: 20, borderRadius: 5, background: 'rgba(230, 126, 34, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e67e22', flexShrink: 0 }}>
+                        <Users size={12} />
+                    </div>
+                    <h2 style={{ fontSize: 13, fontWeight: 500, color: 'var(--label-secondary)', whiteSpace: 'nowrap' }}>Inbound Leads (All Time)</h2>
+                    <div style={{ height: '0.5px', background: 'var(--separator)', width: '100%', marginLeft: 8 }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                    <MetricTile 
+                        title="Total Inbound Leads" 
+                        value={inboundMetrics ? inboundMetrics.totalCount.toLocaleString() : '—'} 
+                        subLabel="All businesses" 
+                        accentColor="#e67e22" 
+                        icon={<Users size={16} />} 
+                    />
+                    <MetricTile 
+                        title="Bennett Wealth Builders Foundation" 
+                        value={inboundMetrics ? inboundMetrics.wealthCount.toLocaleString() : '—'} 
+                        subLabel="Inbound" 
+                        accentColor="var(--green)" 
+                        icon={<img src="/wealth.png" className="w-4 h-4 object-contain opacity-80" alt="Wealth" />} 
+                    />
+                    <MetricTile 
+                        title="Bennett Realty Solutions" 
+                        value={inboundMetrics ? inboundMetrics.realtyCount.toLocaleString() : '—'} 
+                        subLabel="Inbound" 
+                        accentColor="var(--blue)" 
+                        icon={<img src="/realty.png" className="w-4 h-4 object-contain opacity-80" alt="Realty" />} 
+                    />
+                    <MetricTile 
+                        title="Bennett Bootcamps" 
+                        value={inboundMetrics ? inboundMetrics.bootcampsCount.toLocaleString() : '—'} 
+                        subLabel="Inbound" 
+                        accentColor="var(--orange)" 
+                        icon={<img src="/bootcamps.png" className="w-4 h-4 object-contain opacity-80" alt="Bootcamps" />} 
+                    />
+                </div>
+            </div>
+
                 {/* ── Section 3: Bennett Bootcamps (CRM) ── */}
                 <BusinessSection
                     title="Bennett Bootcamps"
-                    icon={<GraduationCap size={11} />}
+                    icon={<img src="/bootcamps.png" className="w-3 h-3 object-contain" alt="" />}
                     iconBg="rgba(230,126,34,0.15)"
                     iconColor="#f59e0b"
                     loading={loading}
@@ -439,7 +499,7 @@ export default function MasterDashboard() {
                 {/* ── Section 4: Bennett Realty Solutions (CRM) ── */}
                 <BusinessSection
                     title="Bennett Realty Solutions"
-                    icon={<Home size={11} />}
+                    icon={<img src="/realty.png" className="w-3 h-3 object-contain" alt="" />}
                     iconBg="rgba(59,91,219,0.15)"
                     iconColor="#6366f1"
                     loading={loading}
@@ -454,10 +514,10 @@ export default function MasterDashboard() {
                     ]}
                 />
 
-                {/* ── Section 5: Bennett Wealth Builder (Generated) ── */}
+                {/* ── Section 5: Bennett Wealth Builders Foundation (Generated) ── */}
                 <BusinessSection
-                    title="Bennett Wealth Builder"
-                    icon={<Coins size={11} />}
+                    title="Bennett Wealth Builders Foundation"
+                    icon={<img src="/wealth.png" className="w-3 h-3 object-contain" alt="" />}
                     iconBg="rgba(15,157,88,0.15)"
                     iconColor="#22c55e"
                     loading={loading}
@@ -472,23 +532,7 @@ export default function MasterDashboard() {
                     ]}
                 />
 
-                {/* ── Section 6: Platinum & Elite Coaching (Generated) ── */}
-                <BusinessSection
-                    title="Platinum & Elite Coaching"
-                    icon={<Crown size={11} />}
-                    iconBg="rgba(175,82,222,0.15)"
-                    iconColor="#a78bfa"
-                    loading={loading}
-                    metrics={[
-                        { title: "Total Leads", value: totalLeadsGen.toLocaleString(), subLabel: "All time", accentColor: "#6366f1", icon: <Users size={16} /> },
-                        { title: "Emails Sent", value: totalEmailsSentGen.toLocaleString(), subLabel: "Real-time", accentColor: "#22c55e", icon: <Mail size={16} /> },
-                        { title: "WA Reachouts", value: totalWaReachoutsGen.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Reachouts", value: smsOwnerReachouts.toLocaleString(), subLabel: "Real-time", accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
-                        { title: "Voice Calls", value: totalVoiceCallsGen.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
-                        { title: "WA Replies", value: totalWaRepliesGen.toLocaleString(), subLabel: `${replyRateGen}% reply rate`, subLabelColor: Number(replyRateGen) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Replies", value: smsOwnerReplies.toLocaleString(), subLabel: `${smsReplyRateGen}% reply rate`, subLabelColor: Number(smsReplyRateGen) > 0 ? '#ec4899' : 'var(--label-tertiary)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
-                    ]}
-                />
+
 
             {/* ── Expanded Replies ── */}
             {isRepliesExpanded && (

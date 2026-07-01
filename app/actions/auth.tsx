@@ -35,7 +35,7 @@ export async function login(prevState: any, formData: FormData) {
         }
 
         // Check password age (90 days)
-        const passwordChangedAt = user.password_changed_at ? new Date(user.password_changed_at) : new Date(0);
+        const passwordChangedAt = user.passwords_changed_at ? new Date(user.passwords_changed_at) : new Date(0);
         const ninetyDaysAgo = new Date();
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 

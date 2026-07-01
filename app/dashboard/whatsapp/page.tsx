@@ -271,26 +271,12 @@ export default function WhatsappDashboardPage() {
                     ]}
                 />
 
-                {/* ── Bennett Wealth Builder ── */}
+                {/* ── Bennett Wealth Builders Foundation ── */}
                 <BusinessSection
-                    title="Bennett Wealth Builder"
+                    title="Bennett Wealth Builders Foundation"
                     icon={<Coins size={11} />}
                     iconBg="rgba(15,157,88,0.15)"
                     iconColor="#22c55e"
-                    loading={loading}
-                    metrics={[
-                        { title: "Unique Msg Sent", value: stats.ownerReachouts.toLocaleString(), accentColor: "var(--purple)", icon: <Users size={17} /> },
-                        { title: "Total Replies", value: stats.ownerReplies.toLocaleString(), accentColor: "var(--green)", icon: <MessageCircle size={17} />, info: `${stats.ownerReachouts > 0 ? ((stats.ownerReplies / stats.ownerReachouts) * 100).toFixed(1) : '0'}% Response Rate` },
-                        { title: "Messages Sent", value: stats.ownerSent.toLocaleString(), accentColor: "var(--blue)", icon: <Send size={17} /> },
-                    ]}
-                />
-
-                {/* ── Platinum & Elite Coaching ── */}
-                <BusinessSection
-                    title="Platinum & Elite Coaching"
-                    icon={<Crown size={11} />}
-                    iconBg="rgba(175,82,222,0.15)"
-                    iconColor="#a78bfa"
                     loading={loading}
                     metrics={[
                         { title: "Unique Msg Sent", value: stats.ownerReachouts.toLocaleString(), accentColor: "var(--purple)", icon: <Users size={17} /> },

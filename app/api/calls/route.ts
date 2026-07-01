@@ -83,8 +83,8 @@ function getMaqsamSignature(method: string, endpoint: string, timestamp: string,
  * Data is synced to this table via an external n8n workflow.
  */
 async function fetchArchivedCallLogs(fromDate: Date | null, toDate: Date | null): Promise<any[]> {
-    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
-    const secretKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+    const supabaseUrl = ((process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL_Realty) || "").trim();
+    const secretKey = ((process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY_Realty) || "").trim();
     if (!supabaseUrl || !secretKey) return [];
 
     const baseUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1`;

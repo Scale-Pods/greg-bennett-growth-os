@@ -111,8 +111,8 @@ ${enrichedList.filter(s => s.text || s.evalPassed).map((s) => `ID: ${s.id}\nSumm
         const results = content.results || {};
         
         // Save globally to Supabase
-        const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
-        const secretKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+        const supabaseUrl = ((process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL_Realty) || "").trim();
+        const secretKey = ((process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY_Realty) || "").trim();
         
         if (supabaseUrl && secretKey && Object.keys(results).length > 0) {
             try {

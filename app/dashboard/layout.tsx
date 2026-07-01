@@ -23,6 +23,7 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
         items: [
             { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
             { title: "Leads", href: "/dashboard/leads", icon: Users },
+            { title: "Inbound Leads", href: "/dashboard/inbound-leads", icon: Inbox },
             { title: "Scrapers", href: "/dashboard/scrappers", icon: Globe },
             { title: "Credentials", href: "/dashboard/credentials", icon: Key },
         ],
