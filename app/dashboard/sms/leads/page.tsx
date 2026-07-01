@@ -26,6 +26,7 @@ import {
     Dialog,
     DialogContent,
     DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { SmsOwnerChatDetail } from "@/components/dashboard/sms-owner-chat-detail";
 import { SmsChatDetail } from "@/components/dashboard/sms-chat-detail";
