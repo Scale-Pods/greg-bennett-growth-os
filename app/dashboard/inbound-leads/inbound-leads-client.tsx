@@ -76,25 +76,25 @@ export default function InboundLeadsClient({
         const qs = getQuestions();
 
         return (
-            <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="liquid-card p-4">
-                        <div className="text-xs text-[var(--label-tertiary)] mb-1 uppercase tracking-wider">Contact</div>
-                        <div className="flex items-center gap-2 text-sm text-[var(--label-primary)] mb-2">
-                            <Mail size={14} className="text-[var(--label-secondary)]" /> {lead.email || 'N/A'}
+            <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="liquid-card p-3">
+                        <div className="text-[10px] text-[var(--label-tertiary)] mb-1.5 uppercase tracking-wider">Contact</div>
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--label-primary)] mb-1.5">
+                            <Mail size={12} className="text-[var(--label-secondary)]" /> {lead.email || 'N/A'}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-[var(--label-primary)]">
-                            <Phone size={14} className="text-[var(--label-secondary)]" /> {lead.phone || 'N/A'}
+                        <div className="flex items-center gap-1.5 text-xs text-[var(--label-primary)]">
+                            <Phone size={12} className="text-[var(--label-secondary)]" /> {lead.phone || 'N/A'}
                         </div>
                     </div>
-                    <div className="liquid-card p-4">
-                        <div className="text-xs text-[var(--label-tertiary)] mb-1 uppercase tracking-wider">Status</div>
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between text-sm">
+                    <div className="liquid-card p-3">
+                        <div className="text-[10px] text-[var(--label-tertiary)] mb-1.5 uppercase tracking-wider">Status</div>
+                        <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center justify-between text-xs">
                                 <span className="text-[var(--label-secondary)]">Qualified</span>
-                                <Badge variant={lead.qualified ? 'default' : 'destructive'}>{lead.qualified ? 'Yes' : 'No'}</Badge>
+                                <Badge variant={lead.qualified ? 'default' : 'destructive'} className="text-[10px] py-0">{lead.qualified ? 'Yes' : 'No'}</Badge>
                             </div>
-                            <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center justify-between text-xs">
                                 <span className="text-[var(--label-secondary)]">Score</span>
                                 <span className="font-semibold">{lead.score || 0}/100</span>
                             </div>
@@ -103,26 +103,26 @@ export default function InboundLeadsClient({
                 </div>
 
                 {lead.summary && (
-                    <div className="liquid-card p-4">
-                        <div className="text-xs text-[var(--label-tertiary)] mb-2 uppercase tracking-wider">AI Summary</div>
-                        <p className="text-sm text-[var(--label-secondary)] leading-relaxed">{lead.summary}</p>
+                    <div className="liquid-card p-3">
+                        <div className="text-[10px] text-[var(--label-tertiary)] mb-1.5 uppercase tracking-wider">AI Summary</div>
+                        <p className="text-xs text-[var(--label-secondary)] leading-relaxed">{lead.summary}</p>
                     </div>
                 )}
 
                 {lead.qualification_reason && (
-                    <div className="liquid-card p-4">
-                        <div className="text-xs text-[var(--label-tertiary)] mb-2 uppercase tracking-wider">Qualification Reason</div>
-                        <p className="text-sm text-[var(--label-secondary)] leading-relaxed">{lead.qualification_reason}</p>
+                    <div className="liquid-card p-3">
+                        <div className="text-[10px] text-[var(--label-tertiary)] mb-1.5 uppercase tracking-wider">Qualification Reason</div>
+                        <p className="text-xs text-[var(--label-secondary)] leading-relaxed">{lead.qualification_reason}</p>
                     </div>
                 )}
 
-                <div className="liquid-card p-4">
-                    <div className="text-xs text-[var(--label-tertiary)] mb-4 uppercase tracking-wider">Questionnaire</div>
-                    <div className="space-y-3">
+                <div className="liquid-card p-3">
+                    <div className="text-[10px] text-[var(--label-tertiary)] mb-3 uppercase tracking-wider">Questionnaire</div>
+                    <div className="space-y-2.5">
                         {qs.map((q, i) => (
-                            <div key={i} className="flex flex-col gap-1 border-b border-[var(--separator)] pb-3 last:border-0 last:pb-0">
-                                <span className="text-sm font-medium text-[var(--label-primary)]">{q.q}</span>
-                                <span className="text-sm text-[var(--label-secondary)]">{q.a || '—'}</span>
+                            <div key={i} className="flex flex-col gap-0.5 border-b border-[var(--separator)] pb-2.5 last:border-0 last:pb-0">
+                                <span className="text-xs font-medium text-[var(--label-primary)]">{q.q}</span>
+                                <span className="text-xs text-[var(--label-secondary)]">{q.a || '—'}</span>
                             </div>
                         ))}
                     </div>
@@ -132,41 +132,41 @@ export default function InboundLeadsClient({
     };
 
     const getSourceIcon = (src: string) => {
-        if (src === 'Instagram') return <Instagram size={20} />;
-        if (src === 'LinkedIn') return <Linkedin size={20} />;
-        if (src === 'Facebook') return <Facebook size={20} />;
+        if (src === 'Instagram') return <Instagram size={16} />;
+        if (src === 'LinkedIn') return <Linkedin size={16} />;
+        if (src === 'Facebook') return <Facebook size={16} />;
         return null;
     };
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6">
             {/* Source Selection */}
             <div>
-                <h2 className="text-sm font-semibold text-[var(--label-secondary)] mb-4 uppercase tracking-wider">Select Source</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <h2 className="text-xs font-semibold text-[var(--label-secondary)] mb-3 uppercase tracking-wider">Select Source</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {sources.map(src => {
                         const isSelected = selectedSource === src;
                         return (
                             <button
                                 key={src}
                                 onClick={() => setSelectedSource(src)}
-                                className={`liquid-card p-5 flex items-center justify-between transition-all duration-200 ${
-                                    isSelected ? 'ring-2 ring-[var(--blue)] shadow-[0_0_20px_rgba(0,122,255,0.15)] scale-[1.02]' : 'hover:scale-[1.01] hover:bg-[var(--fill-tertiary)]'
+                                className={`liquid-card p-4 flex items-center justify-between transition-all duration-200 ${
+                                    isSelected ? 'ring-1 ring-[var(--blue)] shadow-[0_0_15px_rgba(0,122,255,0.1)] scale-[1.01]' : 'hover:bg-[var(--fill-tertiary)]'
                                 }`}
                             >
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                                         isSelected ? 'bg-[var(--blue)] text-white' : 'bg-[var(--fill-secondary)] text-[var(--label-secondary)]'
                                     }`}>
                                         {getSourceIcon(src)}
                                     </div>
-                                    <span className={`font-semibold text-lg ${isSelected ? 'text-[var(--label-primary)]' : 'text-[var(--label-secondary)]'}`}>
+                                    <span className={`font-semibold text-sm ${isSelected ? 'text-[var(--label-primary)]' : 'text-[var(--label-secondary)]'}`}>
                                         {src}
                                     </span>
                                 </div>
                                 <div className="flex flex-col items-end">
-                                    <span className="text-xs text-[var(--label-tertiary)]">Total Leads</span>
-                                    <span className="font-bold text-xl tabular-nums">
+                                    <span className="text-[10px] text-[var(--label-tertiary)] uppercase tracking-wider">Total Leads</span>
+                                    <span className="font-bold text-lg tabular-nums">
                                         {businesses.reduce((acc, b) => acc + b.data.filter(l => l.source?.toLowerCase().includes(src.toLowerCase())).length, 0)}
                                     </span>
                                 </div>
@@ -178,8 +178,8 @@ export default function InboundLeadsClient({
 
             {/* Business Selection */}
             <div>
-                <h2 className="text-sm font-semibold text-[var(--label-secondary)] mb-4 uppercase tracking-wider">Select Business Unit</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <h2 className="text-xs font-semibold text-[var(--label-secondary)] mb-3 uppercase tracking-wider">Select Business Unit</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {businesses.map(bus => {
                         const isSelected = selectedBusiness === bus.id;
                         const count = bus.data.filter(l => l.source?.toLowerCase().includes(selectedSource.toLowerCase())).length;
@@ -188,26 +188,26 @@ export default function InboundLeadsClient({
                             <button
                                 key={bus.id}
                                 onClick={() => setSelectedBusiness(bus.id)}
-                                className={`liquid-card p-5 flex flex-col gap-4 transition-all duration-200 ${
-                                    isSelected ? `shadow-lg scale-[1.02]` : 'hover:scale-[1.01] hover:bg-[var(--fill-tertiary)]'
+                                className={`liquid-card p-4 flex flex-col gap-3 transition-all duration-200 ${
+                                    isSelected ? `shadow-md scale-[1.01]` : 'hover:bg-[var(--fill-tertiary)]'
                                 }`}
                                 style={{
-                                    boxShadow: isSelected ? `0 0 0 2px ${bus.color}, 0 0 20px ${bus.color}20` : 'none'
+                                    boxShadow: isSelected ? `0 0 0 1.5px ${bus.color}, 0 0 15px ${bus.color}15` : 'none'
                                 }}
                             >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: bus.bg, color: bus.color }}>
-                                        <Icon size={16} />
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: bus.bg, color: bus.color }}>
+                                        <Icon size={14} />
                                     </div>
-                                    <span className={`font-medium ${isSelected ? 'text-[var(--label-primary)]' : 'text-[var(--label-secondary)]'}`}>
+                                    <span className={`text-sm font-medium ${isSelected ? 'text-[var(--label-primary)]' : 'text-[var(--label-secondary)]'}`}>
                                         {bus.label}
                                     </span>
                                 </div>
                                 <div className="flex items-end justify-between w-full">
-                                    <span className="text-2xl font-bold tabular-nums" style={{ color: isSelected ? bus.color : 'var(--label-primary)' }}>
+                                    <span className="text-xl font-bold tabular-nums" style={{ color: isSelected ? bus.color : 'var(--label-primary)' }}>
                                         {count}
                                     </span>
-                                    <span className="text-xs text-[var(--label-tertiary)]">Leads from {selectedSource}</span>
+                                    <span className="text-[10px] text-[var(--label-tertiary)] uppercase tracking-wider">Leads from {selectedSource}</span>
                                 </div>
                             </button>
                         );
@@ -217,31 +217,31 @@ export default function InboundLeadsClient({
 
             {/* Leads List */}
             <div className="liquid-card overflow-hidden">
-                <div className="p-5 border-b border-[var(--separator)] flex items-center justify-between">
+                <div className="p-4 border-b border-[var(--separator)] flex items-center justify-between">
                     <div>
-                        <h3 className="text-lg font-semibold text-[var(--label-primary)]">Leads List</h3>
-                        <p className="text-sm text-[var(--label-tertiary)]">
+                        <h3 className="text-base font-semibold text-[var(--label-primary)]">Leads List</h3>
+                        <p className="text-xs text-[var(--label-tertiary)] mt-0.5">
                             Showing {activeLeads.length} leads for {activeBusinessObj?.label} via {selectedSource}
                         </p>
                     </div>
                 </div>
                 
                 {activeLeads.length === 0 ? (
-                    <div className="p-10 flex flex-col items-center justify-center text-[var(--label-tertiary)]">
-                        <Inbox size={40} className="mb-4 opacity-50" />
-                        <p>No leads found for this selection.</p>
+                    <div className="p-8 flex flex-col items-center justify-center text-[var(--label-tertiary)]">
+                        <Inbox size={32} className="mb-3 opacity-50" />
+                        <p className="text-sm">No leads found for this selection.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-[var(--label-secondary)]">
-                            <thead className="bg-[var(--fill-secondary)] text-xs uppercase tracking-wider text-[var(--label-tertiary)]">
+                        <table className="w-full text-left text-xs text-[var(--label-secondary)]">
+                            <thead className="bg-[var(--fill-secondary)] text-[10px] uppercase tracking-wider text-[var(--label-tertiary)]">
                                 <tr>
-                                    <th className="px-6 py-4 font-medium">Name</th>
-                                    <th className="px-6 py-4 font-medium">Contact</th>
-                                    <th className="px-6 py-4 font-medium">Date</th>
-                                    <th className="px-6 py-4 font-medium">Score</th>
-                                    <th className="px-6 py-4 font-medium">Stage</th>
-                                    <th className="px-6 py-4"></th>
+                                    <th className="px-4 py-3 font-medium">Name</th>
+                                    <th className="px-4 py-3 font-medium">Contact</th>
+                                    <th className="px-4 py-3 font-medium">Date</th>
+                                    <th className="px-4 py-3 font-medium">Score</th>
+                                    <th className="px-4 py-3 font-medium">Stage</th>
+                                    <th className="px-4 py-3"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--separator)]">
@@ -251,28 +251,28 @@ export default function InboundLeadsClient({
                                         onClick={() => setSelectedLead(lead)}
                                         className="hover:bg-[var(--fill-tertiary)] cursor-pointer transition-colors"
                                     >
-                                        <td className="px-6 py-4 font-medium text-[var(--label-primary)]">{lead.name || 'Unknown'}</td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 py-3 font-medium text-[var(--label-primary)]">{lead.name || 'Unknown'}</td>
+                                        <td className="px-4 py-3">
                                             <div className="flex flex-col">
                                                 <span>{lead.email}</span>
-                                                <span className="text-xs text-[var(--label-tertiary)]">{lead.phone}</span>
+                                                <span className="text-[10px] text-[var(--label-tertiary)]">{lead.phone}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-4 py-3 whitespace-nowrap">
                                             {lead.created_at ? format(new Date(lead.created_at), 'MMM dd, yyyy') : '—'}
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-[var(--fill-secondary)] flex items-center justify-center font-semibold text-xs text-[var(--label-primary)]">
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-6 h-6 rounded-full bg-[var(--fill-secondary)] flex items-center justify-center font-semibold text-[10px] text-[var(--label-primary)]">
                                                     {lead.score || 0}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <Badge variant="outline">{lead.lead_stage || 'New'}</Badge>
+                                        <td className="px-4 py-3">
+                                            <Badge variant="outline" className="text-[10px] py-0">{lead.lead_stage || 'New'}</Badge>
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <ChevronRight size={16} className="text-[var(--label-tertiary)] ml-auto" />
+                                        <td className="px-4 py-3 text-right">
+                                            <ChevronRight size={14} className="text-[var(--label-tertiary)] ml-auto" />
                                         </td>
                                     </tr>
                                 ))}
@@ -284,13 +284,13 @@ export default function InboundLeadsClient({
 
             {/* Lead Details Modal */}
             <Dialog open={!!selectedLead} onOpenChange={(open) => !open && setSelectedLead(null)}>
-                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="text-xl">
+                        <DialogTitle className="text-lg">
                             {selectedLead?.name || 'Lead Details'}
                         </DialogTitle>
-                        <div className="text-sm text-[var(--label-tertiary)] flex items-center gap-2 mt-1">
-                            <Clock size={12} />
+                        <div className="text-xs text-[var(--label-tertiary)] flex items-center gap-1.5 mt-1">
+                            <Clock size={10} />
                             {selectedLead?.created_at ? format(new Date(selectedLead.created_at), 'PPpp') : '—'}
                             <span>•</span>
                             <span className="capitalize">{selectedLead?.source} Lead</span>

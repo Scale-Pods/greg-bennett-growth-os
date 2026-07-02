@@ -152,15 +152,12 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
+                className="glass-modal-shell !p-5"
                 style={{
                     display: 'flex', flexDirection: 'column',
                     maxHeight: '85vh', height: '85vh',
                     width: '95vw', maxWidth: 950,
                     overflow: 'hidden',
-                    background: 'var(--bg-layer1)',
-                    borderRadius: 14,
-                    padding: 18,
-                    border: '1px solid var(--glass-border)',
                     gap: 0,
                 }}
             >
@@ -169,7 +166,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                 {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0, paddingRight: 32 }}>
                     <div>
-                        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--label-primary)', letterSpacing: '-0.01em', margin: 0 }}>{extractedGuestName}</h2>
+                        <h2 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: 'var(--label-primary)', letterSpacing: '-0.02em', margin: 0 }}>{extractedGuestName}</h2>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, fontSize: 12, color: 'var(--label-secondary)' }}>
                             <span style={{ fontFamily: 'ui-monospace, monospace' }}>{guestNumber}</span>
                             <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--label-quaternary)', display: 'inline-block' }} />
@@ -182,9 +179,9 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                             display: 'flex', alignItems: 'center', gap: 5,
                             padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 500,
                             cursor: 'pointer', transition: 'all 120ms',
-                            background: transcriptCopied ? 'rgba(59,91,219,0.10)' : 'var(--fill-tertiary)',
-                            border: `1px solid ${transcriptCopied ? 'rgba(59,91,219,0.25)' : 'var(--glass-border)'}`,
-                            color: transcriptCopied ? 'var(--blue)' : 'var(--label-primary)',
+                            background: transcriptCopied ? 'rgba(20,184,166,0.12)' : 'var(--glass-fill)',
+                            border: `1px solid ${transcriptCopied ? 'rgba(20,184,166,0.28)' : 'var(--glass-border)'}`,
+                            color: transcriptCopied ? 'var(--teal)' : 'var(--label-primary)',
                         }}
                     >
                         {transcriptCopied ? <Check style={{ width: 12, height: 12 }} /> : <Copy style={{ width: 12, height: 12 }} />}
@@ -195,9 +192,8 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                 {/* Body grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 196px', gap: 12, flex: 1, overflow: 'hidden', minHeight: 0 }}>
                     {/* Left: transcript panel */}
-                    <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--fill-quaternary)', border: '1px solid var(--hairline)', borderRadius: 10, overflow: 'hidden', height: '100%', minHeight: 0 }}>
-                        {/* Panel header */}
-                        <div style={{ borderBottom: '1px solid var(--hairline)', padding: '9px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                    <div className="glass-panel flex flex-col h-full min-h-0">
+                        <div className="glass-panel-header">
                             <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--label-tertiary)', display: 'flex', alignItems: 'center', gap: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                 <FileText style={{ width: 12, height: 12 }} />
                                 Call Transcript
@@ -232,20 +228,13 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                                     }
                                     return (
                                         <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-start' : 'flex-end', width: '100%' }}>
-                                            <div style={{
-                                                maxWidth: '85%', padding: '8px 11px',
-                                                background: isUser ? 'rgba(48,209,88,0.09)' : 'var(--fill-tertiary)',
-                                                border: `1px solid ${isUser ? 'rgba(48,209,88,0.18)' : 'var(--hairline)'}`,
-                                                borderRadius: 10,
-                                                borderTopLeftRadius: isUser ? 3 : 10,
-                                                borderTopRightRadius: isUser ? 10 : 3,
-                                            }}>
+                                            <div className={`chat-bubble ${isUser ? 'chat-bubble-user' : 'chat-bubble-bot'}`}>
                                                 <div style={{ marginBottom: 3 }}>
-                                                    <span style={{ fontSize: 10, fontWeight: 600, color: isUser ? 'var(--green)' : 'var(--blue)' }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 700, color: isUser ? 'var(--green)' : 'var(--teal)' }}>
                                                         {isUser ? 'User' : 'Agent'}
                                                     </span>
                                                 </div>
-                                                <p style={{ fontSize: 12, lineHeight: 1.5, whiteSpace: 'pre-wrap', color: 'var(--label-primary)', margin: 0 }}>
+                                                <p style={{ fontSize: 12, lineHeight: 1.55, whiteSpace: 'pre-wrap', color: 'var(--label-primary)', margin: 0 }}>
                                                     {msg.message || msg.content || msg.text || ''}
                                                 </p>
                                             </div>
@@ -264,13 +253,13 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                     {/* Right sidebar */}
                     <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', height: '100%', paddingRight: 2, paddingBottom: 8 }}>
                         <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: 0 }}>Call Stats</p>
-                        <StatBox label="Duration" value={durationDisplay} icon={Clock} color="var(--blue)" />
+                        <StatBox label="Duration" value={durationDisplay} icon={Clock} color="var(--teal)" />
                         {(displayCall.metadata?.charging?.call_charge > 0) && (
                             <StatBox label="Call Cost" value={`${displayCall.metadata.charging.call_charge} cr`} icon={Phone} color="var(--orange)" />
                         )}
 
                         <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0' }}>Call Info</p>
-                        <div style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--hairline)', borderRadius: 9, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <div className="glass-panel" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                             <div>
                                 <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Date & Time</span>
                                 <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '2px 0 0' }}>{startedAtDisplay}</p>
@@ -293,7 +282,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
 
 function StatBox({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) {
     return (
-        <div style={{ padding: '9px 11px', borderRadius: 9, border: '1px solid var(--hairline)', background: 'var(--fill-quaternary)', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <div className="glass-stat-box">
             <div style={{
                 width: 28, height: 28, borderRadius: 7, flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -460,8 +449,8 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
                 onMouseLeave={() => setIsDragging(false)}
                 style={{ position: 'relative', height: 4, width: '100%', borderRadius: 99, background: 'var(--fill-secondary)', cursor: 'pointer' }}
             >
-                <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', borderRadius: 99, background: 'var(--blue)', width: `${progressPct}%`, transition: isDragging ? 'none' : 'width 75ms linear' }} />
-                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '2px solid var(--blue)', left: `calc(${progressPct}% - 5px)`, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+                <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', borderRadius: 99, background: 'var(--teal)', width: `${progressPct}%`, transition: isDragging ? 'none' : 'width 75ms linear' }} />
+                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', width: 10, height: 10, borderRadius: '50%', background: '#fff', border: '2px solid var(--teal)', left: `calc(${progressPct}% - 5px)`, boxShadow: '0 2px 8px rgba(20,184,166,0.35)' }} />
             </div>
 
             {/* Controls */}
@@ -470,7 +459,7 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
                     {/* Play/Pause */}
                     <button
                         onClick={togglePlay}
-                        style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--blue)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+                        style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, var(--teal), #0d9488)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', flexShrink: 0 }}
                     >
                         {isStalled ? (
                             <svg className="animate-spin" style={{ width: 12, height: 12 }} viewBox="0 0 24 24" fill="none">
@@ -518,11 +507,11 @@ function ModernAudioPlayer({ audioUrl, initialDuration = 0 }: { audioUrl: string
                         style={{
                             display: 'flex', alignItems: 'center', gap: 5,
                             padding: '3px 9px', borderRadius: 6, fontSize: 10, fontWeight: 700,
-                            background: 'rgba(59,91,219,0.10)', color: 'var(--blue)',
-                            border: '1px solid rgba(59,91,219,0.20)', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em',
+                            background: 'rgba(20,184,166,0.12)', color: 'var(--teal)',
+                            border: '1px solid rgba(20,184,166,0.22)', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em',
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,91,219,0.18)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(59,91,219,0.10)')}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(20,184,166,0.20)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(20,184,166,0.12)')}
                     >
                         {isDownloading ? (
                             <svg className="animate-spin" style={{ width: 11, height: 11 }} viewBox="0 0 24 24" fill="none">

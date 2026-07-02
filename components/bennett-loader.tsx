@@ -23,40 +23,31 @@ export const BennettLoader = ({ fullScreen = false }: BennettLoaderProps) => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'transparent',
-                backdropFilter: 'blur(4px)',
-                WebkitBackdropFilter: 'blur(4px)',
+                background: 'rgba(8, 11, 18, 0.15)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
                 borderRadius: fullScreen ? 0 : 'inherit',
                 opacity: mounted ? 1 : 0,
                 transition: 'opacity 400ms ease',
             }}
         >
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-                {/* Spinner */}
-                <div style={{ position: 'relative', width: 72, height: 72, marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {/* Glow */}
-                    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(59,91,219,0.12)', filter: 'blur(16px)' }} className="animate-pulse" />
-                    {/* Outer track */}
+            <div className="glass-surface rounded-2xl px-8 py-7 flex flex-col items-center gap-0">
+                <div style={{ position: 'relative', width: 64, height: 64, marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(20,184,166,0.15)', filter: 'blur(16px)' }} className="animate-pulse" />
                     <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid var(--hairline)' }} />
-                    {/* Outer spinner */}
-                    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid transparent', borderTopColor: 'var(--blue)' }} className="animate-spin" />
-                    {/* Inner track */}
-                    <div style={{ position: 'absolute', inset: 10, borderRadius: '50%', border: '2px solid var(--hairline)' }} />
-                    {/* Inner spinner reverse */}
-                    <div style={{ position: 'absolute', inset: 10, borderRadius: '50%', border: '2px solid transparent', borderBottomColor: 'var(--blue)' }} className="animate-[spin_1.5s_linear_infinite_reverse]" />
+                    <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid transparent', borderTopColor: 'var(--teal)' }} className="animate-spin" />
+                    <div style={{ position: 'absolute', inset: 9, borderRadius: '50%', border: '2px solid transparent', borderBottomColor: 'var(--copper)' }} className="animate-[spin_1.5s_linear_infinite_reverse]" />
                 </div>
 
-                {/* Brand */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--label-primary)', letterSpacing: '-0.02em' }}>Bennett</span>
-                    <span style={{ fontSize: 15, fontWeight: 400, color: 'var(--label-secondary)', letterSpacing: '-0.01em' }}>Growth OS</span>
+                <div className="flex items-center gap-1.5">
+                    <span className="font-display text-[15px] font-bold text-[var(--label-primary)] tracking-tight">Bennett</span>
+                    <span className="text-[15px] font-semibold text-[var(--label-secondary)]">Growth OS</span>
                 </div>
 
-                {/* Dots */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 14, opacity: 0.6 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--blue)' }} className="animate-bounce" />
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--blue)', animationDelay: '150ms' }} className="animate-bounce" />
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--blue)', animationDelay: '300ms' }} className="animate-bounce" />
+                <div className="flex items-center gap-1.5 mt-3 opacity-70">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--teal)] animate-bounce" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--copper)] animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--teal)] animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
             </div>
         </div>

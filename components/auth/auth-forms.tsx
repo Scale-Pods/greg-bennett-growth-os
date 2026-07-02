@@ -7,31 +7,12 @@ import { login, forgotPassword } from '@/app/actions/auth';
 
 type AuthMode = 'login' | 'forgot';
 
-const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '11px 14px 11px 42px',
-    borderRadius: 12,
-    fontSize: 15,
-    fontWeight: 400,
-    letterSpacing: '-0.011em',
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid rgba(255,255,255,0.10)',
-    color: 'rgba(255,255,255,0.88)',
-    outline: 'none',
-    transition: 'border-color 150ms ease, box-shadow 150ms ease',
-    boxSizing: 'border-box',
-};
-
 function StyledInput({ id, name, type, placeholder, required }: {
     id: string; name: string; type: string; placeholder: string; required?: boolean;
 }) {
-    const [focused, setFocused] = useState(false);
     return (
-        <div style={{ position: 'relative' }}>
-            <div style={{
-                position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
-                color: 'rgba(255,255,255,0.30)', pointerEvents: 'none', display: 'flex',
-            }}>
+        <div className="relative">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--label-tertiary)] pointer-events-none flex">
                 {type === 'email' ? <Mail size={16} /> : <Lock size={16} />}
             </div>
             <input
@@ -40,20 +21,7 @@ function StyledInput({ id, name, type, placeholder, required }: {
                 type={type}
                 placeholder={placeholder}
                 required={required}
-                onFocus={e => {
-                    setFocused(true);
-                    e.currentTarget.style.borderColor = '#0A84FF';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(10,132,255,0.22)';
-                }}
-                onBlur={e => {
-                    setFocused(false);
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)';
-                    e.currentTarget.style.boxShadow = 'none';
-                }}
-                style={{
-                    ...inputStyle,
-                    borderColor: focused ? '#0A84FF' : 'rgba(255,255,255,0.10)',
-                }}
+                className="auth-input"
             />
         </div>
     );
@@ -77,37 +45,17 @@ export function AuthForms({ defaultMode = 'login', onSuccess }: { defaultMode?: 
     const error = loginState?.error || forgotState?.error;
     const isPending = isLoginPending || isForgotPending;
 
-    const labelStyle: React.CSSProperties = {
-        fontSize: 11,
-        fontWeight: 600,
-        letterSpacing: '0.04em',
-        textTransform: 'uppercase',
-        color: 'rgba(255,255,255,0.30)',
-        display: 'block',
-        marginBottom: 6,
-    };
-
     if (mode === 'forgot' && forgotState?.success) {
         return (
-            <div style={{ textAlign: 'center', padding: '8px 0 16px' }}>
-                <div style={{
-                    width: 56, height: 56, borderRadius: '50%',
-                    background: 'rgba(48,209,88,0.15)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    margin: '0 auto 20px',
-                }}>
-                    <CheckCircle2 size={26} color="#30D158" />
+            <div className="text-center py-2">
+                <div className="w-14 h-14 rounded-2xl bg-[rgba(5,150,105,0.12)] border border-[rgba(5,150,105,0.22)] flex items-center justify-center mx-auto mb-5">
+                    <CheckCircle2 size={26} className="text-[var(--green)]" />
                 </div>
-                <h2 style={{ fontSize: 22, fontWeight: 600, color: 'rgba(255,255,255,0.92)', letterSpacing: '-0.022em', marginBottom: 8 }}>
-                    Check Your Email
-                </h2>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.44)', lineHeight: 1.6, marginBottom: 24 }}>
+                <h2 className="font-display text-2xl font-bold text-[var(--label-primary)] mb-2">Check Your Email</h2>
+                <p className="text-sm text-[var(--label-secondary)] leading-relaxed mb-6 font-medium">
                     If an account exists for that address, you&apos;ll receive a password reset link shortly.
                 </p>
-                <button
-                    onClick={() => setMode('login')}
-                    style={{ fontSize: 13, fontWeight: 600, color: '#0A84FF', background: 'none', border: 'none', cursor: 'default' }}
-                >
+                <button onClick={() => setMode('login')} className="text-sm font-bold text-[var(--teal)] bg-transparent border-none cursor-pointer">
                     Back to Login
                 </button>
             </div>
@@ -115,55 +63,42 @@ export function AuthForms({ defaultMode = 'login', onSuccess }: { defaultMode?: 
     }
 
     return (
-        <div style={{ width: '100%' }}>
-            {/* Heading */}
-            <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <h2 style={{
-                    fontSize: 26, fontWeight: 600, letterSpacing: '-0.022em',
-                    color: 'rgba(255,255,255,0.92)', marginBottom: 6,
-                }}>
+        <div className="w-full">
+            <div className="text-center mb-7">
+                <h2 className="font-display text-[1.65rem] font-bold text-[var(--label-primary)] mb-2">
                     {mode === 'login' ? 'Welcome Back' : 'Reset Password'}
                 </h2>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.40)', letterSpacing: '-0.011em', fontWeight: 400 }}>
+                <p className="text-sm text-[var(--label-secondary)] font-medium">
                     {mode === 'login'
                         ? 'Enter your credentials to access your dashboard'
                         : 'Enter your email to receive a reset link'}
                 </p>
             </div>
 
-            {/* Error */}
             {error && (
-                <div style={{
-                    padding: '10px 14px', borderRadius: 10, marginBottom: 16,
-                    background: 'rgba(255,69,58,0.12)',
-                    border: '1px solid rgba(255,69,58,0.22)',
-                    color: '#FF453A', fontSize: 13, fontWeight: 500, textAlign: 'center',
-                }}>
+                <div className="p-3 rounded-xl mb-4 text-center text-sm font-semibold bg-[rgba(220,38,38,0.10)] border border-[rgba(220,38,38,0.20)] text-[var(--red)]">
                     {error}
                 </div>
             )}
 
-            <form action={mode === 'login' ? loginAction : forgotAction} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <form action={mode === 'login' ? loginAction : forgotAction} className="flex flex-col gap-4">
                 <div>
-                    <label htmlFor="email" style={labelStyle}>Email Address</label>
+                    <label htmlFor="email" className="block text-[10px] font-bold uppercase tracking-widest text-[var(--label-tertiary)] mb-1.5">
+                        Email Address
+                    </label>
                     <StyledInput id="email" name="email" type="email" placeholder="name@example.com" required />
                 </div>
 
                 {mode === 'login' && (
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                            <label htmlFor="password" style={{ ...labelStyle, marginBottom: 0 }}>Password</label>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label htmlFor="password" className="text-[10px] font-bold uppercase tracking-widest text-[var(--label-tertiary)]">
+                                Password
+                            </label>
                             <button
                                 type="button"
                                 onClick={() => setMode('forgot')}
-                                style={{
-                                    fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.30)',
-                                    background: 'none', border: 'none', cursor: 'default',
-                                    letterSpacing: '0.04em', textTransform: 'uppercase',
-                                    transition: 'color 130ms ease',
-                                }}
-                                onMouseEnter={e => (e.currentTarget.style.color = '#0A84FF')}
-                                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.30)')}
+                                className="text-[10px] font-bold uppercase tracking-widest text-[var(--label-tertiary)] hover:text-[var(--teal)] bg-transparent border-none cursor-pointer transition-colors"
                             >
                                 Forgot?
                             </button>
@@ -175,32 +110,10 @@ export function AuthForms({ defaultMode = 'login', onSuccess }: { defaultMode?: 
                 <button
                     type="submit"
                     disabled={isPending}
-                    style={{
-                        marginTop: 6,
-                        width: '100%',
-                        padding: '12px 20px',
-                        borderRadius: 12,
-                        fontSize: 15,
-                        fontWeight: 600,
-                        color: '#ffffff',
-                        background: isPending ? 'rgba(10,132,255,0.60)' : '#0A84FF',
-                        border: 'none',
-                        cursor: isPending ? 'not-allowed' : 'default',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8,
-                        letterSpacing: '-0.01em',
-                        boxShadow: '0 2px 8px rgba(10,132,255,0.30)',
-                        transition: 'opacity 150ms ease, transform 100ms ease',
-                    }}
-                    onMouseEnter={e => { if (!isPending) e.currentTarget.style.opacity = '0.88'; }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-                    onMouseDown={e => { if (!isPending) e.currentTarget.style.transform = 'scale(0.97)'; }}
-                    onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                    className="apple-btn apple-btn-primary w-full mt-1 py-3 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     {isPending ? (
-                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                        <Loader2 size={16} className="animate-spin" />
                     ) : (
                         <>
                             {mode === 'login' ? 'Sign In' : 'Send Reset Link'}
@@ -211,11 +124,8 @@ export function AuthForms({ defaultMode = 'login', onSuccess }: { defaultMode?: 
             </form>
 
             {mode === 'forgot' && (
-                <div style={{ textAlign: 'center', marginTop: 18 }}>
-                    <button
-                        onClick={() => setMode('login')}
-                        style={{ fontSize: 13, fontWeight: 600, color: '#0A84FF', background: 'none', border: 'none', cursor: 'default' }}
-                    >
+                <div className="text-center mt-5">
+                    <button onClick={() => setMode('login')} className="text-sm font-bold text-[var(--teal)] bg-transparent border-none cursor-pointer">
                         Back to Login
                     </button>
                 </div>

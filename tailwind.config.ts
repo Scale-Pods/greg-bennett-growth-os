@@ -10,7 +10,8 @@ const config: Config = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+                sans: ['Manrope', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+                display: ['Syne', 'Manrope', 'system-ui', 'sans-serif'],
                 mono: ['ui-monospace', 'SF Mono', 'SFMono-Regular', 'Menlo', 'monospace'],
             },
             colors: {
@@ -110,7 +111,8 @@ const config: Config = {
                 'glass-hover':'var(--glass-shadow-hover)',
             },
             backdropBlur: {
-                glass: '0px',
+                glass: '24px',
+                'glass-lg': '32px',
             },
             spacing: {
                 '0.5': 'var(--space-0-5)',

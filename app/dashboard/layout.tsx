@@ -9,7 +9,7 @@ import {
     Key, ExternalLink, Sun, Moon, Inbox, AlertCircle, UserMinus,
     MessageSquare, Phone, Activity, Globe
 } from "lucide-react";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DataProvider, useData } from "@/context/DataContext";
 import { MaqsamBalanceDetail } from "@/components/dashboard/maqsam-balance-detail";
@@ -30,7 +30,7 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
     },
     email: {
         label: "Email",
-        color: "#8B5CF6",
+        color: "#7C3AED",
         icon: Mail,
         items: [
             { title: "Dashboard", href: "/dashboard/email", icon: LayoutDashboard },
@@ -43,7 +43,7 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
     },
     whatsapp: {
         label: "WhatsApp",
-        color: "#10B981",
+        color: "#059669",
         icon: MessageCircle,
         items: [
             { title: "Dashboard", href: "/dashboard/whatsapp", icon: LayoutDashboard },
@@ -65,7 +65,7 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
     },
     voice: {
         label: "Voice",
-        color: "#06B6D4",
+        color: "#14B8A6",
         icon: Mic,
         items: [
             { title: "Dashboard", href: "/dashboard/voice", icon: LayoutDashboard },
@@ -97,7 +97,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         isOpen: false, type: 'vapi',
     });
     const [isChannelDropdownOpen, setIsChannelDropdownOpen] = useState(false);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const isExpanded = isHovered;
 
@@ -131,104 +130,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         }).reduce((acc: number, call: any) => acc + (call.breakdown?.telephony || call.costValue || 0), 0);
     }, [calls]);
 
-    // Canvas Background loop for Dark Mode only
-    useEffect(() => {
-        if (!dark) return;
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        let animationFrameId: number;
-        let pulse = 0;
-        let scanLines = [0, 130, 260];
-
-        const resizeCanvas = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        };
-
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        const animate = () => {
-            pulse += 0.008;
-            const W = canvas.width;
-            const H = canvas.height;
-
-            // Page Background in dark mode
-            ctx.fillStyle = '#040812';
-            ctx.fillRect(0, 0, W, H);
-
-            const vp = { x: W / 2, y: -H * 0.3 };
-            const baseAlpha = 0.06 + Math.sin(pulse) * 0.04;
-
-            // 1. VERTICAL LINES
-            ctx.strokeStyle = `rgba(99, 102, 241, ${baseAlpha})`;
-            ctx.lineWidth = 0.6;
-            const numLines = 15;
-            for (let i = 0; i < numLines; i++) {
-                const xBottom = (W / (numLines - 1)) * i;
-                ctx.beginPath();
-                ctx.moveTo(vp.x, vp.y);
-                ctx.lineTo(xBottom, H);
-                ctx.stroke();
-            }
-
-            // 2. HORIZONTAL LINES
-            const rows = 10;
-            ctx.lineWidth = 0.5;
-            for (let j = 1; j <= rows; j++) {
-                const frac = j / rows;
-                const ty = vp.y + (H - vp.y) * Math.pow(frac, 0.7);
-                if (ty < 0) continue;
-
-                const rowAlpha = baseAlpha * Math.pow(frac, 0.5);
-                ctx.strokeStyle = `rgba(99, 102, 241, ${rowAlpha})`;
-
-                const spread = 0.05 + frac * 0.95;
-                const x1 = vp.x - (W / 2) * spread;
-                const x2 = vp.x + (W / 2) * spread;
-
-                ctx.beginPath();
-                ctx.moveTo(x1, ty);
-                ctx.lineTo(x2, ty);
-                ctx.stroke();
-            }
-
-            // 3. SCAN PULSES
-            for (let i = 0; i < scanLines.length; i++) {
-                scanLines[i] += 0.4;
-                if (scanLines[i] > H) {
-                    scanLines[i] = 0;
-                }
-                const sy = scanLines[i];
-                const grad = ctx.createLinearGradient(0, sy - 22, 0, sy + 22);
-                grad.addColorStop(0, 'rgba(99, 102, 241, 0)');
-                grad.addColorStop(0.5, 'rgba(99, 102, 241, 0.09)');
-                grad.addColorStop(1, 'rgba(99, 102, 241, 0)');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, sy - 22, W, 44);
-            }
-
-            // 4. VIGNETTE
-            const vigGrad = ctx.createLinearGradient(0, 0, 0, H);
-            vigGrad.addColorStop(0, 'rgba(4, 8, 18, 0)');
-            vigGrad.addColorStop(1, 'rgba(4, 8, 18, 0.55)');
-            ctx.fillStyle = vigGrad;
-            ctx.fillRect(0, 0, W, H);
-
-            animationFrameId = requestAnimationFrame(animate);
-        };
-
-        animate();
-
-        return () => {
-            window.removeEventListener('resize', resizeCanvas);
-            cancelAnimationFrame(animationFrameId);
-        };
-    }, [dark]);
-
     let currentContext = "master";
     if (pathname.startsWith("/dashboard/email")) currentContext = "email";
     else if (pathname.startsWith("/dashboard/whatsapp")) currentContext = "whatsapp";
@@ -245,21 +146,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="flex h-screen overflow-hidden ambient-bg">
-            {/* Canvas background for dark mode */}
-            {dark && (
-                <canvas
-                    ref={canvasRef}
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        zIndex: 0,
-                        pointerEvents: 'none',
-                        width: '100%',
-                        height: '100%',
-                    }}
-                />
-            )}
-            
+            {/* Floating ambient orbs */}
+            <div className="pointer-events-none fixed top-[8%] right-[12%] w-80 h-80 rounded-full opacity-40 z-0" style={{ background: 'var(--mesh-1)', filter: 'blur(90px)', animation: 'float-orb 16s ease-in-out infinite' }} aria-hidden />
+            <div className="pointer-events-none fixed bottom-[10%] left-[20%] w-72 h-72 rounded-full opacity-35 z-0" style={{ background: 'var(--mesh-2)', filter: 'blur(80px)', animation: 'float-orb 20s ease-in-out infinite reverse' }} aria-hidden />
+
             {/* Sidebar Placeholder to push content */}
             <div style={{ width: '80px', flexShrink: 0, transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }} className="hidden md:block" />
 
@@ -272,7 +162,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     width: isExpanded ? 260 : 80,
                     zIndex: 50,
                     transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease',
-                    boxShadow: isExpanded ? '10px 0 30px rgba(0,0,0,0.5)' : '1px 0 0 var(--glass-border)',
+                    boxShadow: isExpanded ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
                     overflow: 'hidden',
                     display: 'flex', flexDirection: 'column'
                 }}
@@ -284,7 +174,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         {isExpanded ? (
                             <Image src="/bennett-logo.png" alt="Bennett Growth OS" fill className="object-contain object-center" style={dark ? { filter: 'brightness(1.8) contrast(1.1)' } : undefined} priority />
                         ) : (
-                            <div className="w-12 h-12 rounded-xl bg-[var(--blue)]/10 text-[var(--blue)] flex items-center justify-center font-bold text-2xl border border-[var(--blue)]/20">B</div>
+                            <div className="w-12 h-12 rounded-xl glass-surface text-[var(--teal)] flex items-center justify-center font-display font-extrabold text-2xl">B</div>
                         )}
                     </div>
                 </div>
@@ -299,9 +189,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                                     onClick={() => setIsChannelDropdownOpen(!isChannelDropdownOpen)}
                                     style={{
                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        width: '100%', padding: '10px 12px', borderRadius: '12px',
-                                        background: 'var(--fill-secondary)',
+                                        width: '100%', padding: '10px 12px', borderRadius: '14px',
+                                        background: 'var(--glass-fill)',
                                         border: '1px solid var(--glass-border)',
+                                        backdropFilter: 'blur(12px)',
                                         color: 'var(--label-primary)',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
@@ -329,10 +220,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                                     <div style={{
                                         position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
                                         zIndex: 100, background: 'var(--bg-layer2)',
-                                        backdropFilter: 'blur(35px) saturate(190%)',
+                                        backdropFilter: 'blur(28px) saturate(180%)',
                                         border: '1px solid var(--glass-border)',
-                                        borderRadius: '12px', padding: '6px',
-                                        boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+                                        borderRadius: '16px', padding: '6px',
+                                        boxShadow: 'var(--shadow-lg)',
                                         display: 'flex', flexDirection: 'column', gap: 4
                                     }}>
                                         {mainApps.filter(appKey => appKey !== currentContext).map(appKey => {
@@ -368,8 +259,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                             onClick={() => setIsHovered(true)}
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                width: '48px', height: '48px', borderRadius: '12px',
-                                background: 'var(--fill-secondary)',
+                                width: '48px', height: '48px', borderRadius: '14px',
+                                background: 'var(--glass-fill)',
                                 border: '1px solid var(--glass-border)',
                                 color: 'var(--label-primary)',
                                 cursor: 'pointer',
@@ -405,9 +296,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                                 href={item.href}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 12,
-                                    padding: '10px 12px', borderRadius: '12px',
-                                    background: isActive ? 'var(--fill-secondary)' : 'transparent',
-                                    color: isActive ? 'var(--label-primary)' : 'var(--label-secondary)',
+                                    padding: '10px 12px', borderRadius: '14px',
+                                    background: isActive ? 'var(--sidebar-icon-active-bg)' : 'transparent',
+                                    color: isActive ? 'var(--sidebar-icon-active)' : 'var(--label-secondary)',
+                                    border: isActive ? '1px solid rgba(45, 212, 191, 0.25)' : '1px solid transparent',
                                     transition: 'all 0.2s ease',
                                     textDecoration: 'none',
                                     justifyContent: isExpanded ? 'flex-start' : 'center'
@@ -432,7 +324,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 </nav>
 
                 {/* Bottom Actions (Sign Out & Theme) */}
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--hairline)', background: 'var(--bg-layer1)' }}>
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--hairline)', background: 'transparent' }}>
                     {currentContext === 'master' && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 8, justifyContent: isExpanded ? 'flex-start' : 'center', flexWrap: 'wrap' }}>
                             {walletChips.map(chip => (
@@ -498,8 +390,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
             </aside>
 
             {/* ══ MAIN AREA ══ */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-                <main style={{ flex: 1, overflowY: 'auto', padding: 24 }} className="custom-scrollbar">
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+                <main style={{ flex: 1, overflowY: 'auto', padding: 28 }} className="custom-scrollbar">
                     {children}
                 </main>
             </div>

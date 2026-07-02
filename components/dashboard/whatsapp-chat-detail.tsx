@@ -177,11 +177,11 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', maxHeight: '80vh', background: 'var(--bg-layer1)', borderRadius: 14, padding: 18 }}>
+        <div className="glass-modal-shell flex flex-col h-full overflow-hidden max-h-[80vh] p-5">
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
                 <div>
-                    <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--label-primary)', letterSpacing: '-0.01em', margin: 0 }}>{lead.name}</h2>
+                    <h2 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: 'var(--label-primary)', letterSpacing: '-0.02em', margin: 0 }}>{lead.name}</h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, fontSize: 12, color: 'var(--label-secondary)' }}>
                         <span style={{ fontFamily: 'ui-monospace, monospace' }}>{lead.phone}</span>
                         <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--label-quaternary)', display: 'inline-block' }} />
@@ -196,9 +196,9 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                             display: 'flex', alignItems: 'center', gap: 5,
                             padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 500,
                             cursor: isTranslating ? 'not-allowed' : 'pointer', transition: 'all 120ms',
-                            background: isTranslated ? 'rgba(59,91,219,0.10)' : 'var(--fill-tertiary)',
-                            border: `1px solid ${isTranslated ? 'rgba(59,91,219,0.25)' : 'var(--glass-border)'}`,
-                            color: isTranslated ? 'var(--blue)' : 'var(--label-primary)',
+                            background: isTranslated ? 'rgba(20,184,166,0.12)' : 'var(--glass-fill)',
+                            border: `1px solid ${isTranslated ? 'rgba(20,184,166,0.28)' : 'var(--glass-border)'}`,
+                            color: isTranslated ? 'var(--teal)' : 'var(--label-primary)',
                         }}
                     >
                         {isTranslating
@@ -212,8 +212,8 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                             display: 'flex', alignItems: 'center', gap: 5,
                             padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 500,
                             cursor: 'pointer', transition: 'all 120ms',
-                            background: copied ? 'rgba(48,209,88,0.15)' : 'var(--blue)',
-                            border: `1px solid ${copied ? 'rgba(48,209,88,0.30)' : 'transparent'}`,
+                            background: copied ? 'rgba(5,150,105,0.15)' : 'linear-gradient(135deg, var(--teal), #0d9488)',
+                            border: `1px solid ${copied ? 'rgba(5,150,105,0.30)' : 'transparent'}`,
                             color: copied ? 'var(--green)' : '#fff',
                         }}
                     >
@@ -226,9 +226,9 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
             {/* Body grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 196px', gap: 12, flex: 1, overflow: 'hidden', minHeight: 0 }}>
                 {/* Timeline panel */}
-                <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--fill-quaternary)', border: '1px solid var(--hairline)', borderRadius: 10, overflow: 'hidden', height: '100%', minHeight: 0 }}>
+                <div className="glass-panel flex flex-col h-full min-h-0">
                     {/* Panel header */}
-                    <div style={{ borderBottom: '1px solid var(--hairline)', padding: '9px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                    <div className="glass-panel-header">
                         <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--label-tertiary)', display: 'flex', alignItems: 'center', gap: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                             <MessageSquare style={{ width: 12, height: 12 }} />
                             Conversation
@@ -254,9 +254,9 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                                     const formatted = label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
                                     let pillBg = 'var(--fill-secondary)';
                                     let pillColor = 'var(--label-tertiary)';
-                                    if (formatted.includes('Read')) { pillBg = 'rgba(59,91,219,0.10)'; pillColor = 'var(--blue)'; }
-                                    if (formatted.includes('Failed')) { pillBg = 'rgba(255,69,58,0.10)'; pillColor = 'var(--red)'; }
-                                    if (formatted.includes('Sent')) { pillBg = 'rgba(48,209,88,0.10)'; pillColor = 'var(--green)'; }
+                                    if (formatted.includes('Read')) { pillBg = 'rgba(20,184,166,0.12)'; pillColor = 'var(--teal)'; }
+                                    if (formatted.includes('Failed')) { pillBg = 'rgba(220,38,38,0.10)'; pillColor = 'var(--red)'; }
+                                    if (formatted.includes('Sent')) { pillBg = 'rgba(5,150,105,0.12)'; pillColor = 'var(--green)'; }
                                     tsPill = (
                                         <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 5, background: pillBg, color: pillColor }}>
                                             {formatted}
@@ -267,20 +267,13 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                                 const isUser = msg.type === 'user';
                                 return (
                                     <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-start' : 'flex-end', width: '100%' }}>
-                                        <div style={{
-                                            maxWidth: '85%', padding: '8px 11px',
-                                            background: isUser ? 'rgba(48,209,88,0.09)' : 'var(--fill-tertiary)',
-                                            border: `1px solid ${isUser ? 'rgba(48,209,88,0.18)' : 'var(--hairline)'}`,
-                                            borderRadius: 10,
-                                            borderTopLeftRadius: isUser ? 3 : 10,
-                                            borderTopRightRadius: isUser ? 10 : 3,
-                                        }}>
+                                        <div className={`chat-bubble ${isUser ? 'chat-bubble-user' : 'chat-bubble-bot'}`}>
                                             <div style={{ marginBottom: 3 }}>
-                                                <span style={{ fontSize: 10, fontWeight: 600, color: isUser ? 'var(--green)' : 'var(--blue)' }}>
+                                                <span style={{ fontSize: 10, fontWeight: 700, color: isUser ? 'var(--green)' : 'var(--teal)' }}>
                                                     {msg.label}
                                                 </span>
                                             </div>
-                                            <p style={{ fontSize: 12, lineHeight: 1.5, whiteSpace: 'pre-wrap', color: 'var(--label-primary)', margin: 0 }}>
+                                            <p style={{ fontSize: 12, lineHeight: 1.55, whiteSpace: 'pre-wrap', color: 'var(--label-primary)', margin: 0 }}>
                                                 {isTranslated && translatedMessages[idx] ? translatedMessages[idx] : msg.content}
                                             </p>
                                         </div>
@@ -302,12 +295,12 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
                 {/* Right sidebar */}
                 <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', height: '100%', paddingRight: 2, paddingBottom: 8 }}>
                     <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: 0 }}>Engagement</p>
-                    <StatBox label="Total Messages" value={messages.length} icon={MessageSquare} color="var(--blue)" />
+                    <StatBox label="Total Messages" value={messages.length} icon={MessageSquare} color="var(--teal)" />
                     <StatBox label="Incoming" value={messages.filter((m: any) => m.type === 'user').length} icon={User} color="var(--green)" />
                     <StatBox label="Outgoing" value={messages.filter((m: any) => m.type === 'bot').length} icon={Bot} color="var(--purple)" />
 
                     <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0' }}>Lead Info</p>
-                    <div style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--hairline)', borderRadius: 9, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div className="glass-panel" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <div>
                             <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Phone</span>
                             <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '2px 0 0', fontFamily: 'ui-monospace, monospace' }}>{lead.phone}</p>
@@ -331,7 +324,7 @@ export function WhatsAppChatDetail({ customerId, onClose, initialLead }: WhatsAp
 
 function StatBox({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: string }) {
     return (
-        <div style={{ padding: '9px 11px', borderRadius: 9, border: '1px solid var(--hairline)', background: 'var(--fill-quaternary)', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <div className="glass-stat-box">
             <div style={{
                 width: 28, height: 28, borderRadius: 7, flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',

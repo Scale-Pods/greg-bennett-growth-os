@@ -38,18 +38,15 @@ export default function ResetPasswordPage() {
     }, [state, router]);
 
     return (
-        <div className="min-h-screen ambient-bg flex items-center justify-center p-6">
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-64 bg-apple-blue/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="min-h-screen ambient-bg flex items-center justify-center p-6 relative">
+            <div className="pointer-events-none absolute top-1/4 left-1/2 -translate-x-1/2 w-[28rem] h-64 rounded-full opacity-50" style={{ background: 'var(--mesh-1)', filter: 'blur(100px)' }} aria-hidden />
 
-            <div className="relative w-full max-w-md apple-dialog !rounded-3xl overflow-hidden">
-                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-apple-blue/30 to-transparent" />
+            <div className="relative w-full max-w-md glass-modal-shell overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[var(--teal)]/40 to-transparent" />
 
                 <div className="p-8 pt-12 space-y-8">
                     <div className="flex justify-center">
-                        <div 
-                            className="relative flex items-center justify-center rounded-xl bg-white/95 px-3 py-1 shadow-sm border border-white/20 transition-all duration-200 hover:bg-white"
-                            style={{ height: '36px' }}
-                        >
+                        <div className="relative flex items-center justify-center rounded-xl glass-surface px-3 py-1.5 h-9">
                             <div className="relative w-[110px] h-[24px]">
                                 <Image src="/bennett-logo.png" alt="Bennett Growth OS" fill className="object-contain" priority />
                             </div>
@@ -64,7 +61,7 @@ export default function ResetPasswordPage() {
                                 </div>
                             </div>
                             <div>
-                                <h1 className="text-2xl font-semibold tracking-heading text-label mb-2">Link Invalid</h1>
+                                <h1 className="font-display text-2xl font-bold tracking-tight text-label mb-2">Link Invalid</h1>
                                 <p className="text-label-secondary text-sm">{hashError}</p>
                             </div>
                             <Button
@@ -85,7 +82,7 @@ export default function ResetPasswordPage() {
                                 </div>
                             </div>
                             <div>
-                                <h1 className="text-2xl font-semibold tracking-heading text-label mb-2">Password Updated</h1>
+                                <h1 className="font-display text-2xl font-bold tracking-tight text-label mb-2">Password Updated</h1>
                                 <p className="text-label-secondary text-sm">{state.message}</p>
                             </div>
                             <div className="flex items-center justify-center gap-1.5 text-label-tertiary text-xs">
@@ -98,7 +95,7 @@ export default function ResetPasswordPage() {
                     {!hashError && !state?.success && (
                         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
                             <div className="space-y-2 text-center">
-                                <h1 className="text-3xl font-semibold tracking-heading text-label">Set New Password</h1>
+                                <h1 className="font-display text-3xl font-bold tracking-tight text-label">Set New Password</h1>
                                 <p className="text-label-secondary text-sm">Choose a strong password for your account</p>
                             </div>
 
