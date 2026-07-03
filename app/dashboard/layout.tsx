@@ -426,7 +426,7 @@ function SidebarWalletModal({ isOpen, onClose, type, maqsamBalance, twilioBalanc
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className={type === 'maqsam' ? "sm:max-w-[550px]" : "sm:max-w-[400px]"}>
+            <DialogContent className={`apple-dialog ${type === 'maqsam' ? "sm:max-w-[550px]" : "sm:max-w-[400px]"}`}>
                 <DialogHeader>
                     <DialogTitle style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)' }}>
                         {titles[type]}

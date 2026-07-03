@@ -25,6 +25,9 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { subDays } from "date-fns";
+import { DateRange } from "react-day-picker";
 
 interface BounceEmail {
     email: string;
@@ -46,6 +49,10 @@ export default function BouncedEmailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: subDays(new Date(), 7),
+        to: new Date(),
+    });
 
     const fetchBounces = async () => {
         setLoading(true);
@@ -67,10 +74,19 @@ export default function BouncedEmailsPage() {
 
     useEffect(() => { fetchBounces(); }, []);
 
-    const filteredBounces = bounces.filter(b =>
-        b.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b.from.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredBounces = bounces.filter(b => {
+        const matchesSearch = b.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            b.from.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+        if (dateRange?.from) {
+            const bd = b.date && b.date !== "Unknown" ? new Date(b.date) : null;
+            if (!bd || isNaN(bd.getTime())) return false;
+            const from = new Date(dateRange.from); from.setHours(0, 0, 0, 0);
+            const to = dateRange.to ? new Date(dateRange.to) : new Date(from); to.setHours(23, 59, 59, 999);
+            if (bd < from || bd > to) return false;
+        }
+        return true;
+    });
 
     return (
         <TooltipProvider>
@@ -83,16 +99,19 @@ export default function BouncedEmailsPage() {
                         <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Bounced Emails</h1>
                         <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Real-time bounce tracking from Instantly.ai</p>
                     </div>
-                    <button
-                        onClick={fetchBounces}
-                        disabled={loading}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', fontSize: 12, fontWeight: 500, cursor: 'default', opacity: loading ? 0.6 : 1 }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-secondary)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'var(--fill-tertiary)')}
-                    >
-                        <RefreshCw style={{ width: 13, height: 13, animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-                        {loading ? "Refreshing..." : "Refresh List"}
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <DateRangePicker value={dateRange} onUpdate={r => setDateRange(r.range)} />
+                        <button
+                            onClick={fetchBounces}
+                            disabled={loading}
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', fontSize: 12, fontWeight: 500, cursor: 'default', opacity: loading ? 0.6 : 1 }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-secondary)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'var(--fill-tertiary)')}
+                        >
+                            <RefreshCw style={{ width: 13, height: 13, animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+                            {loading ? "Refreshing..." : "Refresh List"}
+                        </button>
+                    </div>
                 </div>
 
                 {error && (

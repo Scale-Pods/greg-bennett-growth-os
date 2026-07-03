@@ -31,6 +31,7 @@ import { useData } from "@/context/DataContext";
 import { BennettLoader } from "@/components/bennett-loader";
 import { subDays, startOfDay, endOfDay } from "date-fns";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 // --- Sorting & Activity Helpers ---
 const parseMsg = (raw: any): { date: Date | null, content: string } => {
@@ -285,7 +286,7 @@ export default function WhatsappChatPage() {
         return result;
     };
 
-    const { dateRange } = useData();
+    const { dateRange, setDateRange } = useData();
 
     // Re-fetch from the WA-specific endpoint when date range changes.
     // This filters by "W.P_1 TS" (nr_wf), "W.P_1  TS" (followup), and "Whatsapp_1_Date" (owners)
@@ -716,6 +717,7 @@ export default function WhatsappChatPage() {
                             </button>
                         ))}
                     </div>
+                    <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
                     <button
                         onClick={() => { window.location.reload(); }}
                         style={{
@@ -1006,7 +1008,7 @@ export default function WhatsappChatPage() {
 
             {/* Lead Chat Dialog */}
             <Dialog open={!!selectedLeadId} onOpenChange={(open) => { if (!open) { setSelectedLeadId(null); setSelectedLeadObj(null); } }}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-6 gap-0">
+                <DialogContent className="apple-dialog max-w-4xl max-h-[90vh] overflow-hidden p-6 gap-0">
                     <DialogHeader className="sr-only"><DialogTitle>WhatsApp Chat Detail</DialogTitle></DialogHeader>
                     {selectedLeadId && (
                         <WhatsAppChatDetail
@@ -1020,7 +1022,7 @@ export default function WhatsappChatPage() {
 
             {/* Owner Chat Dialog */}
             <Dialog open={!!selectedOwner} onOpenChange={(open) => !open && setSelectedOwner(null)}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-6 gap-0">
+                <DialogContent className="apple-dialog max-w-4xl max-h-[90vh] overflow-hidden p-6 gap-0">
                     <DialogHeader className="sr-only"><DialogTitle>Owner Chat Detail</DialogTitle></DialogHeader>
                     {selectedOwner && <OwnerChatDetail owner={selectedOwner} onClose={() => setSelectedOwner(null)} />}
                 </DialogContent>

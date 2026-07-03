@@ -177,7 +177,7 @@ export function SmsChatDetail({ customerId, onClose, initialLead }: SmsChatDetai
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', maxHeight: '80vh', background: 'var(--bg-layer1)', borderRadius: 14, padding: 18 }}>
+        <div className="glass-modal-shell flex flex-col h-full overflow-hidden max-h-[80vh] p-5">
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0 }}>
                 <div>
@@ -226,9 +226,9 @@ export function SmsChatDetail({ customerId, onClose, initialLead }: SmsChatDetai
             {/* Body grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 196px', gap: 12, flex: 1, overflow: 'hidden', minHeight: 0 }}>
                 {/* Timeline panel */}
-                <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--fill-quaternary)', border: '1px solid var(--hairline)', borderRadius: 10, overflow: 'hidden', height: '100%', minHeight: 0 }}>
+                <div className="glass-panel flex flex-col h-full min-h-0">
                     {/* Panel header */}
-                    <div style={{ borderBottom: '1px solid var(--hairline)', padding: '9px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                    <div className="glass-panel-header">
                         <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--label-tertiary)', display: 'flex', alignItems: 'center', gap: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                             <MessageSquare style={{ width: 12, height: 12 }} />
                             SMS Conversation
@@ -267,20 +267,13 @@ export function SmsChatDetail({ customerId, onClose, initialLead }: SmsChatDetai
                                 const isUser = msg.type === 'user';
                                 return (
                                     <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-start' : 'flex-end', width: '100%' }}>
-                                        <div style={{
-                                            maxWidth: '85%', padding: '8px 11px',
-                                            background: isUser ? 'rgba(214,51,108,0.09)' : 'var(--fill-tertiary)',
-                                            border: `1px solid ${isUser ? 'rgba(214,51,108,0.18)' : 'var(--hairline)'}`,
-                                            borderRadius: 10,
-                                            borderTopLeftRadius: isUser ? 3 : 10,
-                                            borderTopRightRadius: isUser ? 10 : 3,
-                                        }}>
+                                        <div className={`chat-bubble ${isUser ? 'chat-bubble-user' : 'chat-bubble-bot'}`}>
                                             <div style={{ marginBottom: 3 }}>
-                                                <span style={{ fontSize: 10, fontWeight: 600, color: isUser ? '#D6336C' : 'var(--blue)' }}>
+                                                <span style={{ fontSize: 10, fontWeight: 700, color: isUser ? '#D6336C' : 'var(--blue)' }}>
                                                     {msg.label}
                                                 </span>
                                             </div>
-                                            <p style={{ fontSize: 12, lineHeight: 1.5, whiteSpace: 'pre-wrap', color: 'var(--label-primary)', margin: 0 }}>
+                                            <p style={{ fontSize: 12, lineHeight: 1.55, whiteSpace: 'pre-wrap', color: 'var(--label-primary)', margin: 0 }}>
                                                 {isTranslated && translatedMessages[idx] ? translatedMessages[idx] : msg.content}
                                             </p>
                                         </div>
@@ -307,7 +300,7 @@ export function SmsChatDetail({ customerId, onClose, initialLead }: SmsChatDetai
                     <StatBox label="Outgoing" value={messages.filter((m: any) => m.type === 'bot').length} icon={Bot} color="var(--purple)" />
 
                     <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0' }}>Lead Info</p>
-                    <div style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--hairline)', borderRadius: 9, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div className="glass-panel" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <div>
                             <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Phone</span>
                             <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '2px 0 0', fontFamily: 'ui-monospace, monospace' }}>{lead.phone}</p>
@@ -331,7 +324,7 @@ export function SmsChatDetail({ customerId, onClose, initialLead }: SmsChatDetai
 
 function StatBox({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: string }) {
     return (
-        <div style={{ padding: '9px 11px', borderRadius: 9, border: '1px solid var(--hairline)', background: 'var(--fill-quaternary)', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <div className="glass-stat-box">
             <div style={{
                 width: 28, height: 28, borderRadius: 7, flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',

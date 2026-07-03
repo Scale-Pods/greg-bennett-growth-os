@@ -129,7 +129,7 @@ function BusinessSection({ title, icon, iconBg, iconColor, loading, metrics }: {
 
 export default function WhatsappDashboardPage() {
     const router = useRouter();
-    const { dateRange } = useData();
+    const { dateRange, setDateRange } = useData();
     const [waData, setWaData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -222,6 +222,9 @@ export default function WhatsappDashboardPage() {
                     <p style={{ fontSize: 14, color: 'var(--label-secondary)' }}>
                         Real-time engagement insights and campaign totals
                     </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <DateRangePicker onUpdate={r => setDateRange(r.range)} />
                 </div>
             </div>
 

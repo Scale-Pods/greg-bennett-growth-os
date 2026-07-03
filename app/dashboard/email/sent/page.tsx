@@ -28,13 +28,14 @@ import { format, subDays } from "date-fns";
 
 import { useData } from "@/context/DataContext";
 import { BennettLoader } from "@/components/bennett-loader";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 const ITEMS_PER_PAGE = 7;
 
 export default function SentEmailsPage() {
     const { leads: allLeads, loadingLeads } = useData();
     const [page, setPage] = useState(1);
-    const { dateRange } = useData();
+    const { dateRange, setDateRange } = useData();
     const [sentEmails, setSentEmails] = useState<any[]>([]);
     const loading = loadingLeads;
     const [searchQuery, setSearchQuery] = useState("");
@@ -154,9 +155,12 @@ export default function SentEmailsPage() {
             {loading && <BennettLoader />}
 
             {/* Header */}
-            <div>
-                <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Sent Emails</h1>
-                <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>View and manage your sent email history.</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Sent Emails</h1>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>View and manage your sent email history.</p>
+                </div>
+                <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
             </div>
 
             {/* Search & Filters */}

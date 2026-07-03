@@ -27,6 +27,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BennettLoader } from "@/components/bennett-loader";
 import { useMemo } from "react";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { startOfDay, endOfDay } from "date-fns";
 import { useData } from "@/context/DataContext";
 
 interface Lead {
@@ -207,7 +209,7 @@ function ProgressBreakdown({ lead }: { lead: Lead }) {
 
 // Restore LeadsPage component
 export default function LeadsPage() {
-    const { leads, loadingLeads, refreshLeads } = useData();
+    const { leads, loadingLeads, refreshLeads, dateRange, setDateRange } = useData();
     const [templates, setTemplates] = useState<any[]>([]);
     const loadingTemplates = useState(false)[0]; // Placeholder for template loading if needed
     const [view, setView] = useState<"leads" | "templates">("leads");
@@ -226,7 +228,7 @@ export default function LeadsPage() {
     // Reset page on view or filter change
     useEffect(() => {
         setCurrentPage(1);
-    }, [view, templateFilter, searchQuery, loopFilter, statusFilter, regionFilter, channelFilter]);
+    }, [view, templateFilter, searchQuery, loopFilter, statusFilter, regionFilter, channelFilter, dateRange]);
 
 
     const loading = view === "leads" ? loadingLeads : false;
@@ -255,6 +257,14 @@ export default function LeadsPage() {
     // Filtering Logic
     const filteredLeads = useMemo(() => {
         return leads.filter(lead => {
+            // Date Filter
+            if (dateRange?.from) {
+                const leadDate = new Date(lead.created_at || lead.updated_at || Date.now());
+                const from = startOfDay(new Date(dateRange.from));
+                const to = dateRange.to ? endOfDay(new Date(dateRange.to)) : endOfDay(from);
+                if (leadDate < from || leadDate > to) return false;
+            }
+
             // Search Query
             if (searchQuery) {
                 const search = searchQuery.toLowerCase();
@@ -295,7 +305,7 @@ export default function LeadsPage() {
 
             return true;
         });
-    }, [leads, searchQuery, loopFilter, statusFilter, regionFilter, channelFilter]);
+    }, [leads, searchQuery, loopFilter, statusFilter, regionFilter, channelFilter, dateRange]);
 
 
     if (error) {
@@ -318,7 +328,8 @@ export default function LeadsPage() {
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Leads</h1>
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Manage and track your leads across all loops.</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <DateRangePicker onUpdate={(r: any) => setDateRange(r.range)} />
                     <div style={{ display: 'flex', background: 'var(--fill-tertiary)', borderRadius: 'var(--radius-md)', padding: 3, gap: 2 }}>
                         <button
                             onClick={() => setView("leads")}
@@ -350,7 +361,7 @@ export default function LeadsPage() {
                         Refresh
                     </Button>
                     <div style={{ background: 'var(--fill-secondary)', border: '1px solid var(--glass-border)', padding: '6px 12px', borderRadius: 'var(--radius-md)', fontSize: 13, fontWeight: 500, color: 'var(--label-secondary)' }}>
-                        {view === "leads" ? `Total Leads: ${leads.length}` : `Templates: ${templates.length}`}
+                        {view === "leads" ? `Total Leads: ${filteredLeads.length}` : `Templates: ${templates.length}`}
                     </div>
                 </div>
             </div>
@@ -449,15 +460,15 @@ export default function LeadsPage() {
                         <>
                             <div className="overflow-x-auto">
                                 <Table>
-                                    <TableHeader style={{ borderBottom: '1px solid var(--separator)' }}>
+                                    <TableHeader style={{ borderBottom: '1px solid var(--hairline)' }}>
                                         <TableRow className="bg-[var(--fill-quaternary)] border-none hover:bg-[var(--fill-quaternary)]">
-                                            <TableHead className="w-[200px]" style={{ color: 'var(--label-tertiary)' }}>Name</TableHead>
-                                            <TableHead style={{ color: 'var(--label-tertiary)' }}>Phone</TableHead>
-                                            <TableHead className="text-center" style={{ color: 'var(--label-tertiary)' }}>Channel</TableHead>
-                                            <TableHead style={{ color: 'var(--label-tertiary)' }}>Email</TableHead>
-                                            <TableHead style={{ color: 'var(--label-tertiary)' }}>Current Loop</TableHead>
-                                            <TableHead style={{ color: 'var(--label-tertiary)' }}>Reply Status</TableHead>
-                                            <TableHead className="w-[250px]" style={{ color: 'var(--label-tertiary)' }}>Progress</TableHead>
+                                            <TableHead className="w-[200px]" style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Name</TableHead>
+                                            <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Phone</TableHead>
+                                            <TableHead className="text-center" style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Channel</TableHead>
+                                            <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Email</TableHead>
+                                            <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Current Loop</TableHead>
+                                            <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Reply Status</TableHead>
+                                            <TableHead className="w-[250px]" style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Progress</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>

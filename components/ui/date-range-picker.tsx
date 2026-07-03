@@ -50,7 +50,7 @@ export function DateRangePicker({
     }, [open, date])
 
     if (!isMounted) {
-        return <div className={cn("h-9 w-[220px] rounded-xl animate-pulse", className)} style={{ background: 'var(--fill-tertiary)' }}></div>
+        return <div className={cn("h-8 w-[190px] rounded-[8px] animate-pulse", className)} style={{ background: 'var(--fill-tertiary)' }}></div>
     }
 
     const presets = [
@@ -125,17 +125,17 @@ export function DateRangePicker({
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <button
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[8px] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] border border-[var(--glass-border)] text-[var(--label-primary)] text-[12px] font-medium tracking-wide transition-colors min-w-[160px]"
+                        className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-[8px] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] border border-[var(--glass-border)] text-[var(--label-primary)] text-[12px] font-medium leading-none transition-colors whitespace-nowrap"
                     >
-                        <CalendarIcon className="w-3.5 h-3.5 text-[var(--blue)] shrink-0" />
-                        <span className="flex-1 text-left">
+                        <CalendarIcon className="w-3 h-3 text-[var(--blue)] shrink-0" />
+                        <span className="tabular-nums">
                             {date?.from ? (
                                 date.to ? (
                                     <>
-                                        {format(date.from, "MMM dd, yy")} – {format(date.to, "MMM dd, yy")}
+                                        {format(date.from, "MMM d")} – {format(date.to, "MMM d, yy")}
                                     </>
                                 ) : (
-                                    format(date.from, "MMM dd, yyyy")
+                                    format(date.from, "MMM d, yyyy")
                                 )
                             ) : (
                                 <span className="text-[var(--label-tertiary)]">Pick a date</span>
@@ -144,25 +144,26 @@ export function DateRangePicker({
                     </button>
                 </PopoverTrigger>
                 <PopoverContent
-                    className="w-auto p-0 border border-[var(--glass-border)] bg-[var(--bg-layer1)] rounded-[12px] shadow-lg overflow-hidden"
-                    align="start"
+                    className="w-auto max-w-none p-0 border border-[var(--glass-border)] bg-[var(--bg-layer1)] rounded-[10px] shadow-lg overflow-hidden"
+                    align="end"
+                    sideOffset={6}
                 >
                     <div className="flex">
                         {/* Preset List */}
-                        <div className="p-1.5 border-r border-[var(--glass-border)] w-[130px] flex flex-col gap-1">
+                        <div className="p-1.5 border-r border-[var(--glass-border)] w-[124px] flex flex-col gap-0.5">
                             {presets.map((preset) => (
                                 <button
                                     key={preset.label}
                                     onClick={() => handlePresetChange(preset.label)}
-                                    className={`w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] font-medium transition-colors ${tempLabel === preset.label ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
+                                    className={`w-full text-left px-2 py-1 rounded-[6px] text-[11.5px] font-medium leading-tight transition-colors ${tempLabel === preset.label ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
                                 >
                                     {preset.label}
                                 </button>
                             ))}
-                            <div className="h-[1px] bg-[var(--glass-border)] my-1" />
+                            <div className="h-px bg-[var(--glass-border)] my-1" />
                             <button
                                 onClick={() => setTempLabel("Custom Range")}
-                                className={`w-full text-left px-2.5 py-1.5 rounded-[6px] text-[12px] font-medium transition-colors ${tempLabel === "Custom Range" ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-tertiary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
+                                className={`w-full text-left px-2 py-1 rounded-[6px] text-[11.5px] font-medium leading-tight transition-colors ${tempLabel === "Custom Range" ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-tertiary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
                             >
                                 Custom Range
                             </button>
@@ -179,26 +180,27 @@ export function DateRangePicker({
                                     setTempLabel("Custom Range");
                                 }}
                                 numberOfMonths={1}
+                                className="p-2"
                             />
                         </div>
                     </div>
                     {/* Action Footer */}
-                    <div className="p-2 border-t border-[var(--glass-border)] flex items-center justify-end gap-2 bg-[var(--fill-quaternary)]">
+                    <div className="px-2.5 py-1.5 border-t border-[var(--glass-border)] flex items-center justify-end gap-1.5 bg-[var(--fill-quaternary)]">
                         <button
                             onClick={handleClear}
-                            className="mr-auto px-3 py-1 rounded-[6px] text-[11px] font-semibold text-red-500 hover:bg-red-500/10 transition-colors"
+                            className="mr-auto px-2 py-1 rounded-[6px] text-[11px] font-semibold text-red-500 hover:bg-red-500/10 transition-colors"
                         >
                             Clear
                         </button>
                         <button
                             onClick={handleCancel}
-                            className="px-3 py-1 rounded-[6px] text-[11px] font-medium text-[var(--label-secondary)] hover:bg-[var(--fill-tertiary)] transition-colors"
+                            className="px-2.5 py-1 rounded-[6px] text-[11px] font-medium text-[var(--label-secondary)] hover:bg-[var(--fill-tertiary)] transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleApply}
-                            className="px-4 py-1 rounded-[6px] text-[11px] font-semibold text-white bg-[var(--blue)] hover:opacity-90 transition-opacity"
+                            className="px-3 py-1 rounded-[6px] text-[11px] font-semibold text-white bg-[var(--blue)] hover:opacity-90 transition-opacity"
                         >
                             Apply
                         </button>

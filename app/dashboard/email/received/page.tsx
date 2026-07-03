@@ -19,6 +19,7 @@ import {
 import { format, subDays } from "date-fns";
 
 import { useData } from "@/context/DataContext";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export default function ReceivedEmailsPage() {
     const { leads: allLeads, loadingLeads } = useData();
@@ -26,7 +27,7 @@ export default function ReceivedEmailsPage() {
     const loading = loadingLeads;
     const [loopFilter, setLoopFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
-    const { dateRange } = useData();
+    const { dateRange, setDateRange } = useData();
     const [sortBy, setSortBy] = useState("newest");
 
     useEffect(() => {
@@ -109,11 +110,12 @@ export default function ReceivedEmailsPage() {
             {loading && <BennettLoader />}
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                 <div>
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Received Emails</h1>
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>View all received email replies from your campaigns</p>
                 </div>
+                <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
             </div>
 
             {/* Summary Card */}

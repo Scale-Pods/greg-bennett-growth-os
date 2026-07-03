@@ -1,10 +1,45 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { Instagram, Linkedin, Facebook, Users, GraduationCap, Home, Mail, Phone, Clock, ChevronRight, Inbox } from "lucide-react";
+import { format, subDays, endOfDay } from "date-fns";
+import { Instagram, Linkedin, Facebook, Globe, Users, GraduationCap, Home, Mail, Phone, Clock, ChevronRight, ChevronLeft, Inbox } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
+
+const LEADS_PER_PAGE = 10;
+
+type BusinessId = "wealth" | "bootcamps" | "realty";
+
+const SOURCE_STYLES: Record<string, { color: string; bg: string; icon: any }> = {
+    instagram: { color: "#E1306C", bg: "rgba(225,48,108,0.12)", icon: Instagram },
+    linkedin: { color: "#0A66C2", bg: "rgba(10,102,194,0.12)", icon: Linkedin },
+    facebook: { color: "#1877F2", bg: "rgba(24,119,242,0.12)", icon: Facebook },
+};
+
+function getSourceStyle(source: string | null | undefined) {
+    const key = (source || "").toLowerCase();
+    for (const k in SOURCE_STYLES) {
+        if (key.includes(k)) return SOURCE_STYLES[k];
+    }
+    return { color: "var(--label-tertiary)", bg: "var(--fill-tertiary)", icon: Globe };
+}
+
+function SourceBadge({ source }: { source: string | null | undefined }) {
+    const style = getSourceStyle(source);
+    const Icon = style.icon;
+    return (
+        <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide"
+            style={{ color: style.color, background: style.bg }}
+        >
+            <Icon size={10} />
+            {source || "Unknown"}
+        </span>
+    );
+}
 
 export default function InboundLeadsClient({
     wealthLeads,
@@ -15,65 +50,97 @@ export default function InboundLeadsClient({
     realtyLeads: any[];
     bootcampsLeads: any[];
 }) {
-    const sources = ["Instagram", "LinkedIn", "Facebook"];
-    const [selectedSource, setSelectedSource] = useState("Instagram");
-
-    const businesses = [
+    const businesses: { id: BusinessId; label: string; icon: any; color: string; bg: string; data: any[] }[] = [
         { id: "wealth", label: "Wealth Builders", icon: Users, color: "#22c55e", bg: "rgba(34,197,94,0.15)", data: wealthLeads },
         { id: "bootcamps", label: "Bootcamps", icon: GraduationCap, color: "#f59e0b", bg: "rgba(245,158,11,0.15)", data: bootcampsLeads },
         { id: "realty", label: "Realty Solutions", icon: Home, color: "#6366f1", bg: "rgba(99,102,241,0.15)", data: realtyLeads },
     ];
-    const [selectedBusiness, setSelectedBusiness] = useState("wealth");
+    const [selectedBusiness, setSelectedBusiness] = useState<BusinessId>("wealth");
 
     const [selectedLead, setSelectedLead] = useState<any | null>(null);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: subDays(new Date(), 7),
+        to: new Date()
+    });
+    const [page, setPage] = useState(1);
 
-    // Filter leads for the active business & source
-    const activeBusinessObj = businesses.find(b => b.id === selectedBusiness);
+    const activeBusinessObj = businesses.find(b => b.id === selectedBusiness)!;
+
     const activeLeads = useMemo(() => {
-        if (!activeBusinessObj) return [];
-        return activeBusinessObj.data.filter(lead => 
-            lead.source && lead.source.toLowerCase().includes(selectedSource.toLowerCase())
-        );
-    }, [activeBusinessObj, selectedSource]);
+        return activeBusinessObj.data.filter(lead => {
+            if (dateRange?.from && lead.created_at) {
+                const leadDate = new Date(lead.created_at);
+                if (leadDate < dateRange.from) return false;
+                if (dateRange.to && leadDate > endOfDay(dateRange.to)) return false;
+            }
+            return true;
+        }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }, [activeBusinessObj, dateRange]);
 
-    const renderLeadDetails = (lead: any, businessId: string) => {
-        const getQuestions = () => {
-            if (businessId === "wealth") {
-                return [
-                    { q: "Strategy", a: lead.q1_strategy },
-                    { q: "Deals in 12mo", a: lead.q2_deals_12mo },
-                    { q: "Capital", a: lead.q3_capital },
-                    { q: "Market", a: lead.q4_market },
-                    { q: "Challenge", a: lead.q5_challenge },
-                    { q: "Income Goal", a: lead.q6_income_goal },
-                ];
-            }
-            if (businessId === "realty") {
-                return [
-                    { q: "Sell Timing", a: lead.q1_sell_timing },
-                    { q: "Occupied", a: lead.q2_occupied },
-                    { q: "Condition", a: lead.q3_condition },
-                    { q: "Timeline", a: lead.q4_timeline },
-                    { q: "Other Agent", a: lead.q5_other_agent },
-                    { q: "Property Address", a: lead.q6_property_address },
-                    { q: "Motivation", a: lead.q7_motivation },
-                ];
-            }
-            if (businessId === "bootcamps") {
-                return [
-                    { q: "Experience", a: lead.q1_experience },
-                    { q: "Strategy", a: lead.q2_strategy },
-                    { q: "Capital", a: lead.q3_capital },
-                    { q: "Target Market", a: lead.q4_target_market },
-                    { q: "Deals Completed", a: lead.q5_deals_completed },
-                    { q: "Challenge", a: lead.q6_challenge },
-                    { q: "Income Goal", a: lead.q7_income_goal },
-                ];
-            }
-            return [];
-        };
+    useEffect(() => { setPage(1); }, [selectedBusiness, dateRange]);
 
-        const qs = getQuestions();
+    const totalPages = Math.max(1, Math.ceil(activeLeads.length / LEADS_PER_PAGE));
+    const paginatedLeads = useMemo(() => {
+        const start = (page - 1) * LEADS_PER_PAGE;
+        return activeLeads.slice(start, start + LEADS_PER_PAGE);
+    }, [activeLeads, page]);
+
+    // Helper for total leads calculation considering date filter (for business cards)
+    const getFilteredCount = (busData: any[]) => {
+        return busData.filter(lead => {
+            if (dateRange?.from && lead.created_at) {
+                const leadDate = new Date(lead.created_at);
+                if (leadDate < dateRange.from) return false;
+                if (dateRange.to && leadDate > endOfDay(dateRange.to)) return false;
+            }
+            return true;
+        }).length;
+    };
+
+    // Per-business questionnaire field mapping (matches each Supabase table's schema)
+    const getQuestions = (lead: any, businessId: BusinessId) => {
+        if (businessId === "wealth") {
+            return [
+                { q: "Strategy", a: lead.q1_strategy },
+                { q: "Deals in 12mo", a: lead.q2_deals_12mo },
+                { q: "Capital", a: lead.q3_capital },
+                { q: "Market", a: lead.q4_market },
+                { q: "Challenge", a: lead.q5_challenge },
+                { q: "Income Goal", a: lead.q6_income_goal },
+            ];
+        }
+        if (businessId === "realty") {
+            return [
+                { q: "Sell Timing", a: lead.q1_sell_timing },
+                { q: "Occupied", a: lead.q2_occupied },
+                { q: "Condition", a: lead.q3_condition },
+                { q: "Timeline", a: lead.q4_timeline },
+                { q: "Other Agent", a: lead.q5_other_agent },
+                { q: "Property Address", a: lead.q6_property_address },
+                { q: "Motivation", a: lead.q7_motivation },
+            ];
+        }
+        // bootcamps
+        return [
+            { q: "Experience", a: lead.q1_experience },
+            { q: "Strategy", a: lead.q2_strategy },
+            { q: "Capital", a: lead.q3_capital },
+            { q: "Target Market", a: lead.q4_target_market },
+            { q: "Deals Completed", a: lead.q5_deals_completed },
+            { q: "Challenge", a: lead.q6_challenge },
+            { q: "Income Goal", a: lead.q7_income_goal },
+        ];
+    };
+
+    // Per-business "key detail" column shown in the table (most distinguishing question)
+    const getKeyDetail = (lead: any, businessId: BusinessId): { label: string; value: string } => {
+        if (businessId === "wealth") return { label: "Capital", value: lead.q3_capital || "—" };
+        if (businessId === "realty") return { label: "Property", value: lead.q6_property_address || "—" };
+        return { label: "Target Market", value: lead.q4_target_market || "—" };
+    };
+
+    const renderLeadDetails = (lead: any, businessId: BusinessId) => {
+        const qs = getQuestions(lead, businessId);
 
         return (
             <div className="space-y-4">
@@ -96,7 +163,7 @@ export default function InboundLeadsClient({
                             </div>
                             <div className="flex items-center justify-between text-xs">
                                 <span className="text-[var(--label-secondary)]">Score</span>
-                                <span className="font-semibold">{lead.score || 0}/100</span>
+                                <span className="font-semibold">{lead.score ?? 0}/100</span>
                             </div>
                         </div>
                     </div>
@@ -131,49 +198,13 @@ export default function InboundLeadsClient({
         );
     };
 
-    const getSourceIcon = (src: string) => {
-        if (src === 'Instagram') return <Instagram size={16} />;
-        if (src === 'LinkedIn') return <Linkedin size={16} />;
-        if (src === 'Facebook') return <Facebook size={16} />;
-        return null;
-    };
+    const keyDetailLabel = selectedBusiness === "wealth" ? "Capital" : selectedBusiness === "realty" ? "Property" : "Target Market";
 
     return (
         <div className="flex flex-col gap-6">
-            {/* Source Selection */}
-            <div>
-                <h2 className="text-xs font-semibold text-[var(--label-secondary)] mb-3 uppercase tracking-wider">Select Source</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {sources.map(src => {
-                        const isSelected = selectedSource === src;
-                        return (
-                            <button
-                                key={src}
-                                onClick={() => setSelectedSource(src)}
-                                className={`liquid-card p-4 flex items-center justify-between transition-all duration-200 ${
-                                    isSelected ? 'ring-1 ring-[var(--blue)] shadow-[0_0_15px_rgba(0,122,255,0.1)] scale-[1.01]' : 'hover:bg-[var(--fill-tertiary)]'
-                                }`}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                        isSelected ? 'bg-[var(--blue)] text-white' : 'bg-[var(--fill-secondary)] text-[var(--label-secondary)]'
-                                    }`}>
-                                        {getSourceIcon(src)}
-                                    </div>
-                                    <span className={`font-semibold text-sm ${isSelected ? 'text-[var(--label-primary)]' : 'text-[var(--label-secondary)]'}`}>
-                                        {src}
-                                    </span>
-                                </div>
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[10px] text-[var(--label-tertiary)] uppercase tracking-wider">Total Leads</span>
-                                    <span className="font-bold text-lg tabular-nums">
-                                        {businesses.reduce((acc, b) => acc + b.data.filter(l => l.source?.toLowerCase().includes(src.toLowerCase())).length, 0)}
-                                    </span>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-semibold text-[var(--label-primary)]">Inbound Leads</h1>
+                <DateRangePicker value={dateRange} onUpdate={(val) => setDateRange(val.range)} />
             </div>
 
             {/* Business Selection */}
@@ -182,13 +213,13 @@ export default function InboundLeadsClient({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {businesses.map(bus => {
                         const isSelected = selectedBusiness === bus.id;
-                        const count = bus.data.filter(l => l.source?.toLowerCase().includes(selectedSource.toLowerCase())).length;
+                        const count = getFilteredCount(bus.data);
                         const Icon = bus.icon;
                         return (
                             <button
                                 key={bus.id}
                                 onClick={() => setSelectedBusiness(bus.id)}
-                                className={`liquid-card p-4 flex flex-col gap-3 transition-all duration-200 ${
+                                className={`liquid-card p-4 flex flex-col gap-3 transition-all duration-200 text-left ${
                                     isSelected ? `shadow-md scale-[1.01]` : 'hover:bg-[var(--fill-tertiary)]'
                                 }`}
                                 style={{
@@ -207,7 +238,7 @@ export default function InboundLeadsClient({
                                     <span className="text-xl font-bold tabular-nums" style={{ color: isSelected ? bus.color : 'var(--label-primary)' }}>
                                         {count}
                                     </span>
-                                    <span className="text-[10px] text-[var(--label-tertiary)] uppercase tracking-wider">Leads from {selectedSource}</span>
+                                    <span className="text-[10px] text-[var(--label-tertiary)] uppercase tracking-wider">Total Leads</span>
                                 </div>
                             </button>
                         );
@@ -221,70 +252,117 @@ export default function InboundLeadsClient({
                     <div>
                         <h3 className="text-base font-semibold text-[var(--label-primary)]">Leads List</h3>
                         <p className="text-xs text-[var(--label-tertiary)] mt-0.5">
-                            Showing {activeLeads.length} leads for {activeBusinessObj?.label} via {selectedSource}
+                            Showing {activeLeads.length} leads for {activeBusinessObj.label}
                         </p>
                     </div>
                 </div>
-                
+
                 {activeLeads.length === 0 ? (
                     <div className="p-8 flex flex-col items-center justify-center text-[var(--label-tertiary)]">
                         <Inbox size={32} className="mb-3 opacity-50" />
                         <p className="text-sm">No leads found for this selection.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs text-[var(--label-secondary)]">
-                            <thead className="bg-[var(--fill-secondary)] text-[10px] uppercase tracking-wider text-[var(--label-tertiary)]">
-                                <tr>
-                                    <th className="px-4 py-3 font-medium">Name</th>
-                                    <th className="px-4 py-3 font-medium">Contact</th>
-                                    <th className="px-4 py-3 font-medium">Date</th>
-                                    <th className="px-4 py-3 font-medium">Score</th>
-                                    <th className="px-4 py-3 font-medium">Stage</th>
-                                    <th className="px-4 py-3"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--separator)]">
-                                {activeLeads.map((lead: any) => (
-                                    <tr 
-                                        key={lead.id} 
-                                        onClick={() => setSelectedLead(lead)}
-                                        className="hover:bg-[var(--fill-tertiary)] cursor-pointer transition-colors"
-                                    >
-                                        <td className="px-4 py-3 font-medium text-[var(--label-primary)]">{lead.name || 'Unknown'}</td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex flex-col">
-                                                <span>{lead.email}</span>
-                                                <span className="text-[10px] text-[var(--label-tertiary)]">{lead.phone}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                            {lead.created_at ? format(new Date(lead.created_at), 'MMM dd, yyyy') : '—'}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-1.5">
-                                                <div className="w-6 h-6 rounded-full bg-[var(--fill-secondary)] flex items-center justify-center font-semibold text-[10px] text-[var(--label-primary)]">
-                                                    {lead.score || 0}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <Badge variant="outline" className="text-[10px] py-0">{lead.lead_stage || 'New'}</Badge>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <ChevronRight size={14} className="text-[var(--label-tertiary)] ml-auto" />
-                                        </td>
+                    <>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs text-[var(--label-secondary)]">
+                                <thead className="bg-[var(--fill-secondary)] text-[10px] uppercase tracking-wider text-[var(--label-tertiary)]">
+                                    <tr>
+                                        <th className="px-4 py-3 font-medium">Name</th>
+                                        <th className="px-4 py-3 font-medium">Contact</th>
+                                        <th className="px-4 py-3 font-medium">Source</th>
+                                        <th className="px-4 py-3 font-medium">{keyDetailLabel}</th>
+                                        <th className="px-4 py-3 font-medium">Date</th>
+                                        <th className="px-4 py-3 font-medium">Score</th>
+                                        <th className="px-4 py-3 font-medium">Stage</th>
+                                        <th className="px-4 py-3"></th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody className="divide-y divide-[var(--separator)]">
+                                    {paginatedLeads.map((lead: any) => {
+                                        const style = getSourceStyle(lead.source);
+                                        const keyDetail = getKeyDetail(lead, selectedBusiness);
+                                        return (
+                                            <tr
+                                                key={lead.id}
+                                                onClick={() => setSelectedLead(lead)}
+                                                className="hover:bg-[var(--fill-tertiary)] cursor-pointer transition-colors"
+                                                style={{ borderLeft: `3px solid ${style.color}` }}
+                                            >
+                                                <td className="px-4 py-3 font-medium text-[var(--label-primary)] whitespace-nowrap">{lead.name || 'Unknown'}</td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex flex-col">
+                                                        <span>{lead.email || '—'}</span>
+                                                        <span className="text-[10px] text-[var(--label-tertiary)]">{lead.phone || '—'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <SourceBadge source={lead.source} />
+                                                </td>
+                                                <td className="px-4 py-3 max-w-[200px] truncate" title={keyDetail.value}>
+                                                    {keyDetail.value}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    {lead.created_at ? format(new Date(lead.created_at), 'MMM dd, yyyy') : '—'}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="w-6 h-6 rounded-full bg-[var(--fill-secondary)] flex items-center justify-center font-semibold text-[10px] text-[var(--label-primary)]">
+                                                            {lead.score ?? 0}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <Badge variant="outline" className="text-[10px] py-0">{lead.lead_stage || 'New'}</Badge>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <ChevronRight size={14} className="text-[var(--label-tertiary)] ml-auto" />
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--separator)] bg-[var(--fill-quaternary)]">
+                                <p className="text-[11px] text-[var(--label-tertiary)]">
+                                    Showing <span className="font-semibold text-[var(--label-primary)]">{(page - 1) * LEADS_PER_PAGE + 1}</span>
+                                    {" – "}
+                                    <span className="font-semibold text-[var(--label-primary)]">{Math.min(page * LEADS_PER_PAGE, activeLeads.length)}</span>
+                                    {" of "}
+                                    <span className="font-semibold text-[var(--label-primary)]">{activeLeads.length}</span>
+                                </p>
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                        disabled={page === 1}
+                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-[var(--glass-border)] bg-[var(--fill-tertiary)] text-[var(--label-secondary)] text-[11px] font-medium disabled:opacity-40 transition-colors"
+                                    >
+                                        <ChevronLeft size={12} /> Prev
+                                    </button>
+                                    <span className="text-[11px] font-semibold text-[var(--label-secondary)] px-2">
+                                        Page {page} of {totalPages}
+                                    </span>
+                                    <button
+                                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={page === totalPages}
+                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-[var(--glass-border)] bg-[var(--fill-tertiary)] text-[var(--label-secondary)] text-[11px] font-medium disabled:opacity-40 transition-colors"
+                                    >
+                                        Next <ChevronRight size={12} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
             {/* Lead Details Modal */}
             <Dialog open={!!selectedLead} onOpenChange={(open) => !open && setSelectedLead(null)}>
-                <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+                <DialogContent className="apple-dialog max-w-3xl max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="text-lg">
                             {selectedLead?.name || 'Lead Details'}
@@ -293,13 +371,38 @@ export default function InboundLeadsClient({
                             <Clock size={10} />
                             {selectedLead?.created_at ? format(new Date(selectedLead.created_at), 'PPpp') : '—'}
                             <span>•</span>
-                            <span className="capitalize">{selectedLead?.source} Lead</span>
+                            <SourceBadge source={selectedLead?.source} />
                         </div>
                     </DialogHeader>
-                    
-                    <div className="mt-4">
-                        {selectedLead && renderLeadDetails(selectedLead, selectedBusiness)}
-                    </div>
+
+                    <Tabs defaultValue="details" className="w-full mt-2">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="details">Details</TabsTrigger>
+                            <TabsTrigger value="email">Email Content</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="details" className="mt-4 outline-none">
+                            {selectedLead && renderLeadDetails(selectedLead, selectedBusiness)}
+                        </TabsContent>
+                        <TabsContent value="email" className="mt-4 outline-none">
+                            <div className="liquid-card p-4">
+                                <div className="text-[10px] text-[var(--label-tertiary)] mb-1.5 uppercase tracking-wider">Date Received</div>
+                                <div className="text-sm text-[var(--label-primary)] mb-4">
+                                    {selectedLead?.created_at ? format(new Date(selectedLead.created_at), 'PPpp') : '—'}
+                                </div>
+                                <div className="text-[10px] text-[var(--label-tertiary)] mb-1.5 uppercase tracking-wider">Email Content</div>
+                                {selectedLead?.email_content ? (
+                                    <div 
+                                        className="bg-white text-black rounded-lg p-4 overflow-x-auto" 
+                                        dangerouslySetInnerHTML={{ __html: selectedLead.email_content }} 
+                                    />
+                                ) : (
+                                    <div className="text-sm text-[var(--label-secondary)] whitespace-pre-wrap leading-relaxed">
+                                        No email content available.
+                                    </div>
+                                )}
+                            </div>
+                        </TabsContent>
+                    </Tabs>
                 </DialogContent>
             </Dialog>
         </div>

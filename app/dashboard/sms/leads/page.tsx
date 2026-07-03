@@ -22,6 +22,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
     Dialog,
     DialogContent,
@@ -88,7 +89,7 @@ export default function SmsLeadsPage() {
     const leadsPerPage = 10;
     const [activeTab, setActiveTab] = useState<"leads" | "owners">("leads");
 
-    const { dateRange } = useData();
+    const { dateRange, setDateRange } = useData();
 
     const [activeFilters, setActiveFilters] = useState<{
         replyStatus: string[];
@@ -223,6 +224,7 @@ export default function SmsLeadsPage() {
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Review leads successfully contacted via SMS</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <DateRangePicker onUpdate={(r: any) => setDateRange(r.range)} />
                     <div style={{ display: 'flex', background: 'var(--fill-tertiary)', borderRadius: 'var(--radius-md)', padding: 3, gap: 2 }}>
                         <button
                             onClick={() => { setActiveTab("leads"); setCurrentPage(1); }}

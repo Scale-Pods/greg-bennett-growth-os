@@ -18,26 +18,32 @@ function MetricTile({ title, subtitle, value, accentColor, icon, onClick }: {
 }) {
     return (
         <div
-            className="metric-tile"
-            style={{ '--tile-accent': accentColor, cursor: onClick ? 'default' : undefined } as any}
+            className="liquid-card"
+            style={{ 
+                padding: '12px 14px', 
+                position: 'relative', 
+                overflow: 'hidden', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 10,
+                cursor: onClick ? 'pointer' : 'default',
+                transition: 'background 150ms'
+            }}
             onClick={onClick}
+            onMouseEnter={onClick ? e => (e.currentTarget.style.background = 'var(--fill-secondary)') : undefined}
+            onMouseLeave={onClick ? e => (e.currentTarget.style.background = 'var(--bg-layer1)') : undefined}
         >
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                <div style={{ flex: 1 }}>
-                    <div className="tile-label">{title}</div>
-                    <div className="tile-value tabular-nums" style={{ fontSize: 30 }}>{value}</div>
-                    {subtitle && (
-                        <div className="tile-trend neutral">{subtitle}</div>
-                    )}
-                </div>
-                <div style={{
-                    width: 38, height: 38, borderRadius: 10,
-                    background: `${accentColor}18`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: accentColor, flexShrink: 0,
-                }}>
+            <div style={{ width: 32, height: 32, borderRadius: 'var(--radius-md)', background: `color-mix(in srgb, ${accentColor} 12%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ color: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {icon}
                 </div>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</p>
+                    {subtitle && <span style={{ fontSize: 9, fontWeight: 600, color: 'var(--label-quaternary)', whiteSpace: 'nowrap' }}>{subtitle}</span>}
+                </div>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--label-primary)', letterSpacing: 'var(--ls-metric)', lineHeight: 1.1, marginTop: 2 }}>{value}</h3>
             </div>
         </div>
     );
@@ -51,19 +57,18 @@ function BreakdownCard({ title, count, total, accentColor }: {
     const data = [{ value: pct }, { value: 100 - pct }];
 
     return (
-        <div className="liquid-card" style={{ padding: '20px 20px 24px', textAlign: 'center' }}>
-            {/* Mini donut */}
-            <div style={{ height: 110, position: 'relative', marginBottom: 4 }}>
+        <div className="liquid-card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, position: 'relative', flexShrink: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
                             data={data} cx="50%" cy="50%"
-                            innerRadius={30} outerRadius={45}
+                            innerRadius={16} outerRadius={22}
                             startAngle={90} endAngle={-270}
                             dataKey="value" stroke="none"
                         >
                             <Cell fill={accentColor} />
-                            <Cell fill={`${accentColor}14`} />
+                            <Cell fill={`color-mix(in srgb, ${accentColor} 14%, transparent)`} />
                         </Pie>
                     </PieChart>
                 </ResponsiveContainer>
@@ -71,19 +76,21 @@ function BreakdownCard({ title, count, total, accentColor }: {
                     position: 'absolute', inset: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                    <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--label-primary)' }}>
-                        {pct}%
+                    <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--label-primary)' }}>
+                        {Math.round(pct)}%
                     </span>
                 </div>
             </div>
 
-            <div style={{ fontSize: 26, fontWeight: 300, letterSpacing: '-0.03em', color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', marginBottom: 4 }}>
-                {count.toLocaleString()}
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                    <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--label-primary)', letterSpacing: 'var(--ls-metric)', fontVariantNumeric: 'tabular-nums' }}>
+                        {count.toLocaleString()}
+                    </span>
+                    <span style={{ fontSize: 10, color: 'var(--label-tertiary)' }}>sent</span>
+                </div>
             </div>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: accentColor }}>
-                {title}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--label-tertiary)', marginTop: 2 }}>Emails Sent</div>
         </div>
     );
 }
@@ -230,14 +237,14 @@ export default function EmailDashboardPage() {
                 />
 
                 {/* Dynamic loop card */}
-                <div className="metric-tile" style={{ '--tile-accent': currentLoop.color } as any}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div className="liquid-card" style={{ padding: '12px 14px', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                         <Select value={selectedLoopMetric} onValueChange={setSelectedLoopMetric}>
                             <SelectTrigger style={{
-                                height: 30, fontSize: 12, fontWeight: 600,
+                                height: 24, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em',
                                 background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)',
-                                borderRadius: 8, padding: '0 10px', width: 140,
-                                color: 'var(--label-primary)',
+                                borderRadius: 'var(--radius-sm)', padding: '0 8px', width: 130,
+                                color: currentLoop.color,
                             }}>
                                 <SelectValue />
                             </SelectTrigger>
@@ -248,19 +255,19 @@ export default function EmailDashboardPage() {
                             </SelectContent>
                         </Select>
                         <div style={{
-                            width: 28, height: 28, borderRadius: 8,
-                            background: `${currentLoop.color}18`,
+                            width: 32, height: 32, borderRadius: 'var(--radius-md)',
+                            background: `color-mix(in srgb, ${currentLoop.color} 12%, transparent)`,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: currentLoop.color,
+                            color: currentLoop.color, flexShrink: 0
                         }}>
                             <LayoutDashboard size={14} />
                         </div>
                     </div>
-                    <div style={{ fontSize: 30, fontWeight: 300, letterSpacing: '-0.03em', color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-                        {currentLoop.value.toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--label-secondary)', marginTop: 6 }}>
-                        {currentLoop.label} Emails
+                    <div>
+                        <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--label-primary)', letterSpacing: 'var(--ls-metric)', lineHeight: 1.1 }}>
+                            {currentLoop.value.toLocaleString()}
+                        </h3>
+                        <p style={{ fontSize: 9, fontWeight: 600, color: 'var(--label-quaternary)', marginTop: 2 }}>{currentLoop.label} Emails</p>
                     </div>
                 </div>
 

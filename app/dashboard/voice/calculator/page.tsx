@@ -7,9 +7,10 @@ import { useData } from "@/context/DataContext";
 import { format, subDays } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { BennettLoader } from "@/components/bennett-loader";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export default function VoiceCalculatorPage() {
-    const { refreshCalls, calls: rawCalls, loadingCalls, dateRange } = useData();
+    const { refreshCalls, calls: rawCalls, loadingCalls, dateRange, setDateRange } = useData();
     const [accountFilter, setAccountFilter] = useState("vapi");
     const [calculating, setCalculating] = useState(false);
     const [results, setResults] = useState<{
@@ -128,9 +129,7 @@ export default function VoiceCalculatorPage() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         <label style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)' }}>Date Range</label>
-                        <div style={{ padding: '8px 12px', fontSize: 13, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-secondary)', borderRadius: 'var(--radius-md)' }}>
-                            Selected in top bar
-                        </div>
+                        <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} className="w-full" />
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

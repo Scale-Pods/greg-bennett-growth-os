@@ -183,9 +183,9 @@ export function SmsOwnerChatDetail({ owner, onClose }: SmsOwnerChatDetailProps) 
     }
 
     return (
-        <div className="space-y-6 flex flex-col h-full overflow-hidden max-h-[85vh]">
+        <div className="glass-modal-shell flex flex-col h-full overflow-hidden max-h-[85vh] p-5">
             {/* Header */}
-            <div className="flex items-center justify-between shrink-0">
+            <div className="flex items-center justify-between shrink-0 mb-3">
                 <div>
                     <h2 className="text-xl font-bold text-slate-900">{owner.Name || owner.name || "Generated Lead"}</h2>
                     <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -218,12 +218,17 @@ export function SmsOwnerChatDetail({ owner, onClose }: SmsOwnerChatDetailProps) 
             </div>
 
             {/* Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden min-h-0">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 196px', gap: 12, flex: 1, overflow: 'hidden', minHeight: 0 }}>
                 {/* Chat timeline */}
-                <div className="lg:col-span-2 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden h-full min-h-0">
-                    <div className="bg-slate-50/50 border-b border-slate-100 p-3 px-4 flex justify-between items-center shrink-0">
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Conversation Timeline</h3>
-                        <div className="text-[10px] text-slate-400 font-bold">{messages.length} Messages</div>
+                <div className="glass-panel flex flex-col h-full min-h-0">
+                    <div className="glass-panel-header">
+                        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--label-tertiary)', display: 'flex', alignItems: 'center', gap: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            <MessageSquare style={{ width: 12, height: 12 }} />
+                            Conversation Timeline
+                        </span>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'var(--fill-secondary)', color: 'var(--label-secondary)', border: '1px solid var(--hairline)' }}>
+                            {messages.length} Messages
+                        </span>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -251,18 +256,15 @@ export function SmsOwnerChatDetail({ owner, onClose }: SmsOwnerChatDetailProps) 
                                 }
 
                                 return (
-                                    <div key={idx} className={`flex flex-col ${msg.type === 'user' ? 'items-start' : 'items-end'}`}>
-                                        <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm ${msg.type === 'user'
-                                            ? 'bg-slate-50 text-slate-800 border border-slate-100 rounded-tl-none'
-                                            : 'bg-pink-600 text-white rounded-tr-none'
-                                            }`}>
-                                            <div className="flex items-center justify-between mb-2 gap-3">
-                                                <span className={`text-[10px] font-bold uppercase tracking-wide ${msg.type === 'user' ? 'text-slate-400' : 'text-pink-100'}`}>
+                                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: msg.type === 'user' ? 'flex-start' : 'flex-end', width: '100%' }}>
+                                        <div className={`chat-bubble ${msg.type === 'user' ? 'chat-bubble-user' : 'chat-bubble-bot'}`}>
+                                            <div style={{ marginBottom: 3, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                                                <span style={{ fontSize: 10, fontWeight: 700, color: msg.type === 'user' ? '#D6336C' : 'var(--blue)' }}>
                                                     {msg.label}
                                                 </span>
                                                 {tsPill}
                                             </div>
-                                            <p className="text-sm leading-relaxed whitespace-pre-wrap font-sans">
+                                            <p style={{ fontSize: 12, lineHeight: 1.55, whiteSpace: 'pre-wrap', color: 'var(--label-primary)', margin: 0 }}>
                                                 {isTranslated && translatedMessages[idx] ? (
                                                     <span className="relative">
                                                         <span className="block mb-1 text-[10px] uppercase font-bold opacity-50">English Translation:</span>
@@ -284,50 +286,44 @@ export function SmsOwnerChatDetail({ owner, onClose }: SmsOwnerChatDetailProps) 
                 </div>
 
                 {/* Sidebar */}
-                <div className="lg:col-span-1 space-y-4 overflow-y-auto pr-1 h-full pb-4">
-                    <Card className="border-slate-200 shadow-sm bg-white">
-                        <CardContent className="p-4 space-y-4">
-                            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                <User className="h-4 w-4 text-slate-400" /> Lead Information
-                            </h3>
-                            <div className="space-y-3 text-sm">
-                                <div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Contact info</span>
-                                    <p className="font-medium text-slate-900 mt-1">{owner.contactNo || owner.Phone || owner.phone || "—"}</p>
-                                </div>
-                               
-                                <div>
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Source Table</span>
-                                    <p className="font-bold text-pink-600 mt-1 text-xs">generated_leads_outreach</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', height: '100%', paddingRight: 2, paddingBottom: 8 }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: 0 }}>Engagement</p>
+                    <StatBox label="Total Messages" value={messages.length} icon={MessageSquare} color="#D6336C" />
+                    <StatBox label="Incoming" value={messages.filter(m => m.type === 'user').length} icon={User} color="var(--green)" />
+                    <StatBox label="Outgoing" value={messages.filter(m => m.type === 'bot').length} icon={Bot} color="var(--purple)" />
 
-                    <Card className="border-slate-200 shadow-sm bg-white">
-                        <CardContent className="p-4 space-y-4">
-                            <h3 className="text-sm font-bold text-slate-900">Activity Stats</h3>
-                            <div className="grid grid-cols-1 gap-2">
-                                <StatBox label="Total Messages" value={messages.length} icon={MessageSquare} />
-                                <StatBox label="Incoming" value={messages.filter(m => m.type === 'user').length} icon={User} />
-                                <StatBox label="Outgoing" value={messages.filter(m => m.type === 'bot').length} icon={Bot} />
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0' }}>Lead Info</p>
+                    <div className="glass-panel" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div>
+                            <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Contact Info</span>
+                            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '2px 0 0', fontFamily: 'ui-monospace, monospace' }}>{owner.contactNo || owner.Phone || owner.phone || "—"}</p>
+                        </div>
+                        <div>
+                            <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Source Table</span>
+                            <p style={{ fontSize: 12, fontWeight: 500, color: '#D6336C', margin: '2px 0 0' }}>generated_leads_outreach</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
 
-function StatBox({ label, value, icon: Icon }: any) {
+function StatBox({ label, value, icon: Icon, color = "#D6336C" }: any) {
     return (
-        <div className="p-2 px-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-                <Icon className="h-3.5 w-3.5 text-slate-400" />
-                <span className="text-[10px] text-slate-500 uppercase tracking-wide font-bold">{label}</span>
+        <div className="glass-stat-box">
+            <div style={{
+                width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: `color-mix(in srgb, ${color} 12%, transparent)`,
+                color,
+            }}>
+                <Icon style={{ width: 13, height: 13 }} />
             </div>
-            <span className="text-sm font-bold text-slate-900">{value}</span>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 10, color: 'var(--label-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+                <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--label-primary)', lineHeight: 1.1, marginTop: 1 }}>{value}</span>
+            </div>
         </div>
     );
 }

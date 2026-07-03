@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { format, subDays } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 const DynamicRowCells = ({ call, leads, telephonyCost }: { call: any, leads: any[], telephonyCost?: number }) => {
     let guestName = call.name || "Guest";
@@ -106,7 +107,7 @@ const DynamicRowCells = ({ call, leads, telephonyCost }: { call: any, leads: any
 };
 
 export default function VoiceLogsPage() {
-    const { calls: globalCalls, loadingCalls, refreshCalls, leads, loadingLeads, dateRange } = useData();
+    const { calls: globalCalls, loadingCalls, refreshCalls, leads, loadingLeads, dateRange, setDateRange } = useData();
     const [allCallsMapped, setAllCallsMapped] = useState<any[]>([]);
     const [calls, setCalls] = useState<any[]>([]);
     const loading = loadingCalls;
@@ -301,6 +302,7 @@ export default function VoiceLogsPage() {
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Comprehensive history across all accounts and providers.</p>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                    <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
                     <button
                         style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: exporting || calls.length === 0 ? 'var(--fill-quaternary)' : 'rgba(48,209,88,0.10)', color: exporting || calls.length === 0 ? 'var(--label-tertiary)' : 'var(--green)', fontSize: 12, fontWeight: 500, cursor: 'default', opacity: calls.length === 0 ? 0.5 : 1 }}
                         onClick={handleExport}

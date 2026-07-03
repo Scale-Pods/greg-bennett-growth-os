@@ -18,9 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect } from "react";
 import { format, subDays } from "date-fns";
 import { useData } from "@/context/DataContext";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 export default function VoiceAnalyticsPage() {
-    const { voiceMetrics, loadingVoiceMetrics, allTimeVoiceCount, allTimeOwnerVoiceCount, refreshVoiceMetrics, dateRange } = useData();
+    const { voiceMetrics, loadingVoiceMetrics, allTimeVoiceCount, allTimeOwnerVoiceCount, refreshVoiceMetrics, dateRange, setDateRange } = useData();
 
     const [accountFilter, setAccountFilter] = useState("vapi");
 
@@ -71,7 +72,7 @@ export default function VoiceAnalyticsPage() {
                             <SelectItem value="vapi-normal">CRM Leads</SelectItem>
                         </SelectContent>
                     </Select>
-
+                    <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
                 </div>
             </div>
 

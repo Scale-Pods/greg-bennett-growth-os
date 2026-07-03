@@ -11,7 +11,7 @@ import { BennettLoader } from "@/components/bennett-loader";
 import { useData } from "@/context/DataContext";
 
 export default function WhatsappSentPage() {
-    const { leads: allLeads, loadingLeads, dateRange } = useData();
+    const { leads: allLeads, loadingLeads, dateRange, setDateRange } = useData();
     const [messages, setMessages] = useState<any[]>([]);
     const loading = loadingLeads;
     const [searchQuery, setSearchQuery] = useState("");
@@ -105,6 +105,7 @@ export default function WhatsappSentPage() {
                     <h1 className="text-2xl font-bold" style={{ color: 'var(--label-primary)' }}>Total Sent Messages</h1>
                     <p style={{ color: 'var(--label-secondary)' }}>History of all outbound WhatsApp communications</p>
                 </div>
+                <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

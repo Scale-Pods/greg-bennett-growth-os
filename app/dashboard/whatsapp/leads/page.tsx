@@ -22,6 +22,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
     Dialog,
     DialogContent,
@@ -76,7 +77,7 @@ function getLeadDate(lead: WALead): Date | null {
 }
 
 export default function WhatsappLeadsPage() {
-    const { dateRange } = useData();
+    const { dateRange, setDateRange } = useData();
     const [waLeads, setWaLeads] = useState<WALead[]>([]);
     const [waOwners, setWaOwners] = useState<WAOwner[]>([]);
     const [loading, setLoading] = useState(true);
@@ -222,6 +223,7 @@ export default function WhatsappLeadsPage() {
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Review leads successfully contacted via WhatsApp</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <DateRangePicker onUpdate={(r: any) => setDateRange(r.range)} />
                     <div style={{ display: 'flex', background: 'var(--fill-tertiary)', borderRadius: 'var(--radius-md)', padding: 3, gap: 2 }}>
                         <button
                             onClick={() => { setActiveTab("leads"); setCurrentPage(1); }}

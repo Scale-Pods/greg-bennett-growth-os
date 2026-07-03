@@ -43,7 +43,7 @@ function WalletModal({ isOpen, onClose, type, details, calls }: any) {
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className={type === 'maqsam' ? "sm:max-w-[550px]" : "sm:max-w-[400px]"}>
+            <DialogContent className={`apple-dialog ${type === 'maqsam' ? "sm:max-w-[550px]" : "sm:max-w-[400px]"}`}>
                 <DialogHeader>
                     <DialogTitle style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)' }}>
                         {titles[type]}
@@ -108,45 +108,18 @@ function MetricTile({
 }) {
     return (
         <div
-            className="liquid-card"
-            style={{
-                borderRadius: '10px',
-                padding: '14px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                cursor: onClick ? 'pointer' : undefined,
-                transition: 'transform 150ms ease',
-                position: 'relative',
-                zIndex: 1,
-            }}
+            className={`metric-tile ${onClick ? 'liquid-card-interactive' : ''}`}
             onClick={onClick}
-            onMouseEnter={e => {
-                if (onClick) e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={e => {
-                if (onClick) e.currentTarget.style.transform = 'none';
-            }}
+            style={{ '--tile-accent': accentColor } as React.CSSProperties}
         >
-            {/* Row: label on left, icon on right */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 10, color: 'var(--label-tertiary)', fontWeight: 400 }}>
-                    {title}
-                </span>
-                <div style={{ color: accentColor, width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span className="tile-label">{title}</span>
+                <div className="tile-icon-wrapper" style={{ color: accentColor }}>
                     {icon}
                 </div>
             </div>
-
-            {/* Large number */}
-            <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
-                {value}
-            </div>
-
-            {/* Sub-label */}
-            <div style={{ fontSize: 10, fontWeight: 400, color: subLabelColor }}>
-                {subLabel}
-            </div>
+            <div className="tile-value">{value}</div>
+            <div className="tile-trend" style={{ color: subLabelColor }}>{subLabel}</div>
         </div>
     );
 }
@@ -202,11 +175,7 @@ function BusinessSection({ title, icon, iconBg, iconColor, loading, metrics }: {
             </div>
 
             {/* Grid Layout */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                gap: 8,
-            }}>
+            <div className="metric-grid">
                 {metrics.map((m, i) => (
                     <MetricTile
                         key={i}
@@ -489,10 +458,8 @@ export default function MasterDashboard() {
                         { title: "Total Leads", value: totalLeadsCRM.toLocaleString(), subLabel: "All time", accentColor: "#6366f1", icon: <Users size={16} /> },
                         { title: "Emails Sent", value: totalEmailsSentCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#22c55e", icon: <Mail size={16} /> },
                         { title: "WA Reachouts", value: totalWaReachoutsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Reachouts", value: crmSmsReachouts.toLocaleString(), subLabel: "Real-time", accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                         { title: "Voice Calls", value: totalVoiceCallsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
                         { title: "WA Replies", value: totalWaRepliesCRM.toLocaleString(), subLabel: `${replyRateCRM}% reply rate`, subLabelColor: Number(replyRateCRM) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Replies", value: crmSmsReplies.toLocaleString(), subLabel: `${crmSmsReplyRate}% reply rate`, subLabelColor: Number(crmSmsReplyRate) > 0 ? '#ec4899' : 'var(--label-tertiary)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                     ]}
                 />
 
@@ -507,10 +474,8 @@ export default function MasterDashboard() {
                         { title: "Total Leads", value: totalLeadsCRM.toLocaleString(), subLabel: "All time", accentColor: "#6366f1", icon: <Users size={16} /> },
                         { title: "Emails Sent", value: totalEmailsSentCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#22c55e", icon: <Mail size={16} /> },
                         { title: "WA Reachouts", value: totalWaReachoutsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Reachouts", value: crmSmsReachouts.toLocaleString(), subLabel: "Real-time", accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                         { title: "Voice Calls", value: totalVoiceCallsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
                         { title: "WA Replies", value: totalWaRepliesCRM.toLocaleString(), subLabel: `${replyRateCRM}% reply rate`, subLabelColor: Number(replyRateCRM) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Replies", value: crmSmsReplies.toLocaleString(), subLabel: `${crmSmsReplyRate}% reply rate`, subLabelColor: Number(crmSmsReplyRate) > 0 ? '#ec4899' : 'var(--label-tertiary)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                     ]}
                 />
 
@@ -525,10 +490,8 @@ export default function MasterDashboard() {
                         { title: "Total Leads", value: totalLeadsGen.toLocaleString(), subLabel: "All time", accentColor: "#6366f1", icon: <Users size={16} /> },
                         { title: "Emails Sent", value: totalEmailsSentGen.toLocaleString(), subLabel: "Real-time", accentColor: "#22c55e", icon: <Mail size={16} /> },
                         { title: "WA Reachouts", value: totalWaReachoutsGen.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Reachouts", value: smsOwnerReachouts.toLocaleString(), subLabel: "Real-time", accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                         { title: "Voice Calls", value: totalVoiceCallsGen.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
                         { title: "WA Replies", value: totalWaRepliesGen.toLocaleString(), subLabel: `${replyRateGen}% reply rate`, subLabelColor: Number(replyRateGen) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                        { title: "SMS Replies", value: smsOwnerReplies.toLocaleString(), subLabel: `${smsReplyRateGen}% reply rate`, subLabelColor: Number(smsReplyRateGen) > 0 ? '#ec4899' : 'var(--label-tertiary)', accentColor: "#ec4899", icon: <MessageSquare size={16} /> },
                     ]}
                 />
 
@@ -666,7 +629,7 @@ export default function MasterDashboard() {
 
             {/* ── Replies Modal ── */}
             <Dialog open={isRepliesModalOpen} onOpenChange={setIsRepliesModalOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="apple-dialog max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Total Replies — Detailed View</DialogTitle>
                     </DialogHeader>
@@ -682,7 +645,7 @@ export default function MasterDashboard() {
 
             {/* ── WhatsApp Chat Modal ── */}
             <Dialog open={!!chatLead} onOpenChange={open => { if (!open) setChatLead(null); }}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-6 gap-0">
+                <DialogContent className="apple-dialog max-w-4xl max-h-[90vh] overflow-hidden p-6 gap-0">
                     <DialogHeader className="sr-only"><DialogTitle>WhatsApp Chat</DialogTitle></DialogHeader>
                     {chatLead && (
                         <WhatsAppChatDetail
