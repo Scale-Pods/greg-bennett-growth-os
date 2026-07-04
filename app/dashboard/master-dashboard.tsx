@@ -207,6 +207,7 @@ export default function MasterDashboard() {
         maqsamBalance,
         twilioBalance,
         dateRange,
+        setDateRange,
         leads,
     } = useData();
     

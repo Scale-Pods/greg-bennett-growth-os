@@ -31,8 +31,8 @@
     --glass-shadow-hover: 0 12px 40px rgba(15, 23, 42, 0.10), 0 1px 0 rgba(255, 255, 255, 0.95) inset;
 
     /* ─── Mesh orbs (Light) ─── */
-    --mesh-1: rgba(20, 184, 166, 0.22);
-    --mesh-2: rgba(224, 122, 95, 0.16);
+    --mesh-1: rgba(59, 130, 246, 0.22);
+    --mesh-2: rgba(37, 99, 235, 0.16);
     --mesh-3: rgba(99, 102, 241, 0.12);
 
     /* ─── Fills (Light) ─── */
@@ -48,18 +48,18 @@
     --label-quaternary: #cbd5e1;
 
     /* ─── Accent palette ─── */
-    --blue:   #0d9488;
-    --green:  #059669;
+    --blue:   #2563eb;
+    --green:  #10b981;
     --indigo: #6366f1;
-    --orange: #d97706;
-    --pink:   #db2777;
-    --purple: #7c3aed;
-    --red:    #dc2626;
-    --teal:   #14b8a6;
-    --yellow: #ca8a04;
+    --orange: #f59e0b;
+    --pink:   #ec4899;
+    --purple: #8b5cf6;
+    --red:    #ef4444;
+    --teal:   #3b82f6;
+    --yellow: #eab308;
     --brown:  #b45309;
-    --cyan:   #06b6d4;
-    --copper: #e07a5f;
+    --cyan:   #0ea5e9;
+    --copper: #f97316;
 
     /* ─── Separators ─── */
     --separator:        rgba(15, 23, 42, 0.08);
@@ -182,8 +182,8 @@
     --glass-shadow:     0 8px 32px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
     --glass-shadow-hover: 0 16px 48px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.09) inset;
 
-    --mesh-1: rgba(20, 184, 166, 0.14);
-    --mesh-2: rgba(224, 122, 95, 0.10);
+    --mesh-1: rgba(59, 130, 246, 0.14);
+    --mesh-2: rgba(37, 99, 235, 0.10);
     --mesh-3: rgba(99, 102, 241, 0.08);
 
     --fill-primary:    rgba(255, 255, 255, 0.06);
@@ -196,14 +196,14 @@
     --label-tertiary:   rgba(241, 245, 249, 0.32);
     --label-quaternary: rgba(241, 245, 249, 0.18);
 
-    --blue:   #2dd4bf;
+    --blue:   #3b82f6;
     --green:  #34d399;
     --indigo: #818cf8;
     --orange: #fbbf24;
     --pink:   #f472b6;
     --purple: #a78bfa;
     --red:    #f87171;
-    --teal:   #2dd4bf;
+    --teal:   #60a5fa;
     --yellow: #fbbf24;
     --brown:  #f59e0b;
     --cyan:   #22d3ee;
@@ -719,13 +719,30 @@
 
     /* ─── MODALS ─── */
     .apple-dialog {
-        background: var(--glass-fill);
-        backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(40px) saturate(180%);
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
         border-radius: var(--radius-3xl);
         border: 1px solid var(--glass-border);
         box-shadow: var(--shadow-xl);
         padding: 28px;
+    }
+    
+    .dark .apple-dialog {
+        background: rgba(8, 11, 18, 0.75);
+    }
+    
+    .apple-dialog .liquid-card {
+        background: var(--fill-secondary);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+        border: 1px solid var(--hairline);
+    }
+    
+    .apple-dialog .liquid-card:hover {
+        transform: none;
+        background: var(--fill-tertiary);
     }
 
     .glass-modal-shell {

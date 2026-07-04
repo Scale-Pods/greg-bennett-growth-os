@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { format, subDays, endOfDay } from "date-fns";
 import { Instagram, Linkedin, Facebook, Globe, Users, GraduationCap, Home, Mail, Phone, Clock, ChevronRight, ChevronLeft, Inbox } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { DateRange } from "react-day-picker";
+import { useData } from "@/context/DataContext";
 
 const LEADS_PER_PAGE = 10;
 
@@ -56,12 +55,8 @@ export default function InboundLeadsClient({
         { id: "realty", label: "Realty Solutions", icon: Home, color: "#6366f1", bg: "rgba(99,102,241,0.15)", data: realtyLeads },
     ];
     const [selectedBusiness, setSelectedBusiness] = useState<BusinessId>("wealth");
-
+    const { dateRange } = useData();
     const [selectedLead, setSelectedLead] = useState<any | null>(null);
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: subDays(new Date(), 7),
-        to: new Date()
-    });
     const [page, setPage] = useState(1);
 
     const activeBusinessObj = businesses.find(b => b.id === selectedBusiness)!;
@@ -204,7 +199,6 @@ export default function InboundLeadsClient({
         <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-[var(--label-primary)]">Inbound Leads</h1>
-                <DateRangePicker value={dateRange} onUpdate={(val) => setDateRange(val.range)} />
             </div>
 
             {/* Business Selection */}
@@ -272,7 +266,7 @@ export default function InboundLeadsClient({
                                         <th className="px-4 py-3 font-medium">Contact</th>
                                         <th className="px-4 py-3 font-medium">Source</th>
                                         <th className="px-4 py-3 font-medium">{keyDetailLabel}</th>
-                                        <th className="px-4 py-3 font-medium">Date</th>
+                                        <th className="px-4 py-3 font-medium">Created At</th>
                                         <th className="px-4 py-3 font-medium">Score</th>
                                         <th className="px-4 py-3 font-medium">Stage</th>
                                         <th className="px-4 py-3"></th>
@@ -376,9 +370,10 @@ export default function InboundLeadsClient({
                     </DialogHeader>
 
                     <Tabs defaultValue="details" className="w-full mt-2">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="details">Details</TabsTrigger>
                             <TabsTrigger value="email">Email Content</TabsTrigger>
+                            <TabsTrigger value="conversation">Conversation</TabsTrigger>
                         </TabsList>
                         <TabsContent value="details" className="mt-4 outline-none">
                             {selectedLead && renderLeadDetails(selectedLead, selectedBusiness)}
@@ -400,6 +395,36 @@ export default function InboundLeadsClient({
                                         No email content available.
                                     </div>
                                 )}
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="conversation" className="mt-4 outline-none">
+                            <div className="liquid-card p-4">
+                                <div className="text-[10px] text-[var(--label-tertiary)] mb-4 uppercase tracking-wider">Chat History</div>
+                                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                                    {(() => {
+                                        let conv = selectedLead?.conversation;
+                                        if (typeof conv === 'string') {
+                                            try { conv = JSON.parse(conv); } catch (e) { conv = null; }
+                                        }
+                                        if (!Array.isArray(conv) || conv.length === 0) {
+                                            return (
+                                                <div className="text-sm text-[var(--label-secondary)] text-center py-8">
+                                                    No conversation history available.
+                                                </div>
+                                            );
+                                        }
+                                        return conv.map((msg: any, idx: number) => (
+                                            <div key={idx} className={`flex flex-col ${msg.role === 'lead' ? 'items-end' : 'items-start'}`}>
+                                                <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'lead' ? 'bg-[var(--accent)] text-white rounded-br-none' : 'bg-[var(--fill-secondary)] text-[var(--label-primary)] rounded-bl-none'}`}>
+                                                    <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                                                </div>
+                                                <span className="text-[10px] text-[var(--label-tertiary)] mt-1 mx-1">
+                                                    {msg.timestamp ? format(new Date(msg.timestamp), 'h:mm a') : ''}
+                                                </span>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
                             </div>
                         </TabsContent>
                     </Tabs>

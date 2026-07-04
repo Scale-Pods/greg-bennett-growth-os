@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DataProvider, useData } from "@/context/DataContext";
 import { MaqsamBalanceDetail } from "@/components/dashboard/maqsam-balance-detail";
 import { logout } from "@/app/actions/auth";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 const dashboardConfig: Record<string, { label: string; color: string; icon: any; items: { title: string; href: string; icon: any }[] }> = {
     master: {
@@ -52,17 +53,7 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
             { title: "Analytics", href: "/dashboard/whatsapp/analytics", icon: BarChart2 },
         ],
     },
-    sms: {
-        label: "SMS",
-        color: "#D6336C",
-        icon: MessageSquare,
-        items: [
-            { title: "Dashboard", href: "/dashboard/sms", icon: LayoutDashboard },
-            { title: "Chat", href: "/dashboard/sms/chat", icon: MessageSquare },
-            { title: "Leads", href: "/dashboard/sms/leads", icon: Users },
-            { title: "Analytics", href: "/dashboard/sms/analytics", icon: BarChart2 },
-        ],
-    },
+
     voice: {
         label: "Voice",
         color: "#14B8A6",
@@ -76,7 +67,7 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
     },
 };
 
-const mainApps = ['master', 'email', 'whatsapp', 'sms', 'voice'];
+const mainApps = ['master', 'email', 'whatsapp', 'voice'];
 
 
 
@@ -91,7 +82,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const [dark, setDark] = useState(true);
     const [isHovered, setIsHovered] = useState(false);
     const [walletModal, setWalletModal] = useState<{ isOpen: boolean; type: 'vapi' | 'maqsam' | 'twilio' }>({
         isOpen: false, type: 'vapi',
@@ -107,10 +97,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     }, [isExpanded]);
 
     useEffect(() => {
-        document.documentElement.classList.toggle('dark', dark);
-    }, [dark]);
+        document.documentElement.classList.add('dark');
+    }, []);
 
-    const { calls, voiceBalance, maqsamBalance, twilioBalance, loadingBalances, loadingCalls } = useData();
+    const { calls, voiceBalance, maqsamBalance, twilioBalance, loadingBalances, loadingCalls, dateRange, setDateRange } = useData();
 
     const walletChips = [
         { type: 'vapi' as const, icon: <Mic size={13} />, color: '#0A84FF' },
@@ -133,7 +123,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     let currentContext = "master";
     if (pathname.startsWith("/dashboard/email")) currentContext = "email";
     else if (pathname.startsWith("/dashboard/whatsapp")) currentContext = "whatsapp";
-    else if (pathname.startsWith("/dashboard/sms")) currentContext = "sms";
     else if (pathname.startsWith("/dashboard/voice")) currentContext = "voice";
 
     const activeConfig = dashboardConfig[currentContext];
@@ -172,7 +161,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 <div style={{ height: 90, padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>
                     <div style={{ position: 'relative', width: isExpanded ? 190 : 48, height: isExpanded ? 52 : 48, transition: 'all 0.3s ease', overflow: 'hidden' }}>
                         {isExpanded ? (
-                            <Image src="/bennett-logo.png" alt="Bennett Growth OS" fill className="object-contain object-center" style={dark ? { filter: 'brightness(1.8) contrast(1.1)' } : undefined} priority />
+                            <Image src="/bennett-logo.png" alt="Bennett Growth OS" fill className="object-contain object-center" style={{ filter: 'brightness(1.8) contrast(1.1)' }} priority />
                         ) : (
                             <div className="w-12 h-12 rounded-xl glass-surface text-[var(--teal)] flex items-center justify-center font-display font-extrabold text-2xl">B</div>
                         )}
@@ -339,26 +328,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                             ))}
                         </div>
                     )}
-                    <button
-                        onClick={() => setDark(d => !d)}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: 12,
-                            padding: '10px 12px', borderRadius: '12px',
-                            background: 'transparent', border: 'none', cursor: 'pointer',
-                            color: 'var(--label-secondary)',
-                            justifyContent: isExpanded ? 'flex-start' : 'center',
-                            transition: 'all 0.2s ease',
-                        }}
-                        className="hover:bg-[var(--fill-tertiary)] hover:text-[var(--label-primary)]"
-                    >
-                        {dark ? <Sun size={18} style={{ flexShrink: 0 }} /> : <Moon size={18} style={{ flexShrink: 0 }} />}
-                        <span style={{ 
-                            opacity: isExpanded ? 1 : 0, width: isExpanded ? 'auto' : 0, 
-                            overflow: 'hidden', fontWeight: 500, fontSize: 13, whiteSpace: 'nowrap', transition: 'all 0.3s ease'
-                        }}>
-                            {dark ? 'Light Mode' : 'Dark Mode'}
-                        </span>
-                    </button>
 
                     <button
                         onClick={async () => { await logout(); router.push('/'); router.refresh(); }}
@@ -391,6 +360,11 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
             {/* ══ MAIN AREA ══ */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+                {/* Global Topbar */}
+                <div className="flex items-center justify-between px-7 py-4 border-b border-[var(--hairline)] bg-transparent z-10">
+                    <h1 className="text-xl font-semibold text-[var(--label-primary)]">{currentPageTitle}</h1>
+                    <DateRangePicker value={dateRange} onUpdate={(val) => val.range && setDateRange(val.range)} />
+                </div>
                 <main style={{ flex: 1, overflowY: 'auto', padding: 28 }} className="custom-scrollbar">
                     {children}
                 </main>
