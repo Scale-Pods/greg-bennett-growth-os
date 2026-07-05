@@ -248,8 +248,11 @@
     --apple-red:       var(--red);
     --apple-purple:    var(--purple);
     --apple-teal:      var(--teal);
-    --apple-yellow:    var(--yellow);
     --glass-bg:        var(--glass-fill);
+}
+
+.dark .theme-logo {
+    filter: brightness(1.8) contrast(1.1);
 }
 
 /* ═══════════════════════════════════════════════════════════════

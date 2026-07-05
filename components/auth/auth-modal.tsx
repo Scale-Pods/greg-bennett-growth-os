@@ -34,7 +34,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
                         <div className="flex justify-center mb-8">
                             <div className="relative flex items-center justify-center rounded-xl glass-surface px-3 py-1.5 h-9">
                                 <div className="relative w-[110px] h-[24px]">
-                                    <Image src="/bennett-logo.png" alt="Bennett Growth OS Logo" fill className="object-contain" priority />
+                                    <Image src="/bennett-logo.png" alt="Bennett Growth OS Logo" fill className="object-contain theme-logo" priority />
                                 </div>
                             </div>
                         </div>

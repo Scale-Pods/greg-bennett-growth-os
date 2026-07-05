@@ -414,8 +414,11 @@ export default function InboundLeadsClient({
                                             );
                                         }
                                         return conv.map((msg: any, idx: number) => (
-                                            <div key={idx} className={`flex flex-col ${msg.role === 'lead' ? 'items-end' : 'items-start'}`}>
-                                                <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'lead' ? 'bg-[var(--accent)] text-white rounded-br-none' : 'bg-[var(--fill-secondary)] text-[var(--label-primary)] rounded-bl-none'}`}>
+                                            <div key={idx} className={`flex flex-col mb-2 ${msg.role === 'lead' ? 'items-start' : 'items-end'}`}>
+                                                <span className="text-[10px] font-bold text-[var(--label-secondary)] uppercase tracking-wider mb-1 mx-1">
+                                                    {msg.role === 'lead' ? 'Lead' : 'AI Agent'}
+                                                </span>
+                                                <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'lead' ? 'bg-[var(--fill-secondary)] text-[var(--label-primary)] rounded-bl-none' : 'bg-[var(--blue)] text-white rounded-br-none'}`}>
                                                     <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                                                 </div>
                                                 <span className="text-[10px] text-[var(--label-tertiary)] mt-1 mx-1">

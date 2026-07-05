@@ -36,7 +36,7 @@ export default function LandingPage() {
                     <div className="flex items-center gap-3">
                         <div className="relative flex items-center justify-center rounded-xl glass-surface px-3 py-1.5 h-10">
                             <div className="relative w-[110px] h-[24px]">
-                                <Image src="/bennett-logo.png" alt="Bennett Growth OS" fill className="object-contain" priority />
+                                <Image src="/bennett-logo.png" alt="Bennett Growth OS" fill className="object-contain theme-logo" priority />
                             </div>
                         </div>
                         <div className="hidden sm:block w-px h-5 bg-[var(--hairline)]" />
