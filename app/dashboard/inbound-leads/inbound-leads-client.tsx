@@ -197,9 +197,6 @@ export default function InboundLeadsClient({
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold text-[var(--label-primary)]">Inbound Leads</h1>
-            </div>
 
             {/* Business Selection */}
             <div>
@@ -213,26 +210,26 @@ export default function InboundLeadsClient({
                             <button
                                 key={bus.id}
                                 onClick={() => setSelectedBusiness(bus.id)}
-                                className={`liquid-card p-4 flex flex-col gap-3 transition-all duration-200 text-left ${
+                                className={`liquid-card p-3 flex items-center justify-between transition-all duration-200 text-left ${
                                     isSelected ? `shadow-md scale-[1.01]` : 'hover:bg-[var(--fill-tertiary)]'
                                 }`}
                                 style={{
                                     boxShadow: isSelected ? `0 0 0 1.5px ${bus.color}, 0 0 15px ${bus.color}15` : 'none'
                                 }}
                             >
-                                <div className="flex items-center gap-2">
-                                    <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: bus.bg, color: bus.color }}>
-                                        <Icon size={14} />
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: bus.bg, color: bus.color }}>
+                                        <Icon size={16} />
                                     </div>
-                                    <span className={`text-sm font-medium ${isSelected ? 'text-[var(--label-primary)]' : 'text-[var(--label-secondary)]'}`}>
+                                    <span className={`text-sm font-semibold ${isSelected ? 'text-[var(--label-primary)]' : 'text-[var(--label-secondary)]'}`}>
                                         {bus.label}
                                     </span>
                                 </div>
-                                <div className="flex items-end justify-between w-full">
-                                    <span className="text-xl font-bold tabular-nums" style={{ color: isSelected ? bus.color : 'var(--label-primary)' }}>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-[var(--label-tertiary)] uppercase tracking-wider font-semibold">Total:</span>
+                                    <span className="text-lg font-bold tabular-nums" style={{ color: isSelected ? bus.color : 'var(--label-primary)' }}>
                                         {count}
                                     </span>
-                                    <span className="text-[10px] text-[var(--label-tertiary)] uppercase tracking-wider">Total Leads</span>
                                 </div>
                             </button>
                         );
