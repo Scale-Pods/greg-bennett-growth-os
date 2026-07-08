@@ -2,18 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ArrowRight, Mail, MessageCircle, Mic, Sun, Moon, Sparkles } from "lucide-react";
+import { ArrowRight, Mail, MessageCircle, Mic, Sparkles } from "lucide-react";
 import { AuthModal } from "@/components/auth/auth-modal";
 
 export default function LandingPage() {
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [dark, setDark] = useState(true);
-
-    const toggleTheme = () => {
-        const next = !dark;
-        setDark(next);
-        document.documentElement.classList.toggle('dark', next);
-    };
 
     return (
         <div className="min-h-screen overflow-hidden ambient-bg text-[var(--label-primary)] relative">
@@ -34,12 +27,12 @@ export default function LandingPage() {
             <header className="fixed top-0 w-full z-50 glass-header">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 h-[60px] flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="relative flex items-center justify-center rounded-xl glass-surface px-3 py-1.5 h-10">
+                        <div className="relative flex items-center justify-center rounded-xl glass-surface px-3 py-1.5 h-10" style={{ background: 'rgba(255,255,255,0.12)' }}>
                             <div className="relative w-[110px] h-[24px]">
-                                <Image src="/bennett-logo.png" alt="Bennett Growth OS" fill className="object-contain theme-logo" priority />
+                                <Image src="/bennett-logo.png" alt="Bennett Growth OS" fill className="object-contain" priority style={{ filter: 'brightness(0) saturate(100%) invert(40%) sepia(90%) saturate(600%) hue-rotate(185deg) brightness(1.1) drop-shadow(0 0 6px rgba(59,130,246,0.4))' }} />
                             </div>
                         </div>
-                        <div className="hidden sm:block w-px h-5 bg-[var(--hairline)]" />
+                        <div className="hidden sm:block w-px h-5 bg-[var(--separator)]" />
                         <span className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-[var(--label-tertiary)]">
                             Powered by
                             <Image src="/scalepods-logo.avif" alt="ScalePods" width={60} height={16} className="inline-block opacity-80" />
@@ -47,13 +40,10 @@ export default function LandingPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <button onClick={toggleTheme} className="apple-btn-ghost p-2.5 rounded-xl" aria-label="Toggle theme">
-                            {dark ? <Sun size={18} /> : <Moon size={18} />}
-                        </button>
-                        <button onClick={() => setIsAuthModalOpen(true)} className="hidden sm:inline-flex apple-btn-ghost text-sm px-4 py-2 rounded-xl">
+                        <button onClick={() => setIsAuthModalOpen(true)} className="hidden sm:inline-flex app-btn app-btn-secondary text-sm px-4 py-2 rounded-xl">
                             Sign In
                         </button>
-                        <button onClick={() => setIsAuthModalOpen(true)} className="apple-btn-primary text-sm px-5 py-2.5 rounded-xl">
+                        <button onClick={() => setIsAuthModalOpen(true)} className="app-btn app-btn-primary text-sm px-5 py-2.5 rounded-xl">
                             Get Started
                         </button>
                     </div>
@@ -83,7 +73,7 @@ export default function LandingPage() {
 
                     <button
                         onClick={() => setIsAuthModalOpen(true)}
-                        className="inline-flex items-center gap-2.5 apple-btn-primary text-base px-7 py-3.5 rounded-2xl"
+                        className="inline-flex items-center gap-2.5 app-btn app-btn-primary text-base px-7 py-3.5 rounded-2xl"
                     >
                         Get Started Now
                         <ArrowRight size={18} />

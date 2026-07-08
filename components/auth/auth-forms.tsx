@@ -110,7 +110,7 @@ export function AuthForms({ defaultMode = 'login', onSuccess }: { defaultMode?: 
                 <button
                     type="submit"
                     disabled={isPending}
-                    className="apple-btn apple-btn-primary w-full mt-1 py-3 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="app-btn app-btn-primary w-full mt-1 py-3 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     {isPending ? (
                         <Loader2 size={16} className="animate-spin" />

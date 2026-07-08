@@ -29,7 +29,6 @@ export default function VoiceCalculatorPage() {
             await refreshCalls({
                 from: dateRange.from,
                 to: dateRange.to || dateRange.from,
-                includeElevenLabs: false,
                 provider: 'vapi',
                 force: true
             });
@@ -102,18 +101,6 @@ export default function VoiceCalculatorPage() {
 
     return (
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 24 }}>
-            {/* Page header */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'color-mix(in srgb, var(--purple) 14%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Calculator style={{ width: 20, height: 20, color: 'var(--purple)' }} />
-                </div>
-                <div>
-                    <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--label-primary)', letterSpacing: '-0.02em', margin: 0 }}>Cost Calculator</h1>
-                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 3 }}>
-                        Select a date range and account to calculate detailed telephony and agent costs. This tool uses real-time rate matching and provider APIs for maximum accuracy.
-                    </p>
-                </div>
-            </div>
 
             {/* Main two-column layout */}
             <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 16, alignItems: 'start' }}>

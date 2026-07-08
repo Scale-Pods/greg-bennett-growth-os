@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const ELEVENLABS_BASE_URL = 'https://api.elevenlabs.io/v1';
-
 export async function GET(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const elApiKey = process.env.ELEVENLABS_API_KEY;
         const vapiPrivKey = process.env.VAPI_PRIVATE_KEY;
         const { id } = await context.params;
 
@@ -100,33 +97,6 @@ export async function GET(
             } catch (err) { }
         }
 
-        // Fallback to ElevenLabs
-        if (elApiKey) {
-            try {
-                const elResponse = await fetch(`${ELEVENLABS_BASE_URL}/convai/conversations/${id}`, {
-                    headers: { 'xi-api-key': elApiKey, 'Content-Type': 'application/json' }
-                });
-
-                if (elResponse.ok) {
-                    const data = await elResponse.json();
-                    const dynamicVars = data.conversation_initiation_client_data?.dynamic_variables || {};
-                    const durationSeconds = data.metadata?.call_duration_secs || data.call_duration_secs || data.analysis?.call_duration_secs || 0;
-                    const phone = String(data.metadata?.caller_number || dynamicVars.caller_number || "Unknown").replace(/\D/g, '');
-                    const rawName = data.metadata?.user_name || data.metadata?.name || dynamicVars.user_name || dynamicVars.name || "Guest";
-
-                    return NextResponse.json({
-                        ...data,
-                        id: data.conversation_id,
-                        name: resolveName(rawName, phone),
-                        durationSeconds,
-                        phoneNumber: phone,
-                        source: 'elevenlabs',
-                        audio_url: `${ELEVENLABS_BASE_URL}/convai/conversations/${id}/audio`
-                    });
-                }
-            } catch (err) { }
-        }
-
         // LAST RESORT: Check Supabase Archived Logs
         if (supabaseUrl && secretKey) {
             try {
@@ -161,7 +131,7 @@ export async function GET(
                             durationSeconds: call.duration_seconds || raw.duration_seconds || raw.durationSeconds || 0,
                             status: call.status || call.vapi_status || raw.status || 'unknown',
                             recordingUrl: call.recording_url,
-                            source: call.vapi_account === 'elevenlabs' ? 'elevenlabs' : 'vapi',
+                            source: 'vapi',
                             customer_number: call.customer_phone,
                             phone: call.customer_phone,
                             phoneNumber: call.assistant_phone || raw.phoneNumber || raw.number || (assistantId ? assistantIdToPhone[assistantId] : null) || "Unknown",

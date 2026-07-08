@@ -16,8 +16,6 @@ function getTimeoutSignal(ms: number) {
     return controller.signal;
 }
 
-const ELEVENLABS_BASE_URL = 'https://api.elevenlabs.io/v1';
-
 // --- Helper: Number Normalization ---
 function cleanPhoneNumber(num: any): string {
     if (!num) return "Unknown";
@@ -147,7 +145,7 @@ async function fetchArchivedCallLogs(fromDate: Date | null, toDate: Date | null)
             type: isInbound ? "Inbound" : "Outbound",
             isInbound,
             country: getRateInfo(ph)?.Country || 'Unknown',
-            source: d.source === 'elevenlabs' ? 'elevenlabs' : 'vapi',
+            source: 'vapi',
             vapiAccount: d.vapi_account,
             vapiStatus: d.status,
             assistantId: aid,
@@ -201,8 +199,6 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const fromParam = searchParams.get('from');
         const toParam = searchParams.get('to');
-        const includeElevenLabs = searchParams.get('includeElevenLabs') === 'true';
-
         const fromDateRaw = fromParam ? new Date(fromParam) : null;
         const toDateRaw = toParam ? new Date(toParam) : null;
 
@@ -214,10 +210,6 @@ export async function GET(req: Request) {
 
         // Filter and Sort
         const final = archivedCalls
-            .filter((c: any) => {
-                if (!includeElevenLabs && (c.vapiAccount === 'elevenlabs' || c.source === 'elevenlabs')) return false;
-                return true;
-            })
             .sort((a, b) => {
                 const timeA = a.startedAt ? new Date(a.startedAt).getTime() : 0;
                 const timeB = b.startedAt ? new Date(b.startedAt).getTime() : 0;

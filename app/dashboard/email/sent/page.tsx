@@ -28,7 +28,7 @@ import { format, subDays } from "date-fns";
 
 import { useData } from "@/context/DataContext";
 import { BennettLoader } from "@/components/bennett-loader";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+
 
 const ITEMS_PER_PAGE = 7;
 
@@ -154,14 +154,6 @@ export default function SentEmailsPage() {
         <div className="space-y-5 pb-10 max-w-5xl mx-auto relative min-h-[500px]">
             {loading && <BennettLoader />}
 
-            {/* Header */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Sent Emails</h1>
-                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>View and manage your sent email history.</p>
-                </div>
-                <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
-            </div>
 
             {/* Search & Filters */}
             <div className="liquid-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>

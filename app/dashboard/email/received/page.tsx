@@ -19,7 +19,7 @@ import {
 import { format, subDays } from "date-fns";
 
 import { useData } from "@/context/DataContext";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+
 
 export default function ReceivedEmailsPage() {
     const { leads: allLeads, loadingLeads } = useData();
@@ -109,14 +109,6 @@ export default function ReceivedEmailsPage() {
         <div className="space-y-5 pb-10 max-w-5xl mx-auto relative min-h-[500px]">
             {loading && <BennettLoader />}
 
-            {/* Header */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Received Emails</h1>
-                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>View all received email replies from your campaigns</p>
-                </div>
-                <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
-            </div>
 
             {/* Summary Card */}
             <div className="liquid-card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

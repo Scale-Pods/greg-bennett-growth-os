@@ -2,8 +2,8 @@
 
 import {
     Users, Mail, MessageCircle, Phone, TrendingUp, PieChart as PieChartIcon,
-    Activity, Maximize2, Minimize2, X, Expand, Info, Wallet, LayoutDashboard, Mic, MessageSquare,
-    Home, Coins, Crown, GraduationCap
+    Activity, X, Info, Wallet,
+    Home, Coins, GraduationCap
 } from "lucide-react";
 import {
     Tooltip as UITooltip, TooltipContent as UITooltipContent,
@@ -13,7 +13,6 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { TotalRepliesView } from "@/components/dashboard/total-replies-view";
 import { WhatsAppChatDetail } from "@/components/dashboard/whatsapp-chat-detail";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,76 +21,6 @@ import { useRouter } from "next/navigation";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
 import { BennettLoader } from "@/components/bennett-loader";
 import { useData } from "@/context/DataContext";
-import { MaqsamBalanceDetail } from "@/components/dashboard/maqsam-balance-detail";
-
-/* ── Wallet Modal ── */
-function WalletModal({ isOpen, onClose, type, details, calls }: any) {
-    const vapiAgentUsed = useMemo(() => {
-        if (!calls || !Array.isArray(calls)) return 0;
-        return calls.filter((c: any) => c.source === 'vapi').reduce((acc: number, call: any) => acc + (call.breakdown?.agent || 0), 0);
-    }, [calls]);
-
-    const titles: Record<string, string> = {
-        vapi: 'Vapi Wallet',
-        maqsam: 'Maqsam Telephony', twilio: 'Twilio Account',
-    };
-
-    const accentColors: Record<string, string> = {
-        vapi: '#3B5BDB', maqsam: '#40CBE0', twilio: '#FF453A',
-    };
-    const accent = accentColors[type] || '#3B5BDB';
-
-    return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className={`apple-dialog ${type === 'maqsam' ? "sm:max-w-[550px]" : "sm:max-w-[400px]"}`}>
-                <DialogHeader>
-                    <DialogTitle style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)' }}>
-                        {titles[type]}
-                    </DialogTitle>
-                </DialogHeader>
-                <div style={{ paddingTop: 8 }}>
-                    {type === 'vapi' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            <div style={{
-                                background: `${accent}0F`,
-                                borderRadius: 16,
-                                padding: '28px 24px',
-                                textAlign: 'center',
-                                outline: `1px solid ${accent}22`,
-                                outlineOffset: -1,
-                            }}>
-                                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--label-tertiary)', marginBottom: 8 }}>
-                                    Vapi Credits Used
-                                </div>
-                                <div style={{ fontSize: 44, fontWeight: 300, letterSpacing: '-0.03em', color: accent, fontVariantNumeric: 'tabular-nums' }}>
-                                    ${vapiAgentUsed.toFixed(2)}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {type === 'twilio' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            <div style={{
-                                background: `${accent}0F`, borderRadius: 16, padding: '24px',
-                                textAlign: 'center', outline: `1px solid ${accent}22`, outlineOffset: -1,
-                            }}>
-                                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--label-tertiary)', marginBottom: 8 }}>
-                                    Remaining Balance
-                                </div>
-                                <div style={{ fontSize: 40, fontWeight: 300, letterSpacing: '-0.03em', color: accent, fontVariantNumeric: 'tabular-nums' }}>
-                                    {typeof details?.balance === 'number' ? `$${details.balance.toFixed(2)}` : '—'}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {type === 'maqsam' && (
-                        <MaqsamBalanceDetail initialBalance={details} />
-                    )}
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-}
 
 /* ── Liquid Glass Metric Tile ── */
 function MetricTile({
@@ -196,26 +125,15 @@ export default function MasterDashboard() {
     const [isRepliesModalOpen, setIsRepliesModalOpen] = useState(false);
     const [isRepliesExpanded, setIsRepliesExpanded] = useState(false);
     const [chatLead, setChatLead] = useState<any | null>(null);
-    const [walletModal, setWalletModal] = useState<{ isOpen: boolean; type: 'vapi' | 'maqsam' | 'twilio' }>({
-        isOpen: false, type: 'vapi',
-    });
 
     const {
         masterMetrics,
         loadingMasterMetrics,
         calls,
-        maqsamBalance,
-        twilioBalance,
         dateRange,
         setDateRange,
         leads,
     } = useData();
-    
-    const walletChips = [
-        { type: 'vapi' as const, icon: <Mic size={13} />, color: '#3B5BDB' },
-        { type: 'twilio' as const, icon: <MessageCircle size={13} />, color: '#FF453A' },
-        { type: 'maqsam' as const, icon: <Wallet size={13} />, color: '#40CBE0' },
-    ];
     const router = useRouter();
 
     /* WA stats */
@@ -658,8 +576,6 @@ export default function MasterDashboard() {
                 </DialogContent>
             </Dialog>
 
-            {/* ── Wallet Modal ── */}
-            <WalletModal isOpen={walletModal.isOpen} type={walletModal.type} onClose={() => setWalletModal({ ...walletModal, isOpen: false })} details={walletModal.type === 'twilio' ? twilioBalance : maqsamBalance} calls={calls} />
         </div>
     );
 }

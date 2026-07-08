@@ -52,8 +52,6 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
-    const includeElevenLabs = searchParams.get('includeElevenLabs') === 'true';
-
     const fromISO = fromParam || new Date(Date.now() - 7 * 86400000).toISOString();
     const toISO = toParam ? endOfDay(toParam) : endOfDay(new Date().toISOString());
 
@@ -62,7 +60,6 @@ export async function GET(req: Request) {
     const body = JSON.stringify({
         p_from: fromISO,
         p_to: toISO,
-        p_include_eleven: includeElevenLabs,
     });
 
     try {

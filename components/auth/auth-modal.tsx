@@ -19,9 +19,9 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
                     <DialogDescription>Authenticate to access your dashboard.</DialogDescription>
                 </DialogHeader>
 
-                <div className="relative glass-modal-shell">
+                <div className="relative" style={{ background: 'var(--glass-fill)', backdropFilter: 'blur(60px) saturate(180%)', borderRadius: 'var(--radius-2xl)', outline: '1px solid var(--glass-border)', outlineOffset: -1, boxShadow: 'var(--glass-shadow)' }}>
                     {/* Top accent line */}
-                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[var(--teal)]/50 to-transparent" />
+                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[var(--teal)]/50 to-transparent" style={{ borderRadius: 'var(--radius-2xl) var(--radius-2xl) 0 0' }} />
 
                     {/* Ambient glow */}
                     <div
@@ -32,9 +32,9 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
 
                     <div className="relative p-8 pt-10">
                         <div className="flex justify-center mb-8">
-                            <div className="relative flex items-center justify-center rounded-xl glass-surface px-3 py-1.5 h-9">
+                            <div className="relative flex items-center justify-center rounded-xl glass-surface px-3 py-1.5 h-9" style={{ background: 'rgba(255,255,255,0.12)' }}>
                                 <div className="relative w-[110px] h-[24px]">
-                                    <Image src="/bennett-logo.png" alt="Bennett Growth OS Logo" fill className="object-contain theme-logo" priority />
+                                    <Image src="/bennett-logo.png" alt="Bennett Growth OS Logo" fill className="object-contain" priority style={{ filter: 'brightness(0) saturate(100%) invert(40%) sepia(90%) saturate(600%) hue-rotate(185deg) brightness(1.1) drop-shadow(0 0 6px rgba(59,130,246,0.4))' }} />
                                 </div>
                             </div>
                         </div>

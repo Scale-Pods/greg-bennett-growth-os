@@ -9,7 +9,6 @@ import {
     PieChart, Pie, Cell, ResponsiveContainer,
     XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line,
 } from "recharts";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
@@ -212,23 +211,6 @@ export default function WhatsappDashboardPage() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40, position: 'relative', minHeight: 500 }}>
             {loading && <BennettLoader />}
-
-            {/* Header */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                    <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.022em', color: 'var(--label-primary)', marginBottom: 4 }}>
-                        WhatsApp CRM
-                    </h1>
-                    <p style={{ fontSize: 14, color: 'var(--label-secondary)' }}>
-                        Real-time engagement insights and campaign totals
-                    </p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                    <DateRangePicker onUpdate={r => setDateRange(r.range)} />
-                </div>
-            </div>
-
-
 
             {/* Key Metrics */}
             <div>

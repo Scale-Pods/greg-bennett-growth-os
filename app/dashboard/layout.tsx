@@ -7,12 +7,12 @@ import {
     LayoutDashboard, Mail, MessageCircle, Mic, Settings,
     LogOut, ChevronDown, Wallet, BarChart2, Users, Send,
     Key, ExternalLink, Sun, Moon, Inbox, AlertCircle, UserMinus,
-    MessageSquare, Phone, Activity, Globe
+    MessageSquare, Phone, Activity, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
+import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DataProvider, useData } from "@/context/DataContext";
-import { MaqsamBalanceDetail } from "@/components/dashboard/maqsam-balance-detail";
 import { logout } from "@/app/actions/auth";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 
@@ -25,16 +25,15 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
             { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
             { title: "Leads", href: "/dashboard/leads", icon: Users },
             { title: "Inbound Leads", href: "/dashboard/inbound-leads", icon: Inbox },
-            { title: "Scrapers", href: "/dashboard/scrappers", icon: Globe },
             { title: "Credentials", href: "/dashboard/credentials", icon: Key },
         ],
     },
     email: {
         label: "Email",
-        color: "#7C3AED",
+        color: "var(--blue)",
         icon: Mail,
         items: [
-            { title: "Dashboard", href: "/dashboard/email", icon: LayoutDashboard },
+            { title: "Email Dashboard", href: "/dashboard/email", icon: LayoutDashboard },
             { title: "Sent", href: "/dashboard/email/sent", icon: Send },
             { title: "Received", href: "/dashboard/email/received", icon: Inbox },
             { title: "Bounces", href: "/dashboard/email/bounces", icon: AlertCircle },
@@ -44,22 +43,21 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
     },
     whatsapp: {
         label: "WhatsApp",
-        color: "#059669",
+        color: "var(--green)",
         icon: MessageCircle,
         items: [
-            { title: "Dashboard", href: "/dashboard/whatsapp", icon: LayoutDashboard },
+            { title: "WhatsApp Dashboard", href: "/dashboard/whatsapp", icon: LayoutDashboard },
             { title: "Chat", href: "/dashboard/whatsapp/chat", icon: MessageSquare },
             { title: "Leads", href: "/dashboard/whatsapp/leads", icon: Users },
             { title: "Analytics", href: "/dashboard/whatsapp/analytics", icon: BarChart2 },
         ],
     },
-
     voice: {
         label: "Voice",
-        color: "#14B8A6",
+        color: "var(--orange)",
         icon: Mic,
         items: [
-            { title: "Dashboard", href: "/dashboard/voice", icon: LayoutDashboard },
+            { title: "Voice Dashboard", href: "/dashboard/voice", icon: LayoutDashboard },
             { title: "Call Logs", href: "/dashboard/voice/logs", icon: Phone },
             { title: "Analytics", href: "/dashboard/voice/analytics", icon: BarChart2 },
             { title: "Calculator", href: "/dashboard/voice/calculator", icon: Activity },
@@ -68,8 +66,6 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
 };
 
 const mainApps = ['master', 'email', 'whatsapp', 'voice'];
-
-
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -82,43 +78,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const [isHovered, setIsHovered] = useState(false);
-    const [walletModal, setWalletModal] = useState<{ isOpen: boolean; type: 'vapi' | 'maqsam' | 'twilio' }>({
+    const { theme, setTheme } = useTheme();
+    const [sidebarExpanded, setSidebarExpanded] = useState(true);
+    const [walletModal, setWalletModal] = useState<{ isOpen: boolean; type: 'vapi' | 'twilio' }>({
         isOpen: false, type: 'vapi',
     });
     const [isChannelDropdownOpen, setIsChannelDropdownOpen] = useState(false);
-
-    const isExpanded = isHovered;
-
-    useEffect(() => {
-        if (!isExpanded) {
-            setIsChannelDropdownOpen(false);
-        }
-    }, [isExpanded]);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        document.documentElement.classList.add('dark');
+        setMounted(true);
     }, []);
 
-    const { calls, voiceBalance, maqsamBalance, twilioBalance, loadingBalances, loadingCalls, dateRange, setDateRange } = useData();
+    const { calls, voiceBalance, twilioBalance, loadingBalances, loadingCalls, dateRange, setDateRange } = useData();
 
     const walletChips = [
-        { type: 'vapi' as const, icon: <Mic size={13} />, color: '#0A84FF' },
-        { type: 'twilio' as const, icon: <MessageCircle size={13} />, color: '#FF453A' },
-        { type: 'maqsam' as const, icon: <Wallet size={13} />, color: '#40CBE0' },
+        { type: 'vapi' as const, icon: <Mic size={13} />, color: 'var(--blue)' },
+        { type: 'twilio' as const, icon: <MessageCircle size={13} />, color: 'var(--red)' },
     ];
-
-    const maqsamUsedCost = useMemo(() => {
-        if (!calls || !Array.isArray(calls)) return 0;
-        return calls.filter((c: any) => {
-            const isMaqsam = c.source === 'maqsam';
-            const provisionedNum = String(c.phoneNumber || "");
-            const isSpecificNum = provisionedNum.replace(/\D/g, '') === '97148714150';
-            const phoneStr = String(c.phone || c.customer_number || "");
-            const isUAE = phoneStr.startsWith('+971') || phoneStr.startsWith('971');
-            return isMaqsam || isUAE || isSpecificNum;
-        }).reduce((acc: number, call: any) => acc + (call.breakdown?.telephony || call.costValue || 0), 0);
-    }, [calls]);
 
     let currentContext = "master";
     if (pathname.startsWith("/dashboard/email")) currentContext = "email";
@@ -127,93 +104,90 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
     const activeConfig = dashboardConfig[currentContext];
 
-
-
     const currentPageTitle = pathname === "/dashboard"
         ? "Dashboard"
         : (activeConfig.items.find((item) => item.href === pathname)?.title || activeConfig.label);
 
+    const sidebarWidth = sidebarExpanded ? 260 : 80;
+
     return (
-        <div className="flex h-screen overflow-hidden ambient-bg">
-            {/* Floating ambient orbs */}
-            <div className="pointer-events-none fixed top-[8%] right-[12%] w-80 h-80 rounded-full opacity-40 z-0" style={{ background: 'var(--mesh-1)', filter: 'blur(90px)', animation: 'float-orb 16s ease-in-out infinite' }} aria-hidden />
-            <div className="pointer-events-none fixed bottom-[10%] left-[20%] w-72 h-72 rounded-full opacity-35 z-0" style={{ background: 'var(--mesh-2)', filter: 'blur(80px)', animation: 'float-orb 20s ease-in-out infinite reverse' }} aria-hidden />
-
-            {/* Sidebar Placeholder to push content */}
-            <div style={{ width: '80px', flexShrink: 0, transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }} className="hidden md:block" />
-
-            {/* Floating Universal Sidebar */}
+        <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-app)' }}>
+            {/* Sidebar */}
             <aside
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
                 style={{
-                    position: 'absolute', top: 0, left: 0, height: '100%',
-                    width: isExpanded ? 260 : 80,
+                    width: sidebarWidth,
+                    flexShrink: 0,
                     zIndex: 50,
-                    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease',
-                    boxShadow: isExpanded ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
+                    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     overflow: 'hidden',
-                    display: 'flex', flexDirection: 'column'
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
                 }}
-                className="apple-sidebar"
+                className="app-sidebar"
+                onMouseEnter={() => setSidebarExpanded(true)}
+                onMouseLeave={() => setSidebarExpanded(false)}
             >
                 {/* Logo Area */}
-                <div style={{ height: 90, padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>
-                    <div style={{ position: 'relative', width: isExpanded ? 190 : 48, height: isExpanded ? 52 : 48, transition: 'all 0.3s ease', overflow: 'hidden' }}>
-                        {isExpanded ? (
-                            <Image src="/bennett-logo.png" alt="Bennett Growth OS" fill className="object-contain object-center" style={{ filter: 'brightness(1.8) contrast(1.1)' }} priority />
+                <div style={{ height: 72, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ position: 'relative', width: sidebarExpanded ? 160 : 40, height: sidebarExpanded ? 40 : 40, transition: 'all 0.3s ease', overflow: 'hidden', flexShrink: 0 }}>
+                        {sidebarExpanded ? (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.12)', borderRadius: '8px', padding: '4px 8px' }}>
+                                <Image src="/bennett-logo.png" alt="Bennett Growth OS" fill className="object-contain object-center" priority style={{ filter: 'brightness(0) saturate(100%) invert(40%) sepia(90%) saturate(600%) hue-rotate(185deg) brightness(1.1) drop-shadow(0 0 6px rgba(59,130,246,0.4))' }} />
+                            </div>
                         ) : (
-                            <div className="w-12 h-12 rounded-xl glass-surface text-[var(--teal)] flex items-center justify-center font-display font-extrabold text-2xl">B</div>
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xl" style={{ background: 'rgba(255,255,255,0.12)', color: 'var(--label-primary)' }}>B</div>
                         )}
                     </div>
                 </div>
 
-                {/* Dropdown for Main Apps to Save Space */}
-                <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column' }}>
-                    {isExpanded ? (
+                {/* Channel Dropdown */}
+                <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column' }}>
+                    {sidebarExpanded ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            <div className="text-[10px] font-bold text-[var(--label-tertiary)] uppercase tracking-widest px-2 mb-1">Channels</div>
+                            <div className="nav-section-label" style={{ padding: '8px 8px 4px' }}>Channels</div>
                             <div style={{ position: 'relative', width: '100%' }}>
                                 <button
                                     onClick={() => setIsChannelDropdownOpen(!isChannelDropdownOpen)}
                                     style={{
                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        width: '100%', padding: '10px 12px', borderRadius: '14px',
-                                        background: 'var(--glass-fill)',
-                                        border: '1px solid var(--glass-border)',
-                                        backdropFilter: 'blur(12px)',
+                                        width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-md)',
+                                        background: 'var(--fill-tertiary)',
                                         color: 'var(--label-primary)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
+                                        cursor: 'default',
+                                        border: 'none',
+                                        fontSize: 13, fontWeight: 500,
+                                        transition: 'background 130ms',
                                     }}
-                                    className="hover:bg-[var(--fill-tertiary)]"
+                                    className="hover:bg-[var(--fill-secondary)]"
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                         {(() => {
                                             const app = dashboardConfig[currentContext];
                                             const Icon = app.icon;
-                                            return <Icon size={18} style={{ color: app.color, flexShrink: 0 }} />;
+                                            return <Icon size={16} style={{ color: app.color, flexShrink: 0 }} />;
                                         })()}
-                                        <span style={{ fontWeight: 600, fontSize: 13 }}>
-                                            {dashboardConfig[currentContext].label}
-                                        </span>
+                                        <span>{dashboardConfig[currentContext].label}</span>
                                     </div>
-                                    <ChevronDown size={14} style={{ 
+                                    <ChevronDown size={13} style={{
                                         transform: isChannelDropdownOpen ? 'rotate(180deg)' : 'none',
                                         transition: 'transform 0.2s ease',
-                                        color: 'var(--label-tertiary)'
+                                        color: 'var(--label-secondary)'
                                     }} />
                                 </button>
 
                                 {isChannelDropdownOpen && (
                                     <div style={{
-                                        position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
-                                        zIndex: 100, background: 'var(--bg-layer2)',
-                                        backdropFilter: 'blur(28px) saturate(180%)',
-                                        border: '1px solid var(--glass-border)',
-                                        borderRadius: '16px', padding: '6px',
-                                        boxShadow: 'var(--shadow-lg)',
-                                        display: 'flex', flexDirection: 'column', gap: 4
+                                        position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                                        zIndex: 100,
+                                        background: 'var(--glass-fill)',
+                                        backdropFilter: 'blur(60px) saturate(180%)',
+                                        borderRadius: 'var(--radius-xl)',
+                                        padding: '6px',
+                                        boxShadow: 'var(--glass-shadow)',
+                                        outline: '1px solid var(--glass-border)',
+                                        outlineOffset: -1,
+                                        display: 'flex', flexDirection: 'column', gap: 2
                                     }}>
                                         {mainApps.filter(appKey => appKey !== currentContext).map(appKey => {
                                             const app = dashboardConfig[appKey];
@@ -223,19 +197,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                                                     key={appKey}
                                                     href={appKey === 'master' ? '/dashboard' : `/dashboard/${appKey}`}
                                                     onClick={() => setIsChannelDropdownOpen(false)}
-                                                    style={{
-                                                        display: 'flex', alignItems: 'center', gap: 10,
-                                                        padding: '8px 10px', borderRadius: '8px',
-                                                        color: 'var(--label-secondary)',
-                                                        textDecoration: 'none',
-                                                        transition: 'all 0.15s ease',
-                                                    }}
-                                                    className="hover:bg-[var(--fill-tertiary)] hover:text-[var(--label-primary)]"
+                                                    className="nav-item"
                                                 >
                                                     <Icon size={16} style={{ color: app.color, flexShrink: 0 }} />
-                                                    <span style={{ fontWeight: 500, fontSize: 13 }}>
-                                                        {app.label}
-                                                    </span>
+                                                    <span>{app.label}</span>
                                                 </Link>
                                             );
                                         })}
@@ -245,34 +210,36 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                         </div>
                     ) : (
                         <button
-                            onClick={() => setIsHovered(true)}
+                            onClick={() => setSidebarExpanded(true)}
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                width: '48px', height: '48px', borderRadius: '14px',
-                                background: 'var(--glass-fill)',
-                                border: '1px solid var(--glass-border)',
+                                width: 44, height: 44, borderRadius: 'var(--radius-lg)',
+                                background: 'var(--fill-tertiary)',
+                                border: 'none',
                                 color: 'var(--label-primary)',
-                                cursor: 'pointer',
-                                margin: '0 auto'
+                                cursor: 'default',
+                                margin: '0 auto',
+                                transition: 'background 130ms',
                             }}
+                            className="hover:bg-[var(--fill-secondary)]"
                         >
                             {(() => {
                                 const app = dashboardConfig[currentContext];
                                 const Icon = app.icon;
-                                return <Icon size={20} style={{ color: app.color, flexShrink: 0 }} />;
+                                return <Icon size={18} style={{ color: app.color, flexShrink: 0 }} />;
                             })()}
                         </button>
                     )}
                 </div>
 
                 {/* Divider */}
-                <div style={{ margin: '8px 16px', height: 1, background: 'var(--hairline)' }} />
+                <div style={{ margin: '4px 16px', height: 1, background: 'var(--separator)' }} />
 
-                {/* Sub Navigation with Transition */}
-                <nav style={{ flex: 1, padding: '16px 16px', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto' }} className="custom-scrollbar">
-                    {isExpanded && (
-                        <div style={{ color: activeConfig.color, transition: 'color 0.3s ease' }} className="text-[10px] font-bold uppercase tracking-widest px-2 mb-2">
-                            {activeConfig.label} Options
+                {/* Sub Navigation */}
+                <nav style={{ flex: 1, padding: '12px 12px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+                    {sidebarExpanded && (
+                        <div className="nav-section-label" style={{ color: activeConfig.color, padding: '8px 8px 4px' }}>
+                            {activeConfig.label}
                         </div>
                     )}
                     
@@ -283,27 +250,15 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 12,
-                                    padding: '10px 12px', borderRadius: '14px',
-                                    background: isActive ? 'var(--sidebar-icon-active-bg)' : 'transparent',
-                                    color: isActive ? 'var(--sidebar-icon-active)' : 'var(--label-secondary)',
-                                    border: isActive ? '1px solid rgba(45, 212, 191, 0.25)' : '1px solid transparent',
-                                    transition: 'all 0.2s ease',
-                                    textDecoration: 'none',
-                                    justifyContent: isExpanded ? 'flex-start' : 'center'
-                                }}
-                                className="hover:bg-[var(--fill-tertiary)]"
+                                className={isActive ? 'nav-item active' : 'nav-item'}
+                                style={{ justifyContent: sidebarExpanded ? 'flex-start' : 'center' }}
                             >
-                                <NavIcon size={18} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.6 }} />
+                                <NavIcon size={16} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.7 }} />
                                 <span style={{ 
-                                    opacity: isExpanded ? 1 : 0, 
-                                    width: isExpanded ? 'auto' : 0, 
+                                    opacity: sidebarExpanded ? 1 : 0, 
+                                    width: sidebarExpanded ? 'auto' : 0, 
                                     overflow: 'hidden', 
-                                    fontWeight: 500, 
-                                    fontSize: 13,
-                                    transition: 'opacity 0.3s ease, width 0.3s ease',
-                                    whiteSpace: 'nowrap'
+                                    transition: 'opacity 0.2s ease, width 0.2s ease',
                                 }}>
                                     {item.title}
                                 </span>
@@ -312,10 +267,25 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     })}
                 </nav>
 
-                {/* Bottom Actions (Sign Out & Theme) */}
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--hairline)', background: 'transparent' }}>
+                {/* Bottom Actions */}
+                <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--separator)' }}>
+                    {/* Theme toggle */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarExpanded ? 'space-between' : 'center', gap: 8 }}>
+                        {mounted && (
+                            <button
+                                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                                className="nav-item"
+                                style={{ flex: sidebarExpanded ? 1 : undefined, justifyContent: 'center', padding: '7px 12px' }}
+                                title="Toggle theme"
+                            >
+                                {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                                {sidebarExpanded && <span style={{ fontSize: 13 }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+                            </button>
+                        )}
+                    </div>
+
                     {currentContext === 'master' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 8, justifyContent: isExpanded ? 'flex-start' : 'center', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: sidebarExpanded ? 'flex-start' : 'center', flexWrap: 'wrap' }}>
                             {walletChips.map(chip => (
                                 <button
                                     key={chip.type}
@@ -332,40 +302,63 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     <button
                         onClick={async () => { await logout(); router.push('/'); router.refresh(); }}
                         style={{
-                            display: 'flex', alignItems: 'center', gap: 12,
-                            padding: '10px 12px', borderRadius: '12px',
-                            background: 'rgba(220, 38, 38, 0.1)', border: '1px solid rgba(220, 38, 38, 0.2)', 
-                            cursor: 'pointer', color: '#EF4444',
-                            justifyContent: isExpanded ? 'flex-start' : 'center',
-                            transition: 'all 0.2s ease',
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '7px 12px', borderRadius: 'var(--radius-sm)',
+                            background: 'rgba(255,69,58,0.12)',
+                            border: 'none',
+                            cursor: 'default',
+                            color: 'var(--red)',
+                            justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                            transition: 'background 130ms',
+                            fontSize: 13, fontWeight: 500,
                         }}
-                        className="hover:bg-red-500/20 hover:text-red-400"
+                        className="hover:bg-[rgba(255,69,58,0.2)]"
                     >
-                        <LogOut size={18} style={{ flexShrink: 0 }} />
+                        <LogOut size={15} style={{ flexShrink: 0 }} />
                         <span style={{ 
-                            opacity: isExpanded ? 1 : 0, width: isExpanded ? 'auto' : 0, 
-                            overflow: 'hidden', fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', transition: 'all 0.3s ease'
+                            opacity: sidebarExpanded ? 1 : 0, width: sidebarExpanded ? 'auto' : 0, 
+                            overflow: 'hidden', whiteSpace: 'nowrap', transition: 'all 0.2s ease'
                         }}>
                             Sign Out
                         </span>
                     </button>
-                    {isExpanded && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: '10px', color: 'var(--label-quaternary)', marginTop: 8, letterSpacing: '0.05em' }}>
-                            <span>Powered by</span>
-                            <Image src="/scalepods-logo.avif" alt="ScalePods" width={60} height={16} style={{ filter: 'brightness(0.9) opacity(0.8)' }} />
-                        </div>
-                    )}
                 </div>
             </aside>
 
-            {/* ══ MAIN AREA ══ */}
+            {/* MAIN AREA */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
-                {/* Global Topbar */}
-                <div className="flex items-center justify-between px-7 py-4 border-b border-[var(--hairline)] bg-transparent z-10">
-                    <h1 className="text-xl font-semibold text-[var(--label-primary)]">{currentPageTitle}</h1>
-                    <DateRangePicker value={dateRange} onUpdate={(val) => val.range && setDateRange(val.range)} />
+                {/* Floating header bar with page title + date filter */}
+                <div style={{
+                    padding: '16px 28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 16,
+                    background: 'var(--glass-fill)',
+                    backdropFilter: 'blur(48px) saturate(160%)',
+                    borderBottom: '1px solid var(--separator)',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 30,
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <button
+                            onClick={() => setSidebarExpanded(!sidebarExpanded)}
+                            className="btn-icon"
+                            style={{ width: 28, height: 28 }}
+                        >
+                            {sidebarExpanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                        </button>
+                        <h1 style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)', margin: 0 }}>
+                            {currentPageTitle}
+                        </h1>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <DateRangePicker value={dateRange} onUpdate={(val) => val.range && setDateRange(val.range)} />
+                    </div>
                 </div>
-                <main style={{ flex: 1, overflowY: 'auto', padding: 28 }} className="custom-scrollbar">
+
+                <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
                     {children}
                 </main>
             </div>
@@ -375,7 +368,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 isOpen={walletModal.isOpen}
                 type={walletModal.type}
                 onClose={() => setWalletModal(m => ({ ...m, isOpen: false }))}
-                maqsamBalance={maqsamBalance}
                 twilioBalance={twilioBalance}
                 calls={calls}
             />
@@ -383,46 +375,42 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     );
 }
 
-function SidebarWalletModal({ isOpen, onClose, type, maqsamBalance, twilioBalance, calls }: any) {
+function SidebarWalletModal({ isOpen, onClose, type, twilioBalance, calls }: any) {
     const vapiAgentUsed = useMemo(() => {
         if (!calls || !Array.isArray(calls)) return 0;
         return calls.filter((c: any) => c.source === 'vapi').reduce((acc: number, call: any) => acc + (call.breakdown?.agent || 0), 0);
     }, [calls]);
 
     const titles: Record<string, string> = {
-        vapi: 'Vapi Wallet',
-        maqsam: 'Maqsam Telephony', twilio: 'Twilio Account',
+        vapi: 'Vapi Wallet', twilio: 'Twilio Account',
     };
     const accentColors: Record<string, string> = {
-        vapi: '#0A84FF', maqsam: '#40CBE0', twilio: '#FF453A',
+        vapi: 'var(--blue)', twilio: 'var(--red)',
     };
-    const accent = accentColors[type] || '#0A84FF';
+    const accent = accentColors[type] || 'var(--blue)';
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className={`apple-dialog ${type === 'maqsam' ? "sm:max-w-[550px]" : "sm:max-w-[400px]"}`}>
+            <DialogContent className={`app-dialog sm:max-w-[400px]`}>
                 <DialogHeader>
-                    <DialogTitle style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)' }}>
+                    <DialogTitle style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.022em' }}>
                         {titles[type]}
                     </DialogTitle>
                 </DialogHeader>
                 <div style={{ paddingTop: 8 }}>
                     {type === 'vapi' && (
-                        <div style={{ background: `${accent}0F`, borderRadius: 16, padding: '28px 24px', textAlign: 'center', outline: `1px solid ${accent}22`, outlineOffset: -1 }}>
-                            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--label-tertiary)', marginBottom: 8 }}>Vapi Credits Used</div>
+                        <div style={{ background: 'rgba(10,132,255,0.10)', borderRadius: 16, padding: '28px 24px', textAlign: 'center', outline: '1px solid rgba(10,132,255,0.12)', outlineOffset: -1 }}>
+                            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--label-secondary)', marginBottom: 8 }}>Vapi Credits Used</div>
                             <div style={{ fontSize: 44, fontWeight: 300, letterSpacing: '-0.03em', color: accent, fontVariantNumeric: 'tabular-nums' }}>${vapiAgentUsed.toFixed(2)}</div>
                         </div>
                     )}
                     {type === 'twilio' && (
-                        <div style={{ background: `${accent}0F`, borderRadius: 16, padding: '24px', textAlign: 'center', outline: `1px solid ${accent}22`, outlineOffset: -1 }}>
-                            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--label-tertiary)', marginBottom: 8 }}>Remaining Balance</div>
+                        <div style={{ background: 'rgba(255,69,58,0.08)', borderRadius: 16, padding: '24px', textAlign: 'center', outline: '1px solid rgba(255,69,58,0.12)', outlineOffset: -1 }}>
+                            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--label-secondary)', marginBottom: 8 }}>Remaining Balance</div>
                             <div style={{ fontSize: 40, fontWeight: 300, letterSpacing: '-0.03em', color: accent, fontVariantNumeric: 'tabular-nums' }}>
                                 {typeof twilioBalance?.balance === 'number' ? `$${twilioBalance.balance.toFixed(2)}` : '—'}
                             </div>
                         </div>
-                    )}
-                    {type === 'maqsam' && (
-                        <MaqsamBalanceDetail initialBalance={maqsamBalance} />
                     )}
                 </div>
             </DialogContent>

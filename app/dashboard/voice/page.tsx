@@ -1,16 +1,14 @@
 "use client";
 
-import { Phone, Clock, TrendingUp, Timer, Crown, RefreshCw, Mail, MessageCircle, MessageSquare, LayoutDashboard, GraduationCap, Home, Coins } from "lucide-react";
-import { BennettLoader } from "@/components/bennett-loader";
+import { Phone, Clock, TrendingUp, Timer, Crown, Mail, MessageCircle, MessageSquare, LayoutDashboard, GraduationCap, Home, Coins } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { BennettLoader } from "@/components/bennett-loader";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, AreaChart, Area,
 } from "recharts";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, subDays } from "date-fns";
+import { format } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
 
@@ -115,7 +113,6 @@ export default function VoiceDashboardPage() {
         refreshVoiceMetrics({
             from: dateRange?.from,
             to: dateRange?.to,
-            includeElevenLabs: false,
         });
     }, [dateRange, refreshVoiceMetrics]);
 
@@ -163,39 +160,6 @@ export default function VoiceDashboardPage() {
                     </div>
                 </div>
             )}
-
-            {/* Header */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                    <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.022em', color: 'var(--label-primary)', marginBottom: 4 }}>
-                        Voice Agent Dashboard
-                    </h1>
-                    <p style={{ fontSize: 14, color: 'var(--label-secondary)' }}>
-                        Monitor your AI voice agent performance across all accounts.
-                    </p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                    
-
-                    <button
-                        onClick={() => refreshVoiceMetrics({ from: dateRange?.from, to: dateRange?.to, includeElevenLabs: false, force: true })}
-                        disabled={loading}
-                        style={{
-                            height: 38, padding: '0 14px', borderRadius: 10,
-                            background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)',
-                            display: 'flex', alignItems: 'center', gap: 6,
-                            fontSize: 13, fontWeight: 500, color: 'var(--label-secondary)',
-                            cursor: 'pointer', transition: 'background 130ms ease',
-                        }}
-                        className="hover:bg-[var(--fill-secondary)]"
-                    >
-                        <RefreshCw size={13} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-                        Refresh
-                    </button>
-
-                    <DateRangePicker onUpdate={r => setDateRange(r.range)} />
-                </div>
-            </div>
 
             {/* 3 Business Banners */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>

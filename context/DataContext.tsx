@@ -78,19 +78,18 @@ interface DataContextType {
     masterMetrics: MasterMetrics | null;
     whatsappMetrics: WhatsappMetrics | null;
     voiceBalance: any;
-    maqsamBalance: any;
     twilioBalance: any;
     error: string | null;
     dateRange: { from: Date; to: Date };
     setDateRange: React.Dispatch<React.SetStateAction<any>>;
     refreshLeads: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
-    refreshCalls: (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean; provider?: string; force?: boolean }) => Promise<void>;
+    refreshCalls: (params?: { from?: Date; to?: Date; provider?: string; force?: boolean }) => Promise<void>;
     refreshOwners: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
     refreshBalances: () => Promise<void>;
-    refreshVoiceMetrics: (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean; force?: boolean }) => Promise<void>;
+    refreshVoiceMetrics: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
     refreshMasterMetrics: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
     refreshWhatsappMetrics: (params?: { from?: Date; to?: Date; force?: boolean }) => Promise<void>;
-    refreshAll: (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean }) => Promise<void>;
+    refreshAll: (params?: { from?: Date; to?: Date }) => Promise<void>;
     computeWPReplies: (dateRange?: { from?: Date; to?: Date } | null) => number;
 }
 
@@ -117,7 +116,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const [masterMetrics, setMasterMetrics] = useState<MasterMetrics | null>(null);
     const [whatsappMetrics, setWhatsappMetrics] = useState<WhatsappMetrics | null>(null);
     const [voiceBalance, setVoiceBalance] = useState<any>(null);
-    const [maqsamBalance, setMaqsamBalance] = useState<any>(null);
     const [twilioBalance, setTwilioBalance] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -150,14 +148,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
-    const fetchCalls = useCallback(async (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean; provider?: string; force?: boolean }) => {
+    const fetchCalls = useCallback(async (params?: { from?: Date; to?: Date; provider?: string; force?: boolean }) => {
         try {
             // Normalize defaults to Last 7 Days (Start of Day) to ensure stable query strings across components
             // Using full-day boundaries (12am - 12pm) ensures identical cache keys for the entire day.
             const now = new Date();
             const fromDate = params?.from ? startOfDay(params.from) : subDays(startOfDay(now), 7);
             const toDate = params?.to ? endOfDay(params.to) : endOfDay(now);
-            const includeElevenLabs = params?.includeElevenLabs || false;
             const provider = params?.provider || 'vapi';
 
             if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
@@ -168,7 +165,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             const query = new URLSearchParams({
                 from: fromDate.toISOString(),
                 to: toDate.toISOString(),
-                includeElevenLabs: String(includeElevenLabs),
                 provider
             });
 
@@ -225,17 +221,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const hasVoiceMetrics = useRef(false);
 
-    const fetchVoiceMetrics = useCallback(async (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean; force?: boolean }) => {
+    const fetchVoiceMetrics = useCallback(async (params?: { from?: Date; to?: Date; force?: boolean }) => {
         try {
             const now = new Date();
             const fromDate = params?.from ? startOfDay(params.from) : subDays(startOfDay(now), 7);
             const toDate = params?.to ? endOfDay(params.to) : endOfDay(now);
-            const includeElevenLabs = params?.includeElevenLabs || false;
 
             const query = new URLSearchParams({
                 from: fromDate.toISOString(),
                 to: toDate.toISOString(),
-                includeElevenLabs: String(includeElevenLabs),
             });
 
             const currentQuery = query.toString();
@@ -343,19 +337,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const fetchBalances = useCallback(async () => {
         try {
-            const [vapiRes, maqsamRes, twilioRes] = await Promise.all([
+            const [vapiRes, twilioRes] = await Promise.all([
                 fetch('/api/vapi/balance'),
-                fetch('/api/maqsam/balance'),
                 fetch('/api/twilio/balance')
             ]);
             if (vapiRes.ok) setVoiceBalance(await vapiRes.json());
-            if (maqsamRes.ok) setMaqsamBalance(await maqsamRes.json());
             if (twilioRes.ok) setTwilioBalance(await twilioRes.json());
         } catch (err) { }
         finally { setLoadingBalances(false); }
     }, []);
 
-    const refreshAll = useCallback(async (params?: { from?: Date; to?: Date; includeElevenLabs?: boolean }) => {
+    const refreshAll = useCallback(async (params?: { from?: Date; to?: Date }) => {
         await Promise.all([
             fetchLeads(params),
             fetchCalls(params),
@@ -391,7 +383,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (dateRange?.from) {
-            refreshAll({ from: dateRange.from, to: dateRange.to || dateRange.from, includeElevenLabs: false });
+            refreshAll({ from: dateRange.from, to: dateRange.to || dateRange.from });
         }
     }, [dateRange, refreshAll]);
 
@@ -491,7 +483,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             masterMetrics,
             whatsappMetrics,
             voiceBalance,
-            maqsamBalance,
             twilioBalance,
             error,
             dateRange,

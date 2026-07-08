@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect } from "react";
 import { format, subDays } from "date-fns";
 import { useData } from "@/context/DataContext";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+
 
 export default function VoiceAnalyticsPage() {
     const { voiceMetrics, loadingVoiceMetrics, allTimeVoiceCount, allTimeOwnerVoiceCount, refreshVoiceMetrics, dateRange, setDateRange } = useData();
@@ -37,7 +37,6 @@ export default function VoiceAnalyticsPage() {
         refreshVoiceMetrics({
             from: dateRange.from,
             to: dateRange.to || dateRange.from,
-            includeElevenLabs: false,
         });
     }, [dateRange, accountFilter, refreshVoiceMetrics]);
 
@@ -55,25 +54,17 @@ export default function VoiceAnalyticsPage() {
         <div className="space-y-6 pb-10 relative min-h-[500px]">
             {loading && <BennettLoader />}
 
-            {/* Header */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Voice Analytics</h1>
-                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Comprehensive insights across all voice accounts.</p>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-                    <Select value={accountFilter} onValueChange={setAccountFilter}>
-                        <SelectTrigger style={{ width: 190, height: 36, fontSize: 12 }}>
-                            <SelectValue placeholder="Account / Provider" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="vapi">All Vapi Calls</SelectItem>
-                            <SelectItem value="vapi-owners">Generated Leads</SelectItem>
-                            <SelectItem value="vapi-normal">CRM Leads</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
-                </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                <Select value={accountFilter} onValueChange={setAccountFilter}>
+                    <SelectTrigger style={{ width: 190, height: 36, fontSize: 12 }}>
+                        <SelectValue placeholder="Account / Provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="vapi">All Vapi Calls</SelectItem>
+                        <SelectItem value="vapi-owners">Generated Leads</SelectItem>
+                        <SelectItem value="vapi-normal">CRM Leads</SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
 
             {/* All-Time Totals */}

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { format, subDays } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
+
 
 const DynamicRowCells = ({ call, leads, telephonyCost }: { call: any, leads: any[], telephonyCost?: number }) => {
     let guestName = call.name || "Guest";
@@ -70,7 +70,7 @@ const DynamicRowCells = ({ call, leads, telephonyCost }: { call: any, leads: any
                             <Info style={{ width: 11, height: 11, color: 'var(--label-quaternary)' }} />
                         </button>
                     </PopoverTrigger>
-                    <PopoverContent className="apple-dialog" style={{ width: 220, padding: 14 }} onClick={(e) => e.stopPropagation()}>
+                    <PopoverContent style={{ width: 220, padding: 14, background: 'var(--glass-fill)', backdropFilter: 'blur(60px) saturate(180%)', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--glass-shadow)' }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--hairline)', paddingBottom: 8 }}>
                                 <Activity style={{ width: 14, height: 14, color: 'var(--blue)' }} />
@@ -128,7 +128,6 @@ export default function VoiceLogsPage() {
         refreshCalls({
             from: !dateRange ? undefined : dateRange?.from,
             to: !dateRange ? undefined : (dateRange?.to || dateRange?.from),
-            includeElevenLabs: false,
             provider: 'vapi'
         });
     }, [dateRange, refreshCalls]);
@@ -226,7 +225,7 @@ export default function VoiceLogsPage() {
     }, [allCallsMapped, dateRange, statusFilter, typeFilter, accountFilter, phoneFilter, sortBy, regionFilter]);
 
     const handleRefresh = () => {
-        refreshCalls({ from: dateRange?.from, to: dateRange?.to || dateRange?.from, includeElevenLabs: false, provider: 'vapi', force: true });
+        refreshCalls({ from: dateRange?.from, to: dateRange?.to || dateRange?.from, provider: 'vapi', force: true });
     };
 
     const handleExport = async () => {
@@ -295,31 +294,23 @@ export default function VoiceLogsPage() {
                 </div>
             )}
 
-            {/* Header */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Call Logs</h1>
-                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Comprehensive history across all accounts and providers.</p>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-                    <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
-                    <button
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: exporting || calls.length === 0 ? 'var(--fill-quaternary)' : 'rgba(48,209,88,0.10)', color: exporting || calls.length === 0 ? 'var(--label-tertiary)' : 'var(--green)', fontSize: 12, fontWeight: 500, cursor: 'default', opacity: calls.length === 0 ? 0.5 : 1 }}
-                        onClick={handleExport}
-                        disabled={exporting || calls.length === 0}
-                    >
-                        <Download style={{ width: 13, height: 13 }} /> {exporting ? 'Exporting...' : 'Export'}
-                    </button>
-                    <button
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', fontSize: 12, fontWeight: 500, cursor: 'default' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-secondary)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'var(--fill-tertiary)')}
-                        onClick={handleRefresh}
-                        disabled={loading}
-                    >
-                        <RefreshCw style={{ width: 13, height: 13, animation: loading ? 'spin 1s linear infinite' : 'none' }} /> Refresh
-                    </button>
-                </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                <button
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: exporting || calls.length === 0 ? 'var(--fill-quaternary)' : 'rgba(48,209,88,0.10)', color: exporting || calls.length === 0 ? 'var(--label-tertiary)' : 'var(--green)', fontSize: 12, fontWeight: 500, cursor: 'default', opacity: calls.length === 0 ? 0.5 : 1 }}
+                    onClick={handleExport}
+                    disabled={exporting || calls.length === 0}
+                >
+                    <Download style={{ width: 13, height: 13 }} /> {exporting ? 'Exporting...' : 'Export'}
+                </button>
+                <button
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', fontSize: 12, fontWeight: 500, cursor: 'default' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-secondary)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--fill-tertiary)')}
+                    onClick={handleRefresh}
+                    disabled={loading}
+                >
+                    <RefreshCw style={{ width: 13, height: 13, animation: loading ? 'spin 1s linear infinite' : 'none' }} /> Refresh
+                </button>
             </div>
 
             {/* Filters Bar */}

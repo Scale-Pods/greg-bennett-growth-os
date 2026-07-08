@@ -1,13 +1,11 @@
 "use client";
 
 import { Mail, Send, Inbox, LayoutDashboard, BarChart2, UserMinus } from "lucide-react";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useRouter } from "next/navigation";
-import { subDays } from "date-fns";
 import { useData } from "@/context/DataContext";
 import { BennettLoader } from "@/components/bennett-loader";
 
@@ -98,13 +96,7 @@ function BreakdownCard({ title, count, total, accentColor }: {
 export default function EmailDashboardPage() {
     const router = useRouter();
     const [selectedLoopMetric, setSelectedLoopMetric] = useState("intro");
-    const [dateSubtitle, setDateSubtitle] = useState("all time");
-    const { leads: allLeads, loadingLeads } = useData();
-
-    const [dateRange, setDateRange] = useState<any>({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
+    const { leads: allLeads, loadingLeads, dateRange, setDateRange } = useData();
 
     const [data, setData] = useState({
         totalEmails: 0, firstEmail: 0, totalReplies: 0, totalUnsubscribed: 0,
@@ -202,27 +194,11 @@ export default function EmailDashboardPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40, position: 'relative', minHeight: 500 }}>
             {loadingLeads && <BennettLoader />}
 
-            {/* Header */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                    <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.022em', color: 'var(--label-primary)', marginBottom: 4 }}>
-                        Email Marketing
-                    </h1>
-                    <p style={{ fontSize: 14, color: 'var(--label-secondary)' }}>
-                        Monitor your campaigns and inbox health
-                    </p>
-                </div>
-                <DateRangePicker onUpdate={r => {
-                    setDateRange(r.range);
-                    setDateSubtitle(r.label ? `${r.label.toLowerCase()}` : 'selected range');
-                }} />
-            </div>
-
             {/* Top Metric Tiles */}
             <div className="metric-grid-sm">
                 <MetricTile
                     title="Total Emails"
-                    subtitle={dateSubtitle}
+                    subtitle="selected range"
                     value={data.totalEmails.toLocaleString()}
                     accentColor="var(--indigo)"
                     icon={<Mail size={17} />}
@@ -230,7 +206,7 @@ export default function EmailDashboardPage() {
                 />
                 <MetricTile
                     title="Intro Email"
-                    subtitle={dateSubtitle}
+                    subtitle="selected range"
                     value={data.firstEmail.toLocaleString()}
                     accentColor="var(--blue)"
                     icon={<Send size={17} />}
