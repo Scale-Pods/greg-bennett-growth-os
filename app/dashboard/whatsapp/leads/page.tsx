@@ -87,7 +87,6 @@ export default function WhatsappLeadsPage() {
     const [selectedLeadObj, setSelectedLeadObj] = useState<WALead | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const leadsPerPage = 10;
-    const [activeTab, setActiveTab] = useState<"leads" | "owners">("leads");
 
     const [activeFilters, setActiveFilters] = useState<{
         replyStatus: string[];
@@ -150,27 +149,7 @@ export default function WhatsappLeadsPage() {
         });
     }, [waLeads, searchQuery, activeFilters]);
 
-    const filteredOwners = useMemo(() => {
-        setCurrentPage(1);
-        return waOwners.filter(owner => {
-            const name = String(owner.name || "").toLowerCase();
-            const phone = String(owner.contactNo || "");
-            const matchesSearch =
-                name.includes(searchQuery.toLowerCase()) ||
-                phone.includes(searchQuery);
-            if (!matchesSearch) return false;
 
-            const wtR = owner["WTS_Reply_Track"];
-            const hasReplied = wtR && wtR !== "" && String(wtR).toLowerCase() !== "no";
-            if (activeFilters.replyStatus.length > 0) {
-                const ok = (activeFilters.replyStatus.includes("Replied") && hasReplied) ||
-                    (activeFilters.replyStatus.includes("Sent") && !hasReplied);
-                if (!ok) return false;
-            }
-
-            return true;
-        });
-    }, [waOwners, searchQuery, activeFilters]);
 
     const toggleFilter = (type: 'replyStatus' | 'loops', value: string) => {
         setActiveFilters(prev => {
@@ -186,16 +165,9 @@ export default function WhatsappLeadsPage() {
         setSearchQuery("");
     };
 
-    const totalPages = activeTab === "leads"
-        ? Math.ceil(filteredLeads.length / leadsPerPage)
-        : Math.ceil(filteredOwners.length / leadsPerPage);
+    const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
 
     const paginatedLeads = filteredLeads.slice(
-        (currentPage - 1) * leadsPerPage,
-        currentPage * leadsPerPage
-    );
-
-    const paginatedOwners = filteredOwners.slice(
         (currentPage - 1) * leadsPerPage,
         currentPage * leadsPerPage
     );
@@ -224,16 +196,6 @@ export default function WhatsappLeadsPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <DateRangePicker onUpdate={(r: any) => setDateRange(r.range)} />
-                    <div style={{ display: 'flex', background: 'var(--fill-tertiary)', borderRadius: 'var(--radius-md)', padding: 3, gap: 2 }}>
-                        <button
-                            onClick={() => { setActiveTab("leads"); setCurrentPage(1); }}
-                            style={{ padding: '5px 14px', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'default', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 130ms', background: activeTab === "leads" ? 'var(--bg-layer1)' : 'transparent', color: activeTab === "leads" ? 'var(--label-primary)' : 'var(--label-secondary)', boxShadow: activeTab === "leads" ? 'var(--shadow-sm)' : 'none' }}
-                        ><Users style={{ width: 13, height: 13 }} /> CRM Leads</button>
-                        <button
-                            onClick={() => { setActiveTab("owners"); setCurrentPage(1); }}
-                            style={{ padding: '5px 14px', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'default', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 130ms', background: activeTab === "owners" ? 'var(--bg-layer1)' : 'transparent', color: activeTab === "owners" ? 'var(--orange)' : 'var(--label-secondary)', boxShadow: activeTab === "owners" ? 'var(--shadow-sm)' : 'none' }}
-                        ><Building2 style={{ width: 13, height: 13 }} /> Generated Leads</button>
-                    </div>
                     {(activeFilters.replyStatus.length > 0 || activeFilters.loops.length > 0 || searchQuery) && (
                         <button onClick={resetFilters} style={{ fontSize: 11, fontWeight: 700, color: 'var(--blue)', background: 'none', border: 'none', cursor: 'default' }}>RESET FILTERS</button>
                     )}
@@ -246,7 +208,7 @@ export default function WhatsappLeadsPage() {
                     <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--label-tertiary)' }} />
                     <Input
                         style={{ paddingLeft: 30, height: 36, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', fontSize: 13, borderRadius: 'var(--radius-md)' }}
-                        placeholder={`Search ${activeTab === "leads" ? "CRM Leads" : "Generated Leads"}...`}
+                        placeholder="Search Leads..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -269,24 +231,22 @@ export default function WhatsappLeadsPage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    {activeTab === "leads" && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: activeFilters.loops.length > 0 ? 'rgba(175,82,222,0.10)' : 'var(--fill-tertiary)', color: activeFilters.loops.length > 0 ? 'var(--purple)' : 'var(--label-secondary)', fontSize: 13, fontWeight: 500, cursor: 'default' }}>
-                                    <Briefcase style={{ width: 12, height: 12 }} />
-                                    {activeFilters.loops.length > 0 ? `Loops (${activeFilters.loops.length})` : 'Loops'}
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 apple-dialog">
-                                <DropdownMenuItem onClick={() => toggleFilter('loops', 'Intro')} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    Intro {activeFilters.loops.includes('Intro') && "✓"}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => toggleFilter('loops', 'Follow Up')} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    Follow Up {activeFilters.loops.includes('Follow Up') && "✓"}
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: activeFilters.loops.length > 0 ? 'rgba(175,82,222,0.10)' : 'var(--fill-tertiary)', color: activeFilters.loops.length > 0 ? 'var(--purple)' : 'var(--label-secondary)', fontSize: 13, fontWeight: 500, cursor: 'default' }}>
+                                <Briefcase style={{ width: 12, height: 12 }} />
+                                {activeFilters.loops.length > 0 ? `Loops (${activeFilters.loops.length})` : 'Loops'}
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 apple-dialog">
+                            <DropdownMenuItem onClick={() => toggleFilter('loops', 'Intro')} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                Intro {activeFilters.loops.includes('Intro') && "✓"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toggleFilter('loops', 'Follow Up')} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                Follow Up {activeFilters.loops.includes('Follow Up') && "✓"}
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
                     <button
                         style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', fontSize: 13, fontWeight: 500, cursor: 'default', transition: 'background 130ms' }}
@@ -319,31 +279,30 @@ export default function WhatsappLeadsPage() {
                                         onCheckedChange={toggleSelectAll}
                                     />
                                 </th>
-                                <th style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--label-tertiary)' }}>{activeTab === "leads" ? "Name" : "Generated Lead"}</th>
+                                <th style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--label-tertiary)' }}>Name</th>
                                 <th style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--label-tertiary)' }}>Phone</th>
-                                <th style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--label-tertiary)' }}>{activeTab === "leads" ? "Loop" : "Source"}</th>
+                                <th style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--label-tertiary)' }}>Loop</th>
                                 <th style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--label-tertiary)', textAlign: 'center' }}>Reply Status</th>
                                 <th style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--label-tertiary)' }}>WhatsApp Date</th>
                                 <th style={{ padding: '10px 16px', width: 40 }}></th>
                             </tr>
                         </thead>
                             <tbody>
-                                {activeTab === "leads" ? (
-                                    loading ? (
-                                        <tr>
-                                            <td colSpan={7} style={{ padding: '80px 16px', textAlign: 'center', color: 'var(--label-tertiary)' }}>
-                                                <RefreshCw style={{ width: 20, height: 20, margin: '0 auto 8px', animation: 'spin 1s linear infinite', color: 'var(--green)' }} />
-                                                Loading WhatsApp leads...
-                                            </td>
-                                        </tr>
-                                    ) : filteredLeads.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={7} style={{ padding: '80px 16px', textAlign: 'center', color: 'var(--label-tertiary)' }}>
-                                                No leads found for this date range.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        paginatedLeads.map((lead, index) => {
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={7} style={{ padding: '80px 16px', textAlign: 'center', color: 'var(--label-tertiary)' }}>
+                                            <RefreshCw style={{ width: 20, height: 20, margin: '0 auto 8px', animation: 'spin 1s linear infinite', color: 'var(--green)' }} />
+                                            Loading WhatsApp leads...
+                                        </td>
+                                    </tr>
+                                ) : filteredLeads.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={7} style={{ padding: '80px 16px', textAlign: 'center', color: 'var(--label-tertiary)' }}>
+                                            No leads found for this date range.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    paginatedLeads.map((lead, index) => {
                                             const id = String(lead["Lead ID"] || index);
                                             const wtR = lead["WP_Replied_track"];
                                             const hasReplied = wtR && wtR !== "" && String(wtR).trim().toLowerCase() !== "no";
@@ -385,62 +344,7 @@ export default function WhatsappLeadsPage() {
                                                     </td>
                                                 </tr>
                                             );
-                                        })
-                                    )
-                                ) : (
-                                    loading ? (
-                                        <tr>
-                                            <td colSpan={7} style={{ padding: '80px 16px', textAlign: 'center', color: 'var(--label-tertiary)' }}>
-                                                <RefreshCw style={{ width: 20, height: 20, margin: '0 auto 8px', animation: 'spin 1s linear infinite', color: 'var(--orange)' }} />
-                                                Loading generated leads...
-                                            </td>
-                                        </tr>
-                                    ) : filteredOwners.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={7} style={{ padding: '80px 16px', textAlign: 'center', color: 'var(--label-tertiary)' }}>
-                                                No generated leads found for this date range.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        paginatedOwners.map((owner, index) => {
-                                            const wtsReply = owner["WTS_Reply_Track"];
-                                            const hasReplied = wtsReply && wtsReply !== "" && String(wtsReply).toLowerCase() !== "no";
-                                            const waDate = getOwnerDate(owner);
-                                            return (
-                                                <tr
-                                                    key={`${owner.id || ''}-${owner.contactNo || ''}-${index}`}
-                                                    style={{ borderBottom: '1px solid var(--hairline)', cursor: 'pointer', transition: 'background 120ms' }}
-                                                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-quaternary)')}
-                                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                                                >
-                                                    <td style={{ padding: '12px 16px' }} onClick={(e) => e.stopPropagation()}>
-                                                        <Checkbox />
-                                                    </td>
-                                                    <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: 'var(--label-primary)' }}>{owner.name || "—"}</td>
-                                                    <td style={{ padding: '12px 16px', fontSize: 11, fontFamily: 'monospace', color: 'var(--label-secondary)' }}>{owner.contactNo || "—"}</td>
-                                                    <td style={{ padding: '12px 16px' }}>
-                                                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(255,159,10,0.12)', color: 'var(--orange)' }}>
-                                                            GENERATED LEADS OUTREACH
-                                                        </span>
-                                                    </td>
-                                                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                                                        {hasReplied
-                                                            ? <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontSize: 10, fontWeight: 700, background: 'rgba(48,209,88,0.12)', color: 'var(--green)' }}>REPLIED</span>
-                                                            : <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: 'var(--radius-sm)', fontSize: 10, fontWeight: 600, border: '1px solid var(--hairline)', color: 'var(--label-tertiary)' }}>SENT</span>
-                                                        }
-                                                    </td>
-                                                    <td style={{ padding: '12px 16px', fontSize: 11, color: 'var(--label-tertiary)' }}>
-                                                        {waDate ? waDate.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}
-                                                    </td>
-                                                    <td style={{ padding: '12px 16px', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                                        <button style={{ width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', border: 'none', background: 'transparent', color: 'var(--label-tertiary)', cursor: 'default' }}>
-                                                            <MoreVertical style={{ width: 14, height: 14 }} />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )
+                                    })
                                 )}
                             </tbody>
                         </table>
@@ -450,10 +354,10 @@ export default function WhatsappLeadsPage() {
                     <div style={{ padding: '12px 16px', borderTop: '1px solid var(--hairline)', background: 'var(--fill-quaternary)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                         <p style={{ fontSize: 12, color: 'var(--label-tertiary)' }}>
                             Showing <span style={{ fontWeight: 700, color: 'var(--label-primary)' }}>
-                                {activeTab === "leads" ? paginatedLeads.length : paginatedOwners.length}
+                                {paginatedLeads.length}
                             </span> of <span style={{ fontWeight: 700, color: 'var(--label-primary)' }}>
-                                {activeTab === "leads" ? filteredLeads.length : filteredOwners.length}
-                            </span> {activeTab === "leads" ? "CRM Leads" : "Generated Leads"}
+                                {filteredLeads.length}
+                            </span> Leads
                         </p>
 
                         {totalPages > 1 && (

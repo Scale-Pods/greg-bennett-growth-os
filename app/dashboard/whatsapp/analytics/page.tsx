@@ -172,9 +172,9 @@ export default function WhatsappAnalyticsPage() {
                 </div>
             </div>
 
-            {/* Lead Campaigns Metrics */}
+            {/* Bennett Bootcamps Metrics */}
             <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Lead Campaigns (nr_wf · followup · nurture)</p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Bennett Bootcamps</p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     <StatCard title="Messages Sent" value={loading ? "..." : stats.sentCount.toLocaleString()} icon={Send} color="var(--blue)" />
                     <StatCard title="Unique Msg Sent" value={loading ? "..." : totalUniqueLeads.toLocaleString()} icon={Users} color="var(--label-secondary)" info="Count of unique leads where W.P_1 was sent within the selected date range." />
@@ -183,17 +183,29 @@ export default function WhatsappAnalyticsPage() {
                 </div>
             </div>
 
-            {/* Owner Analytics */}
+            {/* Bennett Realty Solutions Metrics */}
             <div>
-                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Building2 style={{ width: 13, height: 13, color: 'var(--orange)' }} /> Generated Leads Outreach
-                </p>
+                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Bennett Realty Solutions</p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    <StatCard title="Generated Leads Outreach" value={loading ? "..." : stats.ownerReachouts.toLocaleString()} icon={Building2} color="var(--orange)" />
-                    <StatCard title="Generated Replies" value={loading ? "..." : stats.ownerReplies.toLocaleString()} icon={Reply} color="var(--green)" />
-                    <StatCard title="Generated Reply Rate" value={loading ? "..." : `${ownerReplyRate}%`} icon={TrendingUp} color="var(--purple)" />
+                    <StatCard title="Messages Sent" value={loading ? "..." : stats.sentCount.toLocaleString()} icon={Send} color="var(--blue)" />
+                    <StatCard title="Unique Msg Sent" value={loading ? "..." : totalUniqueLeads.toLocaleString()} icon={Users} color="var(--label-secondary)" info="Count of unique leads where W.P_1 was sent within the selected date range." />
+                    <StatCard title="Total Replies" value={loading ? "..." : stats.totalReplies.toLocaleString()} icon={MessageSquare} color="var(--green)" info="Derived from WP_Replied_track. Feature installed recently — select Last 3 Months for historical data." />
+                    <StatCard title="Response Rate" value={loading ? "..." : `${replyRate}%`} icon={TrendingUp} color="var(--purple)" />
                 </div>
             </div>
+
+            {/* Bennett Wealth Builders Foundation Metrics */}
+            <div>
+                <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Bennett Wealth Builders Foundation</p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <StatCard title="Messages Sent" value={loading ? "..." : stats.sentCount.toLocaleString()} icon={Send} color="var(--blue)" />
+                    <StatCard title="Unique Msg Sent" value={loading ? "..." : totalUniqueLeads.toLocaleString()} icon={Users} color="var(--label-secondary)" info="Count of unique leads where W.P_1 was sent within the selected date range." />
+                    <StatCard title="Total Replies" value={loading ? "..." : stats.totalReplies.toLocaleString()} icon={MessageSquare} color="var(--green)" info="Derived from WP_Replied_track. Feature installed recently — select Last 3 Months for historical data." />
+                    <StatCard title="Response Rate" value={loading ? "..." : `${replyRate}%`} icon={TrendingUp} color="var(--purple)" />
+                </div>
+            </div>
+
+
 
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

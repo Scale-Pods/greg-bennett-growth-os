@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/tooltip";
 import { BennettLoader } from "@/components/bennett-loader";
 import { useData } from "@/context/DataContext";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { RefreshCw } from "lucide-react";
 
 /* ── Apple Metric Tile ── */
 function MetricTile({ title, value, accentColor, icon, onClick, info }: {
@@ -211,6 +213,23 @@ export default function WhatsappDashboardPage() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40, position: 'relative', minHeight: 500 }}>
             {loading && <BennettLoader />}
+
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>WhatsApp Dashboard</h1>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Overview of WhatsApp outreach</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
+                    <button
+                        onClick={() => { if (dateRange?.from) fetchData(dateRange.from, dateRange.to || dateRange.from); }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}
+                    >
+                        <RefreshCw style={{ width: 14, height: 14 }} />
+                    </button>
+                </div>
+            </div>
 
             {/* Key Metrics */}
             <div>

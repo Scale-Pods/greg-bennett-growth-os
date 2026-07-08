@@ -8,6 +8,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { useRouter } from "next/navigation";
 import { useData } from "@/context/DataContext";
 import { BennettLoader } from "@/components/bennett-loader";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { RefreshCw } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from "recharts";
+import { format } from "date-fns";
 
 /* ── Apple Metric Tile ── */
 function MetricTile({ title, subtitle, value, accentColor, icon, onClick }: {
@@ -96,7 +100,8 @@ function BreakdownCard({ title, count, total, accentColor }: {
 export default function EmailDashboardPage() {
     const router = useRouter();
     const [selectedLoopMetric, setSelectedLoopMetric] = useState("intro");
-    const { leads: allLeads, loadingLeads, dateRange, setDateRange } = useData();
+    const { leads: allLeads, loadingLeads, dateRange, setDateRange, refreshLeads } = useData();
+    const [trendData, setTrendData] = useState<any[]>([]);
 
     const [data, setData] = useState({
         totalEmails: 0, firstEmail: 0, totalReplies: 0, totalUnsubscribed: 0,
@@ -169,6 +174,27 @@ export default function EmailDashboardPage() {
                 });
             });
 
+            const dailyMap: Record<string, number> = {};
+            allLeads.forEach((lead: any) => {
+                const stages = lead.stages_passed || [];
+                const stageData = lead.stage_data || {};
+                stages.forEach((stage: string) => {
+                    if (stage.toLowerCase().startsWith("email_")) {
+                        const emailDate = parseMsg(stageData[stage]).date || new Date(lead.created_at);
+                        if (inRange(emailDate)) {
+                            const dayKey = emailDate.toISOString().slice(0, 10);
+                            dailyMap[dayKey] = (dailyMap[dayKey] || 0) + 1;
+                        }
+                    }
+                });
+            });
+
+            const trends = Object.entries(dailyMap).sort(([a], [b]) => a.localeCompare(b)).map(([date, count]) => ({
+                date: format(new Date(date + 'T00:00:00'), 'MMM dd'),
+                emails: count
+            }));
+            setTrendData(trends);
+
             setData({
                 totalEmails, firstEmail: intro[0], totalReplies: replyCount, totalUnsubscribed: unsubCount,
                 introCounts: intro, followUpCounts: followUp, nurtureCounts: nurture,
@@ -193,6 +219,23 @@ export default function EmailDashboardPage() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40, position: 'relative', minHeight: 500 }}>
             {loadingLeads && <BennettLoader />}
+
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Email Dashboard</h1>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Overview of email campaigns</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
+                    <button
+                        onClick={() => refreshLeads?.()}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}
+                    >
+                        <RefreshCw style={{ width: 14, height: 14 }} />
+                    </button>
+                </div>
+            </div>
 
             {/* Top Metric Tiles */}
             <div className="metric-grid-sm">
@@ -265,45 +308,25 @@ export default function EmailDashboardPage() {
                 />
             </div>
 
-            {/* Campaign Breakdown Tabs */}
+            {/* Email Performance Trend */}
             <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                     <h2 style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)' }}>
-                        Campaign Performance
+                        Email Volume Trend
                     </h2>
                 </div>
 
-                <Tabs defaultValue="intro">
-                    <TabsList style={{ marginBottom: 20 }}>
-                        <TabsTrigger value="intro">Intro Loop</TabsTrigger>
-                        <TabsTrigger value="followup">Follow-up Loop</TabsTrigger>
-                        <TabsTrigger value="nurture">Nurture Loop</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="intro">
-                        <div className="metric-grid-sm">
-                            {["Email 1", "Email 2", "Email 3"].map((name, i) => (
-                                <BreakdownCard key={name} title={name} count={data.introCounts[i]} total={data.totalEmails} accentColor="var(--blue)" />
-                            ))}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="followup">
-                        <div className="metric-grid-sm">
-                            {["Email 1", "Email 2", "Email 3"].map((name, i) => (
-                                <BreakdownCard key={name} title={name} count={data.followUpCounts[i]} total={data.totalEmails} accentColor="var(--orange)" />
-                            ))}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="nurture">
-                        <div className="metric-grid-sm">
-                            {Array.from({ length: 9 }).map((_, i) => (
-                                <BreakdownCard key={i} title={`Email ${i + 1}`} count={data.nurtureCounts[i]} total={data.totalEmails} accentColor="var(--purple)" />
-                            ))}
-                        </div>
-                    </TabsContent>
-                </Tabs>
+                <div className="liquid-card" style={{ padding: 24, height: 350 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trendData.length ? trendData : [{ date: 'No Data', emails: 0 }]}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(127,127,127,0.1)" />
+                            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--label-tertiary)' }} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--label-tertiary)' }} />
+                            <RechartsTooltip contentStyle={{ borderRadius: 10, border: '1px solid var(--hairline)', background: 'var(--bg-layer1)', fontSize: 12, color: 'var(--label-primary)', boxShadow: 'var(--shadow-lg)' }} />
+                            <Line type="monotone" dataKey="emails" stroke="var(--indigo)" strokeWidth={3} dot={{ r: 4, fill: 'var(--indigo)' }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
         </div>
     );

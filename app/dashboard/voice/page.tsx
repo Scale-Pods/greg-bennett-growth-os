@@ -11,6 +11,8 @@ import {
 import { format } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { RefreshCw } from "lucide-react";
 
 /* ── Apple Metric Tile ── */
 function MetricTile({ title, value, accentColor, icon, onClick }: {
@@ -160,6 +162,23 @@ export default function VoiceDashboardPage() {
                     </div>
                 </div>
             )}
+
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Voice Dashboard</h1>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Overview of voice calls</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
+                    <button
+                        onClick={() => { if (dateRange?.from) refreshVoiceMetrics({ from: dateRange.from, to: dateRange.to || dateRange.from }); }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}
+                    >
+                        <RefreshCw style={{ width: 14, height: 14 }} />
+                    </button>
+                </div>
+            </div>
 
             {/* 3 Business Banners */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>

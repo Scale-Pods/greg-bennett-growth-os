@@ -41,9 +41,10 @@ export default function VoiceCalculatorPage() {
     const processResults = async () => {
         const filteredCalls = rawCalls.filter((call: any) => {
             if (accountFilter === 'vapi') return call.source === 'vapi';
-            if (accountFilter === 'vapi-normal') return call.source === 'vapi' && call.vapiAccount === 'normal';
-            if (accountFilter === 'vapi-owners') return call.source === 'vapi' && call.vapiAccount === 'owners';
-            if (accountFilter === 'open-house') return call.assistantId === '1ef6ea66-0a75-45f5-b025-1743e048dc90';
+            if (accountFilter === 'bootcamps') return call.source === 'vapi' && call.vapiAccount === 'bootcamps';
+            if (accountFilter === 'realty') return call.source === 'vapi' && call.vapiAccount === 'realty';
+            if (accountFilter === 'wealth') return call.source === 'vapi' && call.vapiAccount === 'wealth';
+            if (accountFilter === 'automations') return call.source === 'vapi' && call.vapiAccount === 'automations';
             return true;
         });
 
@@ -125,11 +126,12 @@ export default function VoiceCalculatorPage() {
                             <SelectTrigger style={{ height: 36, fontSize: 13, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
                                 <SelectValue placeholder="Select Account" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent style={{ zIndex: 100, backgroundColor: 'var(--bg-layer1)' }}>
                                 <SelectItem value="vapi">All Vapi Calls</SelectItem>
-                                <SelectItem value="vapi-normal">CRM Leads</SelectItem>
-                                <SelectItem value="vapi-owners">Generated Leads</SelectItem>
-                                <SelectItem value="open-house">🏠 Open House Event</SelectItem>
+                                <SelectItem value="bootcamps">Bennett Bootcamps</SelectItem>
+                                <SelectItem value="realty">Bennett Realty Solutions</SelectItem>
+                                <SelectItem value="wealth">Bennett Wealth Builders Foundation</SelectItem>
+                                <SelectItem value="automations">Bennett Automations</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

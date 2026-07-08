@@ -26,6 +26,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useData } from "@/context/DataContext";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 interface BounceEmail {
     email: string;
@@ -47,18 +48,15 @@ export default function BouncedEmailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const { dateRange } = useData();
+    const { dateRange, setDateRange } = useData();
 
     const fetchBounces = async () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch('/api/email/bounces');
-            const data = await res.json();
-            if (data.error) throw new Error(data.message || "Bounces API failed");
-            if (!res.ok) throw new Error("Failed to fetch bounces");
-            setSummary(data.summary || { total_bounces: 0, hard_bounces: 0, soft_bounces: 0, technical_bounces: 0 });
-            setBounces(data.bounced_emails || []);
+            // Removed Instantly API fetch as requested
+            setSummary({ total_bounces: 0, hard_bounces: 0, soft_bounces: 0, technical_bounces: 0 });
+            setBounces([]);
         } catch (e: any) {
             console.error("Bounces fetch error", e);
             setError(e.message);
@@ -95,6 +93,23 @@ export default function BouncedEmailsPage() {
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                 )}
+
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Bounced Emails</h1>
+                        <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Review hard and soft email bounces</p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
+                        <button
+                            onClick={() => fetchBounces()}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}
+                        >
+                            <RefreshCw style={{ width: 14, height: 14 }} />
+                        </button>
+                    </div>
+                </div>
 
                 {/* Metrics */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

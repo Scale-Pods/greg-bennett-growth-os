@@ -25,6 +25,7 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { format, subDays } from "date-fns";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 import { useData } from "@/context/DataContext";
 import { BennettLoader } from "@/components/bennett-loader";
@@ -167,7 +168,7 @@ export default function SentEmailsPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-
+                    <DateRangePicker onUpdate={(r: any) => setDateRange(r.range)} />
                 </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>

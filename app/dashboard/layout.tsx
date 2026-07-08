@@ -327,37 +327,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
             {/* MAIN AREA */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
-                {/* Floating header bar with page title + date filter */}
-                <div style={{
-                    padding: '16px 28px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 16,
-                    background: 'var(--glass-fill)',
-                    backdropFilter: 'blur(48px) saturate(160%)',
-                    borderBottom: '1px solid var(--separator)',
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 30,
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <button
-                            onClick={() => setSidebarExpanded(!sidebarExpanded)}
-                            className="btn-icon"
-                            style={{ width: 28, height: 28 }}
-                        >
-                            {sidebarExpanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-                        </button>
-                        <h1 style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)', margin: 0 }}>
-                            {currentPageTitle}
-                        </h1>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <DateRangePicker value={dateRange} onUpdate={(val) => val.range && setDateRange(val.range)} />
-                    </div>
-                </div>
-
                 <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
                     {children}
                 </main>

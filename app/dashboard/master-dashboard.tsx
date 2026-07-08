@@ -21,6 +21,8 @@ import { useRouter } from "next/navigation";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
 import { BennettLoader } from "@/components/bennett-loader";
 import { useData } from "@/context/DataContext";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { RefreshCw } from "lucide-react";
 
 /* ── Liquid Glass Metric Tile ── */
 function MetricTile({
@@ -132,6 +134,7 @@ export default function MasterDashboard() {
         calls,
         dateRange,
         setDateRange,
+        refreshMasterMetrics,
         leads,
     } = useData();
     const router = useRouter();
@@ -324,6 +327,23 @@ export default function MasterDashboard() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28, position: 'relative' }}>
             {loading && <BennettLoader />}
+
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Master Dashboard</h1>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Overview of all your campaigns</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
+                    <button
+                        onClick={() => { if (dateRange?.from) { refreshMasterMetrics({ from: dateRange.from, to: dateRange.to || dateRange.from }); fetchWaStats(dateRange.from, dateRange.to || dateRange.from); fetchSmsStats(dateRange.from, dateRange.to || dateRange.from); fetchInboundMetrics(); } }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}
+                    >
+                        <RefreshCw style={{ width: 14, height: 14 }} />
+                    </button>
+                </div>
+            </div>
 
             {/* Inbound Leads Row */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, CheckCircle, PhoneIncoming, Crown } from "lucide-react";
+import { Phone, CheckCircle, PhoneIncoming, Crown, RefreshCw } from "lucide-react";
 import { BennettLoader } from "@/components/bennett-loader";
 import {
     BarChart,
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect } from "react";
 import { format, subDays } from "date-fns";
 import { useData } from "@/context/DataContext";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 
 export default function VoiceAnalyticsPage() {
@@ -29,8 +30,9 @@ export default function VoiceAnalyticsPage() {
     const loading = loadingVoiceMetrics;
     const m = voiceMetrics;
 
-    const showNormal = accountFilter === 'vapi' || accountFilter === 'vapi-normal';
-    const showOwners = accountFilter === 'vapi' || accountFilter === 'vapi-owners';
+    const showBootcamps = accountFilter === 'vapi' || accountFilter === 'bootcamps';
+    const showRealty = accountFilter === 'vapi' || accountFilter === 'realty';
+    const showWealth = accountFilter === 'vapi' || accountFilter === 'wealth';
 
     useEffect(() => {
         if (!dateRange?.from) return;
@@ -55,44 +57,25 @@ export default function VoiceAnalyticsPage() {
             {loading && <BennettLoader />}
 
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
-                <Select value={accountFilter} onValueChange={setAccountFilter}>
-                    <SelectTrigger style={{ width: 190, height: 36, fontSize: 12 }}>
-                        <SelectValue placeholder="Account / Provider" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="vapi">All Vapi Calls</SelectItem>
-                        <SelectItem value="vapi-owners">Generated Leads</SelectItem>
-                        <SelectItem value="vapi-normal">CRM Leads</SelectItem>
-                    </SelectContent>
-                </Select>
+                <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
+                <button
+                    onClick={() => { if (dateRange?.from) refreshVoiceMetrics({ from: dateRange.from, to: dateRange.to || dateRange.from }); }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}
+                >
+                    <RefreshCw style={{ width: 14, height: 14 }} />
+                </button>
             </div>
 
-            {/* All-Time Totals */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <StatCard
-                    title="Total CRM Leads Calls"
-                    value={(m?.allTimeNormalCalls ?? allTimeVoiceCount).toLocaleString()}
-                    change="All Time"
-                    icon={<Phone style={{ width: 18, height: 18 }} />}
-                    color="var(--blue)"
-                />
-                <StatCard
-                    title="Total Generated Leads Calls"
-                    value={(m?.allTimeOwnerCalls ?? allTimeOwnerVoiceCount).toLocaleString()}
-                    change="All Time"
-                    icon={<Crown style={{ width: 18, height: 18 }} />}
-                    color="var(--orange)"
-                />
-            </div>
 
-            {/* Normal Calls Funnel */}
-            {showNormal && (
+
+            {/* Bennett Bootcamps Funnel */}
+            {showBootcamps && (
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                         <div style={{ padding: 6, borderRadius: 'var(--radius-md)', background: 'var(--blue)' }}>
                             <PhoneIncoming style={{ width: 14, height: 14, color: '#fff' }} />
                         </div>
-                        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--label-primary)' }}>CRM Leads Analytics</h2>
+                        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--label-primary)' }}>Bennett Bootcamps Analytics</h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <StatCard title="Calls in Range" value={(m?.normalCalls ?? 0).toLocaleString()} change="Selected Dates" icon={<Phone style={{ width: 18, height: 18 }} />} color="var(--blue)" />
@@ -103,20 +86,38 @@ export default function VoiceAnalyticsPage() {
                 </div>
             )}
 
-            {/* Owner Calls Funnel */}
-            {showOwners && (
+            {/* Bennett Realty Solutions Funnel */}
+            {showRealty && (
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                         <div style={{ padding: 6, borderRadius: 'var(--radius-md)', background: 'var(--orange)' }}>
                             <Crown style={{ width: 14, height: 14, color: '#fff' }} />
                         </div>
-                        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--label-primary)' }}>Generated Leads Outreach Analytics</h2>
+                        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--label-primary)' }}>Bennett Realty Solutions Analytics</h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <StatCard title="Calls in Range" value={(m?.ownerCalls ?? 0).toLocaleString()} change="Selected Dates" icon={<Crown style={{ width: 18, height: 18 }} />} color="var(--orange)" />
                         <StatCard title="Call Pick-up Rate" value={`${(m?.ownerPickupRate ?? 0).toFixed(1)}%`} change="Picked & duration > 18 sec" icon={<Phone style={{ width: 18, height: 18 }} />} color="var(--orange)" />
                         <StatCard title="Completion Rate" value={`${(m?.ownerCompletionRate ?? 0).toFixed(1)}%`} change="Completed Conversation" icon={<CheckCircle style={{ width: 18, height: 18 }} />} color="var(--green)" />
                         <StatCard title="Positive Response" value={`${(m?.ownerPositiveRate ?? 0).toFixed(1)}%`} change="EOI & Callback" icon={<CheckCircle style={{ width: 18, height: 18 }} />} color="var(--blue)" />
+                    </div>
+                </div>
+            )}
+
+            {/* Bennett Wealth Builders Foundation Funnel */}
+            {showWealth && (
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <div style={{ padding: 6, borderRadius: 'var(--radius-md)', background: 'var(--purple)' }}>
+                            <PhoneIncoming style={{ width: 14, height: 14, color: '#fff' }} />
+                        </div>
+                        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--label-primary)' }}>Bennett Wealth Builders Foundation Analytics</h2>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <StatCard title="Calls in Range" value={(m?.normalCalls ?? 0).toLocaleString()} change="Selected Dates" icon={<Phone style={{ width: 18, height: 18 }} />} color="var(--purple)" />
+                        <StatCard title="Call Pick-up Rate" value={`${(m?.normalPickupRate ?? 0).toFixed(1)}%`} change="Picked & duration > 18 sec" icon={<Phone style={{ width: 18, height: 18 }} />} color="var(--purple)" />
+                        <StatCard title="Completion Rate" value={`${(m?.normalCompletionRate ?? 0).toFixed(1)}%`} change="Completed Conversation" icon={<CheckCircle style={{ width: 18, height: 18 }} />} color="var(--green)" />
+                        <StatCard title="Positive Response" value={`${(m?.normalPositiveRate ?? 0).toFixed(1)}%`} change="Positive & Hesitant" icon={<CheckCircle style={{ width: 18, height: 18 }} />} color="var(--blue)" />
                     </div>
                 </div>
             )}
