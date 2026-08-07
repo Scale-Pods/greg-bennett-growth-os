@@ -1,8 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { hashPassword, comparePassword } from '@/lib/auth-utils';
 import { SignJWT } from 'jose';
 import crypto from 'crypto';
@@ -137,12 +136,10 @@ export async function resetPassword(prevState: any, formData: FormData) {
     }
 
     try {
-        // Verify the Supabase recovery token and get the user's email
-        const supabaseAnon = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-        const { data: { user }, error: tokenError } = await supabaseAnon.auth.getUser(accessToken);
+        // Verify the Supabase recovery token and get the user's email.
+        // Must point at the same project that issued the token (the one used by
+        // supabaseAdmin.auth.resetPasswordForEmail in forgotPassword() below).
+        const { data: { user }, error: tokenError } = await supabase.auth.getUser(accessToken);
 
         if (tokenError || !user?.email) {
             return { error: 'Invalid or expired reset link. Please request a new one.' };
