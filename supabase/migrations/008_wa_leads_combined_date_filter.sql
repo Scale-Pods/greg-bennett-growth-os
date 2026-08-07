@@ -7,7 +7,7 @@
 -- Strategy:
 --   WHERE whatsapp_last_contacted BETWEEN p_from AND p_to          (new leads, 25 May+)
 --      OR (whatsapp_last_contacted IS NULL                          (old leads, pre-25 May)
---          AND parse_wp_date("W.P_1") BETWEEN p_from AND p_to)
+--          AND parse_wp_  date("W.P_1") BETWEEN p_from AND p_to)
 --   Using OR avoids COALESCE swallowing rows where parse_wp_date returns NULL.
 --   latest_wp_date = COALESCE(whatsapp_last_contacted, parse_wp_date("W.P_1"))
 --
