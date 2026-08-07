@@ -1,24 +1,58 @@
 "use client";
 
-import { RefreshCw, ChevronLeft, ChevronRight, User, Download, Search, Info, Activity, Phone } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RefreshCw, ChevronLeft, ChevronRight, User, Download, Search, Info, Activity } from "lucide-react";
 import { BennettLoader } from "@/components/bennett-loader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CallDetailsModal } from "@/components/voice/call-details-modal";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { format, subDays } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 
+const AGENTS = [
+    { key: "recruiting", label: "Recruiting", color: "#3b5bdb" },
+    { key: "coaching", label: "Coaching", color: "#22c55e" },
+    { key: "investor", label: "Investor", color: "#f59e0b" },
+    { key: "biglife", label: "BigLife", color: "#0f9d58" },
+    { key: "bootcampsNew", label: "Bootcamps New Leads", color: "#e67e22" },
+    { key: "bootcampsFollowup", label: "Bootcamps Follow-up", color: "#d6336c" },
+] as const;
 
-const DynamicRowCells = ({ call, leads, telephonyCost }: { call: any, leads: any[], telephonyCost?: number }) => {
+type AgentKey = typeof AGENTS[number]["key"];
+
+const AGENT_MAP: Record<string, { label: string; color: string }> = Object.fromEntries(
+    AGENTS.map(a => [a.key, { label: a.label, color: a.color }])
+);
+
+const selectTriggerStyle: React.CSSProperties = {
+    height: 34, fontSize: 12, background: 'var(--fill-tertiary)',
+    border: '1px solid var(--glass-border)', color: 'var(--label-primary)',
+    borderRadius: 'var(--radius-md)',
+};
+
+function AgentBadge({ agent }: { agent: string }) {
+    const cfg = AGENT_MAP[agent];
+    if (!cfg) return <span style={{ fontSize: 11, color: 'var(--label-tertiary)' }}>—</span>;
+    return (
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '2px 8px', borderRadius: 'var(--radius-xs)',
+            fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+            background: `${cfg.color}1A`, color: cfg.color,
+        }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.color, flexShrink: 0 }} />
+            {cfg.label}
+        </span>
+    );
+}
+
+const DynamicRowCells = ({ call, leads }: { call: any, leads: any[] }) => {
     let guestName = call.name || "Guest";
     const guestNum = call.phone || "Unknown";
-    const realType = call.type || (call.isInbound ? "Inbound" : "Outbound");
-    const isInboundState = call.isInbound;
+    const callType = call.status === 'in-progress' ? 'Ongoing' : (call.voiceCallStatus || call.status || 'Unknown');
 
     if ((!guestName || guestName === "Guest" || guestName === "Unknown") && call.phone && leads) {
         const targetPhone = call.phone.replace(/\D/g, '');
@@ -38,36 +72,19 @@ const DynamicRowCells = ({ call, leads, telephonyCost }: { call: any, leads: any
             </td>
             <td style={{ padding: '10px 14px', fontSize: 12, fontFamily: 'monospace', color: 'var(--label-secondary)' }}>{guestNum}</td>
             <td style={{ padding: '10px 14px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(59,91,219,0.10)', color: 'var(--blue)' }}>
-                        {realType}
-                    </span>
-                    {call.vapiAccount === 'owners' && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', background: 'rgba(255,159,10,0.12)', color: 'var(--orange)' }}>
-                            generated leads
-                        </span>
-                    )}
-                    {call.assistantId === '560ca61b-8cd3-4b5f-996b-2966abfa37fd' && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', background: 'rgba(175,82,222,0.10)', color: 'var(--purple)' }}>
-                            secondary leads
-                        </span>
-                    )}
-                    {call.assistantId === '1ef6ea66-0a75-45f5-b025-1743e048dc90' && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', background: 'rgba(255,159,10,0.12)', color: 'var(--orange)' }}>
-                            open house
-                        </span>
-                    )}
-                </div>
+                <AgentBadge agent={call.agent} />
+            </td>
+            <td style={{ padding: '10px 14px' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(59,91,219,0.10)', color: 'var(--blue)' }}>
+                    {callType}
+                </span>
             </td>
             <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--label-secondary)', fontWeight: 500 }}>{formatDuration(call.durationSeconds)}</td>
-            <td style={{ padding: '10px 14px', fontSize: 11, color: 'var(--label-tertiary)' }}>{call.country || 'Unknown'}</td>
             <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>
                 <Popover>
                     <PopoverTrigger asChild>
                         <button style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'help', color: 'var(--green)', fontSize: 12, fontWeight: 700 }} onClick={(e) => e.stopPropagation()}>
-                            {telephonyCost !== undefined && telephonyCost !== -1
-                                ? `$${((call.breakdown?.agent || 0) + telephonyCost).toFixed(3)}`
-                                : call.cost}
+                            ${Number(call.totalCost ?? call.cost ?? 0).toFixed(3)}
                             <Info style={{ width: 11, height: 11, color: 'var(--label-quaternary)' }} />
                         </button>
                     </PopoverTrigger>
@@ -79,25 +96,21 @@ const DynamicRowCells = ({ call, leads, telephonyCost }: { call: any, leads: any
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--label-secondary)' }}>
-                                    <span>Agent (Vapi/AI):</span>
-                                    <span style={{ fontFamily: 'monospace', color: 'var(--label-primary)' }}>${(call.breakdown?.agent || 0).toFixed(3)}</span>
+                                    <span>Agent (Vapi):</span>
+                                    <span style={{ fontFamily: 'monospace', color: 'var(--label-primary)' }}>${Number(call.cost || 0).toFixed(3)}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--label-secondary)' }}>
-                                    <span>Telephony:</span>
-                                    {telephonyCost === -1 ? (
-                                        <span style={{ fontFamily: 'monospace', color: 'var(--label-tertiary)', fontStyle: 'italic' }}>loading...</span>
+                                    <span>Telephony (Twilio):</span>
+                                    {call.telephonyCost === null || call.telephonyCost === undefined ? (
+                                        <span style={{ fontFamily: 'monospace', color: 'var(--label-tertiary)', fontStyle: 'italic' }}>no match</span>
                                     ) : (
-                                        <span style={{ fontFamily: 'monospace', color: 'var(--label-primary)' }}>${(telephonyCost !== undefined ? telephonyCost : (call.breakdown?.telephony || 0)).toFixed(3)}</span>
+                                        <span style={{ fontFamily: 'monospace', color: 'var(--label-primary)' }}>${Number(call.telephonyCost).toFixed(3)}</span>
                                     )}
                                 </div>
                             </div>
                             <div style={{ borderTop: '1px solid var(--hairline)', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: 'var(--label-primary)' }}>
                                 <span>Total:</span>
-                                <span style={{ color: 'var(--green)' }}>
-                                    {telephonyCost !== undefined && telephonyCost !== -1
-                                        ? `$${((call.breakdown?.agent || 0) + telephonyCost).toFixed(3)}`
-                                        : call.cost}
-                                </span>
+                                <span style={{ color: 'var(--green)' }}>${Number(call.totalCost ?? call.cost ?? 0).toFixed(3)}</span>
                             </div>
                         </div>
                     </PopoverContent>
@@ -108,38 +121,53 @@ const DynamicRowCells = ({ call, leads, telephonyCost }: { call: any, leads: any
 };
 
 export default function VoiceLogsPage() {
-    const { calls: globalCalls, loadingCalls, refreshCalls, leads, loadingLeads, dateRange, setDateRange } = useData();
+    const { leads, loadingLeads, dateRange, setDateRange } = useData();
     const [allCallsMapped, setAllCallsMapped] = useState<any[]>([]);
     const [calls, setCalls] = useState<any[]>([]);
-    const loading = loadingCalls;
+    const [loading, setLoading] = useState(true);
     const [selectedCall, setSelectedCall] = useState<any>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState("all");
-    const [typeFilter, setTypeFilter] = useState("all");
-    const [accountFilter, setAccountFilter] = useState("vapi");
+    const [agent, setAgent] = useState<AgentKey | "all">("all");
     const [phoneFilter, setPhoneFilter] = useState("");
     const [sortBy, setSortBy] = useState("newest");
-    const [regionFilter, setRegionFilter] = useState("all");
-    const [costModalOpen, setCostModalOpen] = useState(false);
-    const [telephonyCosts, setTelephonyCosts] = useState<Record<string, number>>({});
     const [exporting, setExporting] = useState(false);
 
+    const fetchCallsForAgents = useCallback(async () => {
+        if (!dateRange?.from) return;
+        setLoading(true);
+        try {
+            const from = startOfDay(dateRange.from).toISOString();
+            const to = endOfDay(dateRange.to || dateRange.from).toISOString();
+            const agentsToFetch = agent === "all" ? AGENTS.map(a => a.key) : [agent];
+
+            const results = await Promise.all(
+                agentsToFetch.map(async (key) => {
+                    const res = await fetch(`/api/calls?agent=${key}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&includeTelephony=true`);
+                    if (!res.ok) return [];
+                    const data = await res.json();
+                    return Array.isArray(data) ? data : [];
+                })
+            );
+
+            setAllCallsMapped(results.flat());
+        } catch (err) {
+            console.error("Error fetching calls", err);
+        } finally {
+            setLoading(false);
+        }
+    }, [agent, dateRange]);
+
     useEffect(() => {
-        if (!refreshCalls) return;
-        refreshCalls({
-            from: !dateRange ? undefined : dateRange?.from,
-            to: !dateRange ? undefined : (dateRange?.to || dateRange?.from),
-            provider: 'vapi'
-        });
-    }, [dateRange, refreshCalls]);
+        fetchCallsForAgents();
+    }, [fetchCallsForAgents]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    useEffect(() => {
-        if (loadingLeads || !globalCalls) return;
-
-        const mappedCalls = globalCalls.map((c: any) => {
+    const mappedCalls = useCallback(() => {
+        if (loadingLeads) return [];
+        return allCallsMapped.map((c: any) => {
             let resolvedName = c.name;
             if ((!resolvedName || resolvedName === "Guest" || resolvedName === "Unknown") && c.phone && leads) {
                 const targetPhone = c.phone.replace(/\D/g, '');
@@ -148,47 +176,24 @@ export default function VoiceLogsPage() {
                     if (foundLead && foundLead.name) resolvedName = foundLead.name;
                 }
             }
-            const UAE_BOT_ID = '70f05e16-18f3-4f6e-964a-f47b299c6c1d';
-            const UAE_BUSINESS_NUMBER = '+97148714150';
-            let resolvedType = c.type || (c.isInbound ? "Inbound" : "Outbound");
-
-            if (resolvedType === "Inbound") {
-                const isFromUAEBot = c.assistantId === UAE_BOT_ID;
-                const isFromUAENumber = c.fromNumber === UAE_BUSINESS_NUMBER || c.phoneNumber === UAE_BUSINESS_NUMBER;
-                if ((isFromUAEBot || isFromUAENumber) && c.phone) resolvedType = "Outbound";
-            }
 
             return {
                 ...c,
                 name: resolvedName,
-                type: resolvedType,
                 displayDate: c.startedAt ? format(new Date(c.startedAt), 'PPp') : 'N/A',
                 displayDuration: formatDuration(c.durationSeconds || 0),
             };
         });
-
-        setAllCallsMapped(mappedCalls);
-    }, [globalCalls, leads, loadingLeads]);
+    }, [allCallsMapped, leads, loadingLeads]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [dateRange, statusFilter, typeFilter, accountFilter, phoneFilter, sortBy, regionFilter]);
+    }, [dateRange, statusFilter, agent, phoneFilter, sortBy]);
 
     useEffect(() => {
-        const filteredCalls = allCallsMapped.filter((call: any) => {
-            if (accountFilter === 'vapi' && call.source !== 'vapi') return false;
-            if (accountFilter === 'bootcamps' && (call.source !== 'vapi' || call.vapiAccount !== 'normal' || call.assistantId === '1ef6ea66-0a75-45f5-b025-1743e048dc90')) return false;
-            if (accountFilter === 'realty' && (call.source !== 'vapi' || call.vapiAccount !== 'normal' || (call.assistantId !== '1ef6ea66-0a75-45f5-b025-1743e048dc90' && call.assistantId !== '70f05e16-18f3-4f6e-964a-f47b299c6c1d'))) return false;
-            if (accountFilter === 'wealth' && (call.source !== 'vapi' || call.vapiAccount !== 'owners' || call.assistantId === '560ca61b-8cd3-4b5f-996b-2966abfa37fd')) return false;
-            if (accountFilter === 'coaching' && (call.source !== 'vapi' || call.vapiAccount !== 'owners' || call.assistantId !== '560ca61b-8cd3-4b5f-996b-2966abfa37fd')) return false;
+        const resolved = mappedCalls();
+        const filteredCalls = resolved.filter((call: any) => {
             if (statusFilter !== "all" && call.status !== statusFilter) return false;
-            if (typeFilter !== "all") {
-                const normalizedCallType = (call.type || (call.isInbound ? "Inbound" : "Outbound")).toLowerCase();
-                const isSecondaryLeads = call.assistantId === '560ca61b-8cd3-4b5f-996b-2966abfa37fd';
-                if (typeFilter === "secondary-leads") { if (!isSecondaryLeads) return false; }
-                else if (typeFilter === "normal") { if (isSecondaryLeads) return false; }
-                else if (normalizedCallType !== typeFilter.toLowerCase()) return false;
-            }
             if (phoneFilter) {
                 const searchStr = phoneFilter.toLowerCase().trim();
                 const phoneSearch = searchStr.replace(/\D/g, '');
@@ -196,21 +201,6 @@ export default function VoiceLogsPage() {
                 const matchesPhone = phoneSearch && phoneTarget.includes(phoneSearch);
                 const matchesName = (call.name || "Guest").toLowerCase().includes(searchStr);
                 if (!matchesPhone && !matchesName) return false;
-            }
-            if (regionFilter !== "all") {
-                const assistantId = call.assistantId;
-                const assistantNum = (call.phoneNumber || call.fromNumber || "").replace(/\D/g, '');
-                const regionMap: Record<string, { nums: string[], ids: string[] }> = {
-                    "uae": { nums: ["97148714150"], ids: ["70f05e16-18f3-4f6e-964a-f47b299c6c1d", "9ac979c3-a0b3-4af6-bb0d-07ddf9c0d1cd"] },
-                    "us": { nums: ["14782159151", "17624000439"], ids: ["b35e3032-7865-4913-ba22-a913b5d4117b"] },
-                    "uk": { nums: ["447462179309", "7462179309"], ids: ["918c25eb-9882-452e-86df-b4851d464852"] }
-                };
-                const target = regionMap[regionFilter];
-                if (target) {
-                    const matchesNum = assistantNum && target.nums.some(n => assistantNum.endsWith(n) || n.endsWith(assistantNum));
-                    const matchesId = assistantId && target.ids.includes(assistantId);
-                    if (!matchesNum && !matchesId) return false;
-                }
             }
             return true;
         });
@@ -223,35 +213,20 @@ export default function VoiceLogsPage() {
         });
 
         setCalls(sortedCalls);
-    }, [allCallsMapped, dateRange, statusFilter, typeFilter, accountFilter, phoneFilter, sortBy, regionFilter]);
+    }, [allCallsMapped, statusFilter, phoneFilter, sortBy, mappedCalls]);
 
     const handleRefresh = () => {
-        refreshCalls({ from: dateRange?.from, to: dateRange?.to || dateRange?.from, provider: 'vapi', force: true });
+        fetchCallsForAgents();
     };
 
     const handleExport = async () => {
         if (calls.length === 0) return;
         setExporting(true);
         try {
-            const missingCostCalls = calls.filter(c => telephonyCosts[c.id] === undefined);
-            let allCosts = { ...telephonyCosts };
-            if (missingCostCalls.length > 0) {
-                const res = await fetch('/api/calls/telephony-cost', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ calls: missingCostCalls.map(c => ({ id: c.id, phoneNumber: c.phoneNumber, phone: c.phone, durationSeconds: c.durationSeconds, isInbound: c.isInbound })) })
-                });
-                const data = await res.json();
-                if (data && data.costs) { allCosts = { ...allCosts, ...data.costs }; setTelephonyCosts(prev => ({ ...prev, ...data.costs })); }
-            }
-            const headers = ["Name", "Phone", "Type", "Duration (sec)", "Duration (min)", "Country", "Telephony Cost", "Total Cost", "Status", "Date"];
+            const headers = ["Name", "Phone", "Agent", "Duration (sec)", "Duration (min)", "Agent Cost", "Telephony Cost", "Total Cost", "Status", "Date"];
             const csvData = calls.map(call => {
-                const tCost = allCosts[call.id];
-                const agentCost = call.breakdown?.agent || 0;
-                let totalCostStr = call.cost;
-                let telephonyCostStr = "N/A";
-                if (tCost !== undefined && tCost !== -1) { telephonyCostStr = `$${tCost.toFixed(3)}`; totalCostStr = `$${(agentCost + tCost).toFixed(3)}`; }
-                return [call.name || "Guest", call.phone || "Unknown", call.type, call.durationSeconds || 0, ((call.durationSeconds || 0) / 60).toFixed(2), call.country || "Unknown", telephonyCostStr, totalCostStr, call.status, call.displayDate].map(v => `"${String(v).replace(/"/g, '""')}"`).join(",");
+                const telephonyStr = call.telephonyCost === null || call.telephonyCost === undefined ? "N/A" : `$${Number(call.telephonyCost).toFixed(3)}`;
+                return [call.name || "Guest", call.phone || "Unknown", AGENT_MAP[call.agent]?.label || call.agent, call.durationSeconds || 0, ((call.durationSeconds || 0) / 60).toFixed(2), `$${Number(call.cost || 0).toFixed(3)}`, telephonyStr, `$${Number(call.totalCost ?? call.cost ?? 0).toFixed(3)}`, call.status, call.displayDate].map(v => `"${String(v).replace(/"/g, '""')}"`).join(",");
             });
             const csvContent = "﻿" + [headers.join(","), ...csvData].join("\n");
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -266,18 +241,6 @@ export default function VoiceLogsPage() {
     };
 
     const paginatedCalls = calls.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-    useEffect(() => {
-        if (!paginatedCalls || paginatedCalls.length === 0) return;
-        const callsToFetch = paginatedCalls.filter(c => telephonyCosts[c.id] === undefined);
-        if (callsToFetch.length === 0) return;
-        setTelephonyCosts(prev => { const fetching = { ...prev }; callsToFetch.forEach(c => fetching[c.id] = -1); return fetching; });
-        fetch('/api/calls/telephony-cost', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ calls: callsToFetch.map(c => ({ id: c.id, phoneNumber: c.phoneNumber, phone: c.phone, durationSeconds: c.durationSeconds, isInbound: c.isInbound, startedAt: c.startedAt })) })
-        }).then(res => res.json()).then(data => { if (data && data.costs) setTelephonyCosts(prev => ({ ...prev, ...data.costs })); }).catch(err => console.error("Error fetching telephony costs", err));
-    }, [paginatedCalls]);
 
     return (
         <div className="space-y-4 pb-10 relative min-h-[500px]">
@@ -327,60 +290,47 @@ export default function VoiceLogsPage() {
                     />
                 </div>
 
-                <Select value={accountFilter} onValueChange={setAccountFilter}>
-                    <SelectTrigger style={{ width: 220, height: 34, fontSize: 12 }}>
-                        <SelectValue placeholder="Select Business" />
+                <Select value={agent} onValueChange={(v) => setAgent(v as AgentKey | "all")}>
+                    <SelectTrigger style={{ ...selectTriggerStyle, width: 200 }}>
+                        <SelectValue placeholder="Agent" />
                     </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="vapi">All Businesses</SelectItem>
-                        <SelectItem value="bootcamps">Bennett Bootcamps</SelectItem>
-                        <SelectItem value="realty">Bennett Realty Solutions</SelectItem>
-                        <SelectItem value="wealth">Bennett Wealth Builders Foundation</SelectItem>
-                    </SelectContent>
-                </Select>
-
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger style={{ width: 110, height: 34, fontSize: 12 }}><SelectValue placeholder="Call Type" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="Inbound">Inbound</SelectItem>
-                        <SelectItem value="Outbound">Outbound</SelectItem>
+                    <SelectContent className="apple-dialog">
+                        <SelectItem value="all">All Agents</SelectItem>
+                        {AGENTS.map(a => (
+                            <SelectItem key={a.key} value={a.key}>{a.label}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
 
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger style={{ width: 110, height: 34, fontSize: 12 }}><SelectValue placeholder="Status" /></SelectTrigger>
-                    <SelectContent>
+                    <SelectTrigger style={{ ...selectTriggerStyle, width: 130 }}><SelectValue placeholder="Status" /></SelectTrigger>
+                    <SelectContent className="apple-dialog">
                         <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="answered">Answered / Done</SelectItem>
+                        <SelectItem value="ended">Ended</SelectItem>
                         <SelectItem value="failed">Failed / Error</SelectItem>
                     </SelectContent>
                 </Select>
 
-                <Select value={regionFilter} onValueChange={setRegionFilter}>
-                    <SelectTrigger style={{ width: 150, height: 34, fontSize: 12, whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
-                            <Phone style={{ width: 12, height: 12, color: 'var(--label-tertiary)', flexShrink: 0 }} />
-                            <SelectValue placeholder="Region" />
-                        </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Regions</SelectItem>
-                        <SelectItem value="us">United States</SelectItem>
-                        <SelectItem value="uk">United Kingdom</SelectItem>
-                        <SelectItem value="uae">UAE (Dubai)</SelectItem>
-                    </SelectContent>
-                </Select>
-
                 <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger style={{ width: 130, height: 34, fontSize: 12 }}><SelectValue placeholder="Sort By" /></SelectTrigger>
-                    <SelectContent>
+                    <SelectTrigger style={{ ...selectTriggerStyle, width: 150 }}><SelectValue placeholder="Sort By" /></SelectTrigger>
+                    <SelectContent className="apple-dialog">
                         <SelectItem value="newest">Newest First</SelectItem>
                         <SelectItem value="oldest">Oldest First</SelectItem>
                         <SelectItem value="longest">Longest Duration</SelectItem>
                         <SelectItem value="shortest">Shortest Duration</SelectItem>
                     </SelectContent>
                 </Select>
+
+                {(phoneFilter || statusFilter !== "all" || agent !== "all" || sortBy !== "newest") && (
+                    <button
+                        onClick={() => { setPhoneFilter(""); setStatusFilter("all"); setAgent("all"); setSortBy("newest"); }}
+                        style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-secondary)', background: 'none', border: 'none', cursor: 'default', padding: '6px 10px', borderRadius: 'var(--radius-sm)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-secondary)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                    >
+                        Clear
+                    </button>
+                )}
             </div>
 
             {/* Table */}
@@ -389,7 +339,7 @@ export default function VoiceLogsPage() {
                     <table className="w-full text-left">
                         <thead style={{ borderBottom: '1px solid var(--hairline)' }}>
                             <tr style={{ background: 'var(--fill-quaternary)' }}>
-                                {['Name', 'Guest Number', 'Type', 'Duration', 'Country', 'Cost', 'Status', 'Date & Time'].map(h => (
+                                {['Name', 'Guest Number', 'Agent', 'Type', 'Duration', 'Cost', 'Status', 'Date & Time'].map(h => (
                                     <th key={h} style={{ padding: '10px 14px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--label-tertiary)', whiteSpace: 'nowrap' }}>{h}</th>
                                 ))}
                             </tr>
@@ -408,9 +358,9 @@ export default function VoiceLogsPage() {
                                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                                         onClick={() => { setSelectedCall(call); setModalOpen(true); }}
                                     >
-                                        <DynamicRowCells call={call} leads={leads} telephonyCost={telephonyCosts[call.id]} />
+                                        <DynamicRowCells call={call} leads={leads} />
                                         <td style={{ padding: '10px 14px' }}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: call.status === 'answered' ? 'rgba(48,209,88,0.12)' : 'var(--fill-tertiary)', color: call.status === 'answered' ? 'var(--green)' : 'var(--label-tertiary)', border: `1px solid ${call.status === 'answered' ? 'transparent' : 'var(--hairline)'}` }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: call.status === 'ended' ? 'rgba(48,209,88,0.12)' : 'var(--fill-tertiary)', color: call.status === 'ended' ? 'var(--green)' : 'var(--label-tertiary)', border: `1px solid ${call.status === 'ended' ? 'transparent' : 'var(--hairline)'}` }}>
                                                 {call.status}
                                             </span>
                                         </td>

@@ -1,24 +1,15 @@
 "use client";
 
 import {
-    Users, Mail, MessageCircle, Phone, TrendingUp, PieChart as PieChartIcon,
-    Activity, X, Info, Wallet,
-    Home, Coins, GraduationCap
+    Users, Mail, Phone, TrendingUp, PieChart as PieChartIcon,
+    Wallet, Coins, GraduationCap
 } from "lucide-react";
-import {
-    Tooltip as UITooltip, TooltipContent as UITooltipContent,
-    TooltipProvider as UITooltipProvider, TooltipTrigger as UITooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { TotalRepliesView } from "@/components/dashboard/total-replies-view";
-import { WhatsAppChatDetail } from "@/components/dashboard/whatsapp-chat-detail";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { subDays, startOfDay, endOfDay, format } from "date-fns";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { startOfDay, endOfDay, format } from "date-fns";
 import { BennettLoader } from "@/components/bennett-loader";
 import { useData } from "@/context/DataContext";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
@@ -124,28 +115,59 @@ function BusinessSection({ title, icon, iconBg, iconColor, loading, metrics }: {
 }
 
 export default function MasterDashboard() {
-    const [isRepliesModalOpen, setIsRepliesModalOpen] = useState(false);
-    const [isRepliesExpanded, setIsRepliesExpanded] = useState(false);
-    const [chatLead, setChatLead] = useState<any | null>(null);
-
     const {
         masterMetrics,
         loadingMasterMetrics,
-        calls,
         dateRange,
         setDateRange,
         refreshMasterMetrics,
-        leads,
     } = useData();
-    const router = useRouter();
-
-    /* WA stats */
-    const [waUniqueSent, setWaUniqueSent] = useState<number | null>(null);
-    const [waReplies, setWaReplies] = useState<number | null>(null);
-    const [waReplyLeads, setWaReplyLeads] = useState<any[]>([]);
 
     /* Inbound Leads stats */
     const [inboundMetrics, setInboundMetrics] = useState<{ totalCount: number; wealthCount: number; realtyCount: number; bootcampsCount: number } | null>(null);
+
+    /* AI Agent metrics (Recruiting / Coaching / Investor / BigLife / Bootcamps New / Bootcamps Follow-up) */
+    type AgentMetric = { key: string; totalLeads: number; emailsSent: number; voiceCalls: number; emailReplies: number; callReplies: number };
+    const [agentMetrics, setAgentMetrics] = useState<Record<string, AgentMetric> | null>(null);
+    const [loadingAgentMetrics, setLoadingAgentMetrics] = useState(true);
+
+    /* Voice metrics (for Channel Mix donut) */
+    const [totalVoiceCalls, setTotalVoiceCalls] = useState(0);
+
+    const fetchAgentMetrics = useCallback(async (from: Date, to: Date) => {
+        setLoadingAgentMetrics(true);
+        try {
+            const query = new URLSearchParams({
+                from: startOfDay(from).toISOString(),
+                to: endOfDay(to).toISOString(),
+            });
+            const res = await fetch(`/api/metrics/agents?${query.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                setAgentMetrics(data);
+            }
+        } catch (e) {
+            console.error('Error fetching agent metrics', e);
+        } finally {
+            setLoadingAgentMetrics(false);
+        }
+    }, []);
+
+    const fetchVoiceTotals = useCallback(async (from: Date, to: Date) => {
+        try {
+            const query = new URLSearchParams({
+                from: startOfDay(from).toISOString(),
+                to: endOfDay(to).toISOString(),
+            });
+            const res = await fetch(`/api/metrics/voice?${query.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                setTotalVoiceCalls(data.totalCalls || 0);
+            }
+        } catch (e) {
+            console.error('Error fetching voice totals', e);
+        }
+    }, []);
 
     const fetchInboundMetrics = useCallback(async () => {
         try {
@@ -159,79 +181,11 @@ export default function MasterDashboard() {
         }
     }, []);
 
-    const fetchWaStats = useCallback(async (from: Date, to: Date) => {
-        const fromISO = startOfDay(from).toISOString();
-        const toISO = endOfDay(to).toISOString();
-        const res = await fetch(`/api/whatsapp-leads?from=${encodeURIComponent(fromISO)}&to=${encodeURIComponent(toISO)}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const allLeadsWA: any[] = [...(data.nr_wf || []), ...(data.followup || []), ...(data.nurture || [])];
-        const rangeFrom = startOfDay(from).getTime();
-        const rangeTo = endOfDay(to).getTime();
-        let unique = 0;
-        const replied: any[] = [];
-        allLeadsWA.forEach((lead: any) => {
-            if (!lead["W.P_1"]) return;
-            const wp1t = lead.wp1_parsed_date ? new Date(lead.wp1_parsed_date).getTime() : null;
-            const lct = lead.whatsapp_last_contacted ? new Date(lead.whatsapp_last_contacted).getTime() : null;
-            const inRange = (wp1t && wp1t >= rangeFrom && wp1t <= rangeTo) || (lct && lct >= rangeFrom && lct <= rangeTo) || (!wp1t && !lct);
-            if (!inRange) return;
-            unique++;
-            const wp = lead.WP_Replied_track || lead["WP_Replied_track"];
-            const hasReply = wp && String(wp).trim() && !['no', 'none'].includes(String(wp).trim().toLowerCase());
-            if (hasReply) replied.push({ ...lead, id: lead["Lead ID"] || lead.id, name: lead["Name"] || lead.name || "Unknown", phone: lead["Phone"] || lead.phone || "", email: lead["Email"] || lead.email || "", WP_Replied_track: wp });
-        });
-        setWaUniqueSent(unique);
-        setWaReplies(replied.length);
-        setWaReplyLeads(replied);
-    }, []);
-
-    /* SMS stats */
-    const [smsUniqueSent, setSmsUniqueSent] = useState<number | null>(null);
-    const [smsReplies, setSmsReplies] = useState<number | null>(null);
-    const [smsOwnerReachouts, setSmsOwnerReachouts] = useState<number>(0);
-    const [smsOwnerReplies, setSmsOwnerReplies] = useState<number>(0);
-
-    const fetchSmsStats = useCallback(async (from: Date, to: Date) => {
-        const fromISO = startOfDay(from).toISOString();
-        const toISO = endOfDay(to).toISOString();
-        const res = await fetch(`/api/sms-leads?from=${encodeURIComponent(fromISO)}&to=${encodeURIComponent(toISO)}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const allLeadsSMS: any[] = [...(data.nr_wf || []), ...(data.followup || []), ...(data.nurture || [])];
-        const rangeFrom = startOfDay(from).getTime();
-        const rangeTo = endOfDay(to).getTime();
-        let unique = 0;
-        let repliedCount = 0;
-        allLeadsSMS.forEach((lead: any) => {
-            if (!lead["W.P_1"]) return;
-            const wp1t = lead.wp1_parsed_date ? new Date(lead.wp1_parsed_date).getTime() : null;
-            const lct = lead.whatsapp_last_contacted ? new Date(lead.whatsapp_last_contacted).getTime() : null;
-            const inRange = (wp1t && wp1t >= rangeFrom && wp1t <= rangeTo) || (lct && lct >= rangeFrom && lct <= rangeTo) || (!wp1t && !lct);
-            if (!inRange) return;
-            unique++;
-            const wp = lead.WP_Replied_track || lead["WP_Replied_track"];
-            const hasReply = wp && String(wp).trim() && !['no', 'none'].includes(String(wp).trim().toLowerCase());
-            if (hasReply) repliedCount++;
-        });
-        setSmsUniqueSent(unique);
-        setSmsReplies(repliedCount);
-
-        const owners = data.owners || [];
-        const ownerReachouts = owners.filter((o: any) => o["Whatsapp_1"]).length;
-        const ownerReplies = owners.filter((o: any) => {
-            const v = o["WTS_Reply_Track"];
-            return v && String(v).trim() && String(v).toLowerCase() !== "no";
-        }).length;
-        setSmsOwnerReachouts(ownerReachouts);
-        setSmsOwnerReplies(ownerReplies);
-    }, []);
-
     useEffect(() => {
         if (!dateRange?.from) return;
-        fetchWaStats(dateRange.from, dateRange.to || dateRange.from);
-        fetchSmsStats(dateRange.from, dateRange.to || dateRange.from);
-    }, [dateRange, fetchWaStats, fetchSmsStats]);
+        fetchAgentMetrics(dateRange.from, dateRange.to || dateRange.from);
+        fetchVoiceTotals(dateRange.from, dateRange.to || dateRange.from);
+    }, [dateRange, fetchAgentMetrics, fetchVoiceTotals]);
 
     useEffect(() => {
         fetchInboundMetrics();
@@ -246,83 +200,15 @@ export default function MasterDashboard() {
         }));
     }, [masterMetrics]);
 
-    const m = masterMetrics;
-    const totalWaReplies = waReplies ?? m?.totalWaReplies ?? 0;
-    const totalWaReachouts = waUniqueSent ?? m?.totalWaReachouts ?? 0;
-    const replyRate = totalWaReachouts > 0 ? ((totalWaReplies / totalWaReachouts) * 100).toFixed(1) : '0';
-
-    const totalLeadsCRM = Math.max(0, (m?.totalLeads ?? 0) - (m?.totalOwnerLeads ?? 0));
-    const totalWaReachoutsCRM = Math.max(0, totalWaReachouts - (m?.ownerWaReachouts ?? 0));
-    const totalWaRepliesCRM = Math.max(0, totalWaReplies - (m?.ownerWaReplies ?? 0));
-    const replyRateCRM = totalWaReachoutsCRM > 0 ? ((totalWaRepliesCRM / totalWaReachoutsCRM) * 100).toFixed(1) : '0';
-    const totalVoiceCallsCRM = Math.max(0, (m?.totalVoiceCalls ?? 0) - (m?.ownerVoiceCalls ?? 0));
-
-    const totalLeadsGen = m?.totalOwnerLeads ?? 0;
-    const totalWaReachoutsGen = m?.ownerWaReachouts ?? 0;
-    const totalWaRepliesGen = m?.ownerWaReplies ?? 0;
-    const replyRateGen = totalWaReachoutsGen > 0 ? ((totalWaRepliesGen / totalWaReachoutsGen) * 100).toFixed(1) : '0';
-    const totalVoiceCallsGen = m?.ownerVoiceCalls ?? 0;
-
-    const totalSmsReachouts = smsUniqueSent ?? 0;
-    const totalSmsReplies = smsReplies ?? 0;
-    const smsReplyRate = totalSmsReachouts > 0 ? ((totalSmsReplies / totalSmsReachouts) * 100).toFixed(1) : '0';
-    const smsReplyRateGen = smsOwnerReachouts > 0 ? ((smsOwnerReplies / smsOwnerReachouts) * 100).toFixed(1) : '0';
+    const totalEmailsSent = useMemo(() => {
+        if (!agentMetrics) return 0;
+        return Object.values(agentMetrics).reduce((sum, a) => sum + (a.emailsSent || 0), 0);
+    }, [agentMetrics]);
 
     const serviceDistribution = [
-        { name: 'Email', value: 0, color: 'var(--blue)' },
-        { name: 'WhatsApp', value: totalWaReachouts, color: 'var(--green)' },
-        { name: 'SMS', value: totalSmsReachouts, color: '#D6336C' },
-        { name: 'Voice', value: m?.totalVoiceCalls ?? 0, color: 'var(--cyan)' },
+        { name: 'Email', value: totalEmailsSent, color: 'var(--blue)' },
+        { name: 'Voice', value: totalVoiceCalls, color: 'var(--cyan)' },
     ];
-
-    const totalEmailsSentCRM = useMemo(() => {
-        if (loading) return 0;
-        let count = 0;
-        const start = dateRange?.from ? startOfDay(dateRange.from).getTime() : null;
-        const end = dateRange?.to ? endOfDay(dateRange.to).getTime() : null;
-        const crmLeads = (leads || []).filter((l: any) => l.source_loop && l.source_loop !== 'Owner Message');
-        crmLeads.forEach((lead: any) => {
-            const dateRef = lead.last_contacted || lead.updated_at || lead.created_at;
-            if (dateRef) {
-                const t = new Date(dateRef).getTime();
-                if (start && t < start) return;
-                if (end && t > end) return;
-            }
-            for (let i = 1; i <= 10; i++) {
-                const val = lead[`Email_${i}`] || lead.stage_data?.[`Email_${i}`];
-                if (val && String(val).trim() !== "" && String(val).toLowerCase() !== "no") count++;
-            }
-        });
-        return count;
-    }, [leads, loading, dateRange]);
-
-    const totalEmailsSentGen = useMemo(() => {
-        if (loading) return 0;
-        let count = 0;
-        const start = dateRange?.from ? startOfDay(dateRange.from).getTime() : null;
-        const end = dateRange?.to ? endOfDay(dateRange.to).getTime() : null;
-        const genLeads = (leads || []).filter((l: any) => !l.source_loop || l.source_loop === 'Owner Message');
-        genLeads.forEach((lead: any) => {
-            const dateRef = lead.last_contacted || lead.updated_at || lead.created_at;
-            if (dateRef) {
-                const t = new Date(dateRef).getTime();
-                if (start && t < start) return;
-                if (end && t > end) return;
-            }
-            for (let i = 1; i <= 10; i++) {
-                const val = lead[`Email_${i}`] || lead.stage_data?.[`Email_${i}`];
-                if (val && String(val).trim() !== "" && String(val).toLowerCase() !== "no") count++;
-            }
-        });
-        return count;
-    }, [leads, loading, dateRange]);
-
-
-
-    // Segmented Metrics Calculations
-    const crmSmsReachouts = Math.max(0, totalSmsReachouts - smsOwnerReachouts);
-    const crmSmsReplies = Math.max(0, totalSmsReplies - smsOwnerReplies);
-    const crmSmsReplyRate = crmSmsReachouts > 0 ? ((crmSmsReplies / crmSmsReachouts) * 100).toFixed(1) : '0';
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28, position: 'relative' }}>
@@ -337,7 +223,7 @@ export default function MasterDashboard() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
                     <button
-                        onClick={() => { if (dateRange?.from) { refreshMasterMetrics({ from: dateRange.from, to: dateRange.to || dateRange.from }); fetchWaStats(dateRange.from, dateRange.to || dateRange.from); fetchSmsStats(dateRange.from, dateRange.to || dateRange.from); fetchInboundMetrics(); } }}
+                        onClick={() => { if (dateRange?.from) { refreshMasterMetrics({ from: dateRange.from, to: dateRange.to || dateRange.from }); fetchInboundMetrics(); fetchAgentMetrics(dateRange.from, dateRange.to || dateRange.from); fetchVoiceTotals(dateRange.from, dateRange.to || dateRange.from); } }}
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}
                     >
                         <RefreshCw style={{ width: 14, height: 14 }} />
@@ -355,120 +241,67 @@ export default function MasterDashboard() {
                     <div style={{ height: '0.5px', background: 'var(--separator)', width: '100%', marginLeft: 8 }} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-                    <MetricTile 
-                        title="Total Inbound Leads" 
-                        value={inboundMetrics ? inboundMetrics.totalCount.toLocaleString() : '—'} 
-                        subLabel="All businesses" 
-                        accentColor="#e67e22" 
-                        icon={<Users size={16} />} 
+                    <MetricTile
+                        title="Total Inbound Leads"
+                        value={inboundMetrics ? inboundMetrics.totalCount.toLocaleString() : '—'}
+                        subLabel="All businesses"
+                        accentColor="#e67e22"
+                        icon={<Users size={16} />}
                     />
-                    <MetricTile 
-                        title="Bennett Wealth Builders Foundation" 
-                        value={inboundMetrics ? inboundMetrics.wealthCount.toLocaleString() : '—'} 
-                        subLabel="Inbound" 
-                        accentColor="var(--green)" 
-                        icon={<img src="/wealth.png" className="w-4 h-4 object-contain opacity-80" alt="Wealth" />} 
+                    <MetricTile
+                        title="Bennett Wealth Builders Foundation"
+                        value={inboundMetrics ? inboundMetrics.wealthCount.toLocaleString() : '—'}
+                        subLabel="Inbound"
+                        accentColor="var(--green)"
+                        icon={<img src="/wealth.png" className="w-4 h-4 object-contain opacity-80" alt="Wealth" />}
                     />
-                    <MetricTile 
-                        title="Bennett Realty Solutions" 
-                        value={inboundMetrics ? inboundMetrics.realtyCount.toLocaleString() : '—'} 
-                        subLabel="Inbound" 
-                        accentColor="var(--blue)" 
-                        icon={<img src="/realty.png" className="w-4 h-4 object-contain opacity-80" alt="Realty" />} 
+                    <MetricTile
+                        title="Bennett Realty Solutions"
+                        value={inboundMetrics ? inboundMetrics.realtyCount.toLocaleString() : '—'}
+                        subLabel="Inbound"
+                        accentColor="var(--blue)"
+                        icon={<img src="/realty.png" className="w-4 h-4 object-contain opacity-80" alt="Realty" />}
                     />
-                    <MetricTile 
-                        title="Bennett Bootcamps" 
-                        value={inboundMetrics ? inboundMetrics.bootcampsCount.toLocaleString() : '—'} 
-                        subLabel="Inbound" 
-                        accentColor="var(--orange)" 
-                        icon={<img src="/bootcamps.png" className="w-4 h-4 object-contain opacity-80" alt="Bootcamps" />} 
+                    <MetricTile
+                        title="Bennett Bootcamps"
+                        value={inboundMetrics ? inboundMetrics.bootcampsCount.toLocaleString() : '—'}
+                        subLabel="Inbound"
+                        accentColor="var(--orange)"
+                        icon={<img src="/bootcamps.png" className="w-4 h-4 object-contain opacity-80" alt="Bootcamps" />}
                     />
                 </div>
             </div>
 
-                {/* ── Section 3: Bennett Bootcamps (CRM) ── */}
-                <BusinessSection
-                    title="Bennett Bootcamps"
-                    icon={<img src="/bootcamps.png" className="w-3 h-3 object-contain" alt="" />}
-                    iconBg="rgba(230,126,34,0.15)"
-                    iconColor="#f59e0b"
-                    loading={loading}
-                    metrics={[
-                        { title: "Total Leads", value: totalLeadsCRM.toLocaleString(), subLabel: "All time", accentColor: "#6366f1", icon: <Users size={16} /> },
-                        { title: "Emails Sent", value: totalEmailsSentCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#22c55e", icon: <Mail size={16} /> },
-                        { title: "WA Reachouts", value: totalWaReachoutsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
-                        { title: "Voice Calls", value: totalVoiceCallsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
-                        { title: "WA Replies", value: totalWaRepliesCRM.toLocaleString(), subLabel: `${replyRateCRM}% reply rate`, subLabelColor: Number(replyRateCRM) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                    ]}
-                />
-
-                {/* ── Section 4: Bennett Realty Solutions (CRM) ── */}
-                <BusinessSection
-                    title="Bennett Realty Solutions"
-                    icon={<img src="/realty.png" className="w-3 h-3 object-contain" alt="" />}
-                    iconBg="rgba(59,91,219,0.15)"
-                    iconColor="#6366f1"
-                    loading={loading}
-                    metrics={[
-                        { title: "Total Leads", value: totalLeadsCRM.toLocaleString(), subLabel: "All time", accentColor: "#6366f1", icon: <Users size={16} /> },
-                        { title: "Emails Sent", value: totalEmailsSentCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#22c55e", icon: <Mail size={16} /> },
-                        { title: "WA Reachouts", value: totalWaReachoutsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
-                        { title: "Voice Calls", value: totalVoiceCallsCRM.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
-                        { title: "WA Replies", value: totalWaRepliesCRM.toLocaleString(), subLabel: `${replyRateCRM}% reply rate`, subLabelColor: Number(replyRateCRM) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                    ]}
-                />
-
-                {/* ── Section 5: Bennett Wealth Builders Foundation (Generated) ── */}
-                <BusinessSection
-                    title="Bennett Wealth Builders Foundation"
-                    icon={<img src="/wealth.png" className="w-3 h-3 object-contain" alt="" />}
-                    iconBg="rgba(15,157,88,0.15)"
-                    iconColor="#22c55e"
-                    loading={loading}
-                    metrics={[
-                        { title: "Total Leads", value: totalLeadsGen.toLocaleString(), subLabel: "All time", accentColor: "#6366f1", icon: <Users size={16} /> },
-                        { title: "Emails Sent", value: totalEmailsSentGen.toLocaleString(), subLabel: "Real-time", accentColor: "#22c55e", icon: <Mail size={16} /> },
-                        { title: "WA Reachouts", value: totalWaReachoutsGen.toLocaleString(), subLabel: "Real-time", accentColor: "#06b6d4", icon: <MessageCircle size={16} /> },
-                        { title: "Voice Calls", value: totalVoiceCallsGen.toLocaleString(), subLabel: "Real-time", accentColor: "#f59e0b", icon: <Phone size={16} /> },
-                        { title: "WA Replies", value: totalWaRepliesGen.toLocaleString(), subLabel: `${replyRateGen}% reply rate`, subLabelColor: Number(replyRateGen) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <MessageCircle size={16} /> },
-                    ]}
-                />
-
-
-
-            {/* ── Expanded Replies ── */}
-            {isRepliesExpanded && (
-                <div
-                    className="liquid-card"
-                    style={{ padding: 24, animation: 'spring-in 280ms var(--ease-spring)' }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                        <div>
-                            <h2 style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)', marginBottom: 3 }}>
-                                Total Replies Details
-                            </h2>
-                            <p style={{ fontSize: 13, color: 'var(--label-secondary)' }}>Detailed view of all replies</p>
-                        </div>
-                        <button
-                            onClick={() => setIsRepliesExpanded(false)}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: 6,
-                                padding: '7px 12px', borderRadius: 8,
-                                background: 'var(--fill-tertiary)', border: 'none',
-                                cursor: 'default', fontSize: 13, fontWeight: 500,
-                                color: 'var(--label-secondary)',
-                            }}
-                        >
-                            <X size={13} /> Close
-                        </button>
-                    </div>
-                    <TotalRepliesView
-                        leads={waReplyLeads}
-                        dateRange={dateRange}
-                        onViewLead={lead => { setIsRepliesExpanded(false); setChatLead(lead); }}
+            {/* ── AI Agent Sections ── */}
+            {[
+                { key: "recruiting", title: "Recruiting AI Agent", icon: <Users size={12} />, iconBg: "rgba(99,102,241,0.15)", iconColor: "#6366f1" },
+                { key: "coaching", title: "Coaching AI Agent", icon: <GraduationCap size={12} />, iconBg: "rgba(34,197,94,0.15)", iconColor: "#22c55e" },
+                { key: "investor", title: "Investor AI Agent", icon: <Coins size={12} />, iconBg: "rgba(245,158,11,0.15)", iconColor: "#f59e0b" },
+                { key: "biglife", title: "BigLife AI Agent", icon: <Wallet size={12} />, iconBg: "rgba(15,157,88,0.15)", iconColor: "#22c55e" },
+                { key: "bootcampsNew", title: "Bootcamps New Leads AI Agent", icon: <img src="/bootcamps.png" className="w-3 h-3 object-contain" alt="" />, iconBg: "rgba(230,126,34,0.15)", iconColor: "#f59e0b" },
+                { key: "bootcampsFollowup", title: "Bootcamps Follow-up Leads AI Agent", icon: <img src="/bootcamps.png" className="w-3 h-3 object-contain" alt="" />, iconBg: "rgba(230,126,34,0.15)", iconColor: "#e67e22" },
+            ].map(agent => {
+                const am = agentMetrics?.[agent.key];
+                const emailReplyRate = am && am.emailsSent > 0 ? ((am.emailReplies / am.emailsSent) * 100).toFixed(1) : '0';
+                const callReplyRate = am && am.voiceCalls > 0 ? ((am.callReplies / am.voiceCalls) * 100).toFixed(1) : '0';
+                return (
+                    <BusinessSection
+                        key={agent.key}
+                        title={agent.title}
+                        icon={agent.icon}
+                        iconBg={agent.iconBg}
+                        iconColor={agent.iconColor}
+                        loading={loadingAgentMetrics}
+                        metrics={[
+                            { title: "Total Leads", value: (am?.totalLeads ?? 0).toLocaleString(), subLabel: "All time", accentColor: "#6366f1", icon: <Users size={16} /> },
+                            { title: "Emails Sent", value: (am?.emailsSent ?? 0).toLocaleString(), subLabel: "In range", accentColor: "#22c55e", icon: <Mail size={16} /> },
+                            { title: "Voice Calls", value: (am?.voiceCalls ?? 0).toLocaleString(), subLabel: "In range", accentColor: "#f59e0b", icon: <Phone size={16} /> },
+                            { title: "Email Replies", value: (am?.emailReplies ?? 0).toLocaleString(), subLabel: `${emailReplyRate}% reply rate`, subLabelColor: Number(emailReplyRate) > 0 ? '#a78bfa' : 'var(--label-tertiary)', accentColor: "#a78bfa", icon: <Mail size={16} /> },
+                            { title: "Call Replies", value: (am?.callReplies ?? 0).toLocaleString(), subLabel: `${callReplyRate}% reply rate`, subLabelColor: Number(callReplyRate) > 0 ? '#06b6d4' : 'var(--label-tertiary)', accentColor: "#06b6d4", icon: <Phone size={16} /> },
+                        ]}
                     />
-                </div>
-            )}
+                );
+            })}
 
             {/* ── Charts ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
@@ -523,7 +356,7 @@ export default function MasterDashboard() {
                         </div>
                     </div>
 
-                    {/* Response Performance Donut */}
+                    {/* Channel Mix Donut */}
                     <div className="liquid-card" style={{ padding: 24 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
                             <div style={{
@@ -538,7 +371,7 @@ export default function MasterDashboard() {
                                 <h3 style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.022em', color: 'var(--label-primary)' }}>
                                     Channel Mix
                                 </h3>
-                                <p style={{ fontSize: 12, color: 'var(--label-tertiary)' }}>Response performance</p>
+                                <p style={{ fontSize: 12, color: 'var(--label-tertiary)' }}>Email vs. Voice outreach</p>
                             </div>
                         </div>
                         <div style={{ height: 220 }}>
@@ -565,37 +398,6 @@ export default function MasterDashboard() {
                     </div>
                 </div>
             </div>
-
-            {/* ── Replies Modal ── */}
-            <Dialog open={isRepliesModalOpen} onOpenChange={setIsRepliesModalOpen}>
-                <DialogContent className="apple-dialog max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Total Replies — Detailed View</DialogTitle>
-                    </DialogHeader>
-                    <div style={{ paddingTop: 16 }}>
-                        <TotalRepliesView
-                            leads={waReplyLeads}
-                            dateRange={dateRange}
-                            onViewLead={lead => { setIsRepliesModalOpen(false); setChatLead(lead); }}
-                        />
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* ── WhatsApp Chat Modal ── */}
-            <Dialog open={!!chatLead} onOpenChange={open => { if (!open) setChatLead(null); }}>
-                <DialogContent className="apple-dialog max-w-4xl max-h-[90vh] overflow-hidden p-6 gap-0">
-                    <DialogHeader className="sr-only"><DialogTitle>WhatsApp Chat</DialogTitle></DialogHeader>
-                    {chatLead && (
-                        <WhatsAppChatDetail
-                            customerId={String(chatLead["Lead ID"] || chatLead.id || "")}
-                            initialLead={chatLead}
-                            onClose={() => setChatLead(null)}
-                        />
-                    )}
-                </DialogContent>
-            </Dialog>
-
         </div>
     );
 }

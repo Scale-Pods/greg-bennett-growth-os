@@ -1,8 +1,7 @@
 "use client";
 
-import { Phone, Clock, TrendingUp, Timer, Crown, Mail, MessageCircle, MessageSquare, LayoutDashboard, GraduationCap, Home, Coins } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Phone, Clock, TrendingUp, Timer, GraduationCap, Home, Coins } from "lucide-react";
+import { useEffect } from "react";
 import { BennettLoader } from "@/components/bennett-loader";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -103,9 +102,16 @@ function BusinessSection({ title, icon, iconBg, iconColor, loading, metrics }: {
     );
 }
 
+const AGENT_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
+    recruiting: { label: "Recruiting", icon: <Home size={20} />, color: 'var(--blue)', bg: 'rgba(59,91,219,0.15)' },
+    coaching: { label: "Coaching", icon: <GraduationCap size={20} />, color: 'var(--green)', bg: 'rgba(15,157,88,0.15)' },
+    investor: { label: "Investor", icon: <Coins size={20} />, color: 'var(--orange)', bg: 'rgba(230,126,34,0.15)' },
+    biglife: { label: "BigLife", icon: <Coins size={20} />, color: 'var(--green)', bg: 'rgba(15,157,88,0.15)' },
+    bootcampsNew: { label: "Bootcamps New Leads", icon: <GraduationCap size={20} />, color: 'var(--orange)', bg: 'rgba(230,126,34,0.15)' },
+    bootcampsFollowup: { label: "Bootcamps Follow-up", icon: <GraduationCap size={20} />, color: 'var(--orange)', bg: 'rgba(230,126,34,0.15)' },
+};
+
 export default function VoiceDashboardPage() {
-    const router = useRouter();
-    const [providerFilter, setProviderFilter] = useState("vapi");
     const { dateRange, setDateRange } = useData();
 
     const { voiceMetrics, loadingVoiceMetrics, refreshVoiceMetrics } = useData();
@@ -132,18 +138,7 @@ export default function VoiceDashboardPage() {
             calls: h.calls,
         }));
 
-    const normalCalls = providerFilter === 'vapi' ? (m?.normalCalls ?? 0) : 0;
-    const ownerCalls  = providerFilter === 'vapi' ? (m?.ownerCalls  ?? 0) : 0;
-    const { calls } = useData();
-
-    // specific bot IDs from env
-    const realtyBotId = "16de3300-403d-4f82-b3f2-e25f6c4980c1";
-    const wealthBotId = "b8920aca-a6f5-4927-aebb-7a72941a6da2";
-    const bootcampsBotId = "c326651f-ff42-464b-a25f-4de7d98ce995";
-
-    const realtyCallsCount = Array.isArray(calls) ? calls.filter(c => c.assistantId === realtyBotId).length : 0;
-    const wealthCallsCount = Array.isArray(calls) ? calls.filter(c => c.assistantId === wealthBotId).length : 0;
-    const bootcampsCallsCount = Array.isArray(calls) ? calls.filter(c => c.assistantId === bootcampsBotId).length : 0;
+    const byAgent = m?.byAgent ?? [];
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40, position: 'relative', minHeight: 500 }}>
@@ -180,52 +175,26 @@ export default function VoiceDashboardPage() {
                 </div>
             </div>
 
-            {/* 3 Business Banners */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-                {/* Bennett Bootcamps */}
-                <div className="liquid-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, borderLeft: '4px solid var(--orange)' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(230,126,34,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--orange)' }}>
-                        <GraduationCap size={20} />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: 2 }}>
-                            Bennett Bootcamps
+            {/* Per-Agent Call Banners */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
+                {Object.entries(AGENT_LABELS).map(([key, cfg]) => {
+                    const agentData = byAgent.find(a => a.key === key);
+                    return (
+                        <div key={key} className="liquid-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, borderLeft: `4px solid ${cfg.color}` }}>
+                            <div style={{ width: 44, height: 44, borderRadius: 12, background: cfg.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cfg.color }}>
+                                {cfg.icon}
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: cfg.color, marginBottom: 2 }}>
+                                    {cfg.label}
+                                </div>
+                                <div style={{ fontSize: 32, fontWeight: 300, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                                    {(agentData?.calls ?? 0).toLocaleString()}
+                                </div>
+                            </div>
                         </div>
-                        <div style={{ fontSize: 32, fontWeight: 300, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-                            {bootcampsCallsCount.toLocaleString()}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bennett Realty Solutions */}
-                <div className="liquid-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, borderLeft: '4px solid var(--blue)' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(59,91,219,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--blue)' }}>
-                        <Home size={20} />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--blue)', marginBottom: 2 }}>
-                            Bennett Realty Solutions
-                        </div>
-                        <div style={{ fontSize: 32, fontWeight: 300, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-                            {realtyCallsCount.toLocaleString()}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bennett Wealth Builders Foundation */}
-                <div className="liquid-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, borderLeft: '4px solid var(--green)' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(15,157,88,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--green)' }}>
-                        <Coins size={20} />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--green)', marginBottom: 2 }}>
-                            Bennett Wealth Builders Foundation
-                        </div>
-                        <div style={{ fontSize: 32, fontWeight: 300, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-                            {wealthCallsCount.toLocaleString()}
-                        </div>
-                    </div>
-                </div>
+                    );
+                })}
             </div>
 
             {/* Global Metrics */}

@@ -2,23 +2,35 @@
 
 import React, { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calculator, Activity, Crown, Info, RefreshCw, Phone } from "lucide-react";
+import { Calculator, Activity, Crown, Info, RefreshCw, Phone, PhoneCall } from "lucide-react";
 import { useData } from "@/context/DataContext";
-import { format, subDays } from "date-fns";
+import { format } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { BennettLoader } from "@/components/bennett-loader";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 
+const AGENTS = [
+    { key: "recruiting", label: "Recruiting" },
+    { key: "coaching", label: "Coaching" },
+    { key: "investor", label: "Investor" },
+    { key: "biglife", label: "BigLife" },
+    { key: "bootcampsNew", label: "Bootcamps New Leads" },
+    { key: "bootcampsFollowup", label: "Bootcamps Follow-up" },
+] as const;
+
+type AgentKey = typeof AGENTS[number]["key"];
+
 export default function VoiceCalculatorPage() {
-    const { refreshCalls, calls: rawCalls, loadingCalls, dateRange, setDateRange } = useData();
-    const [accountFilter, setAccountFilter] = useState("vapi");
+    const { dateRange, setDateRange } = useData();
+    const [agent, setAgent] = useState<AgentKey>("recruiting");
     const [calculating, setCalculating] = useState(false);
     const [results, setResults] = useState<{
+        agentCost: number;
+        telephonyCost: number;
         totalCost: number;
-        agentTotal: number;
-        telephonyTotal: number;
         totalDuration: number;
         callCount: number;
+        telephonyMatchedCount: number;
         calculatedAt: Date;
     } | null>(null);
 
@@ -26,79 +38,40 @@ export default function VoiceCalculatorPage() {
         if (!dateRange?.from) return;
         setCalculating(true);
         try {
-            await refreshCalls({
-                from: dateRange.from,
-                to: dateRange.to || dateRange.from,
-                provider: 'vapi',
-                force: true
-            });
-        } catch (err) {
-            console.error("Calculation error:", err);
-            setCalculating(false);
-        }
-    };
+            const from = dateRange.from.toISOString();
+            const to = (dateRange.to || dateRange.from).toISOString();
+            const res = await fetch(`/api/calls?agent=${agent}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&includeTelephony=true`);
+            const rawCalls = res.ok ? await res.json() : [];
 
-    const processResults = async () => {
-        const filteredCalls = rawCalls.filter((call: any) => {
-            if (accountFilter === 'vapi') return call.source === 'vapi';
-            if (accountFilter === 'bootcamps') return call.source === 'vapi' && call.vapiAccount === 'bootcamps';
-            if (accountFilter === 'realty') return call.source === 'vapi' && call.vapiAccount === 'realty';
-            if (accountFilter === 'wealth') return call.source === 'vapi' && call.vapiAccount === 'wealth';
-            if (accountFilter === 'automations') return call.source === 'vapi' && call.vapiAccount === 'automations';
-            return true;
-        });
+            let agentCost = 0;
+            let telephonyCost = 0;
+            let totalDuration = 0;
+            let telephonyMatchedCount = 0;
 
-        if (filteredCalls.length === 0) {
-            setResults({ totalCost: 0, agentTotal: 0, telephonyTotal: 0, totalDuration: 0, callCount: 0, calculatedAt: new Date() });
-            setCalculating(false);
-            return;
-        }
-
-        setCalculating(true);
-        try {
-            const res = await fetch('/api/calls/telephony-cost', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    calls: filteredCalls.map((c: any) => ({
-                        id: c.id, phoneNumber: c.phoneNumber, phone: c.phone,
-                        durationSeconds: c.durationSeconds, isInbound: c.isInbound, startedAt: c.startedAt
-                    }))
-                })
-            });
-            const data = await res.json();
-            const telephonyCosts = data.costs || {};
-
-            let agentTotal = 0, telephonyTotal = 0, totalDuration = 0;
-            filteredCalls.forEach((call: any) => {
-                const tCost = telephonyCosts[call.id];
-                const aCost = call.breakdown?.agent || 0;
+            (Array.isArray(rawCalls) ? rawCalls : []).forEach((call: any) => {
+                agentCost += Number(call.cost || 0);
                 totalDuration += (call.durationSeconds || 0);
-                if (tCost !== undefined && tCost !== -1) {
-                    agentTotal += aCost;
-                    telephonyTotal += tCost;
-                } else {
-                    const rawTotal = parseFloat(call.cost.replace('$', '')) || 0;
-                    agentTotal += aCost;
-                    telephonyTotal += Math.max(0, rawTotal - aCost);
+                if (call.telephonyCost !== null && call.telephonyCost !== undefined) {
+                    telephonyCost += Number(call.telephonyCost);
+                    telephonyMatchedCount++;
                 }
             });
 
-            setResults({ totalCost: agentTotal + telephonyTotal, agentTotal, telephonyTotal, totalDuration, callCount: filteredCalls.length, calculatedAt: new Date() });
+            setResults({
+                agentCost,
+                telephonyCost,
+                totalCost: agentCost + telephonyCost,
+                totalDuration,
+                callCount: rawCalls.length,
+                telephonyMatchedCount,
+                calculatedAt: new Date(),
+            });
         } catch (err) {
-            console.error("Processing error:", err);
+            console.error("Calculation error:", err);
         } finally {
             setCalculating(false);
         }
     };
-
-    const prevLoadingRef = React.useRef(loadingCalls);
-    React.useEffect(() => {
-        if (prevLoadingRef.current === true && loadingCalls === false && calculating) {
-            processResults();
-        }
-        prevLoadingRef.current = loadingCalls;
-    }, [loadingCalls, calculating]);
 
     return (
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 24 }}>
@@ -121,17 +94,15 @@ export default function VoiceCalculatorPage() {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <label style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)' }}>Account / Provider</label>
-                        <Select value={accountFilter} onValueChange={setAccountFilter}>
+                        <label style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)' }}>Agent</label>
+                        <Select value={agent} onValueChange={(v) => setAgent(v as AgentKey)}>
                             <SelectTrigger style={{ height: 36, fontSize: 13, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
-                                <SelectValue placeholder="Select Account" />
+                                <SelectValue placeholder="Select Agent" />
                             </SelectTrigger>
                             <SelectContent style={{ zIndex: 100, backgroundColor: 'var(--bg-layer1)' }}>
-                                <SelectItem value="vapi">All Vapi Calls</SelectItem>
-                                <SelectItem value="bootcamps">Bennett Bootcamps</SelectItem>
-                                <SelectItem value="realty">Bennett Realty Solutions</SelectItem>
-                                <SelectItem value="wealth">Bennett Wealth Builders Foundation</SelectItem>
-                                <SelectItem value="automations">Bennett Automations</SelectItem>
+                                {AGENTS.map(a => (
+                                    <SelectItem key={a.key} value={a.key}>{a.label}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -161,7 +132,7 @@ export default function VoiceCalculatorPage() {
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 'var(--radius-md)', background: 'color-mix(in srgb, var(--orange) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--orange) 20%, transparent)' }}>
                         <Info style={{ width: 13, height: 13, color: 'var(--orange)', flexShrink: 0, marginTop: 1 }} />
                         <p style={{ fontSize: 11, color: 'var(--orange)', margin: 0, lineHeight: 1.5 }}>
-                            <strong>Note:</strong> Calculations may take a few seconds as we synchronize costs with telephony providers for the selected range.
+                            <strong>Note:</strong> Agent cost is Vapi's cost_usd per call. Telephony cost is your real Twilio call price, matched by phone number and call time (±5 min). Calls with no Twilio match are excluded from the telephony total.
                         </p>
                     </div>
                 </div>
@@ -195,9 +166,9 @@ export default function VoiceCalculatorPage() {
                         <>
                             {/* Cost summary cards */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                                <CostCard label="Agent Cost" value={`$${results.agentCost.toFixed(2)}`} icon={Activity} color="var(--blue)" />
+                                <CostCard label="Telephony Cost" value={`$${results.telephonyCost.toFixed(2)}`} icon={PhoneCall} color="var(--purple)" />
                                 <CostCard label="Total Cost" value={`$${results.totalCost.toFixed(2)}`} icon={Crown} color="var(--green)" />
-                                <CostCard label="Agent Cost" value={`$${results.agentTotal.toFixed(2)}`} icon={Activity} color="var(--blue)" />
-                                <CostCard label="Telephony" value={`$${results.telephonyTotal.toFixed(2)}`} icon={Phone} color="var(--purple)" />
                             </div>
 
                             {/* Detailed metrics */}
@@ -219,6 +190,10 @@ export default function VoiceCalculatorPage() {
                                     value={String(results.callCount)} color="var(--blue)"
                                 />
                                 <MetricRow
+                                    icon={PhoneCall} label="Telephony Matched" sub="Calls with Twilio cost found"
+                                    value={`${results.telephonyMatchedCount} / ${results.callCount}`} color="var(--purple)"
+                                />
+                                <MetricRow
                                     icon={Activity} label="Total Talk Time" sub="Cumulative Duration"
                                     value={formatDuration(results.totalDuration)} color="var(--green)"
                                 />
@@ -227,14 +202,6 @@ export default function VoiceCalculatorPage() {
                                     value={`$${(results.callCount > 0 ? results.totalCost / results.callCount : 0).toFixed(3)}`}
                                     color="var(--purple)" last
                                 />
-                            </div>
-
-                            {/* Footer note */}
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--label-tertiary)', background: 'var(--fill-quaternary)', border: '1px solid var(--hairline)', padding: '5px 14px', borderRadius: 99 }}>
-                                    <Info style={{ width: 11, height: 11 }} />
-                                    Prices include per-minute rounding and special backup rates for UAE destinations.
-                                </div>
                             </div>
                         </>
                     )}

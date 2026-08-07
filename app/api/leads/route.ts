@@ -1,70 +1,86 @@
 import { NextResponse } from 'next/server';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { normalizeLeads } from '@/lib/leads-utils';
 
 export const dynamic = 'force-dynamic';
 
-function endOfDay(iso: string): string {
-    const d = new Date(iso);
-    if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0) {
-        d.setUTCHours(23, 59, 59, 999);
+interface AgentConfig {
+    key: string;
+    envPrefix: string;
+    outreachTable: string;
+}
+
+export const AGENTS: AgentConfig[] = [
+    { key: 'recruiting', envPrefix: 'Realty', outreachTable: 'recruiting_ai_agent_outreach' },
+    { key: 'coaching', envPrefix: 'platinum', outreachTable: 'coaching_ai_agent_outreach' },
+    { key: 'investor', envPrefix: 'platinum', outreachTable: 'investor_funnel_ai_agent_outreach' },
+    { key: 'biglife', envPrefix: 'wealth', outreachTable: 'biglife_new_leads_outreach' },
+    { key: 'bootcampsNew', envPrefix: 'bootcamps', outreachTable: 'bootcamps_new_leads_outreach' },
+    { key: 'bootcampsFollowup', envPrefix: 'bootcamps', outreachTable: 'bootcamps_follow_up_outreach' },
+];
+
+const clientCache = new Map<string, SupabaseClient>();
+
+function getClient(envPrefix: string): SupabaseClient {
+    const cached = clientCache.get(envPrefix);
+    if (cached) return cached;
+
+    const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${envPrefix}`];
+    const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${envPrefix}`];
+    const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${envPrefix}`];
+
+    if (!url || !(serviceKey || anonKey)) {
+        throw new Error(`Missing Supabase env vars for prefix "${envPrefix}"`);
     }
-    return d.toISOString();
+
+    const client = createClient(url, (serviceKey || anonKey)!);
+    clientCache.set(envPrefix, client);
+    return client;
 }
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
+    const agentKey = searchParams.get('agent');
+    const fromParam = searchParams.get('from');
+    const toParam = searchParams.get('to');
 
-    const supabaseUrl = ((process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL_Realty) || '').trim().replace(/\/$/, '');
-    const secretKey = ((process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY_Realty) || '').trim();
-
-    if (!supabaseUrl || !secretKey) {
-        return NextResponse.json({ error: 'Config missing' }, { status: 500 });
+    const cfg = AGENTS.find(a => a.key === agentKey);
+    if (!cfg) {
+        return NextResponse.json(
+            { error: `Invalid or missing "agent" param. Valid values: ${AGENTS.map(a => a.key).join(', ')}` },
+            { status: 400 }
+        );
     }
 
-    const fromISO = from || new Date(Date.now() - 7 * 86400000).toISOString();
-    const toISO = to ? endOfDay(to) : endOfDay(new Date().toISOString());
+    const from = fromParam ? new Date(fromParam) : new Date(Date.now() - 7 * 86400000);
+    const to = toParam ? new Date(toParam) : new Date();
+
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+        return NextResponse.json({ error: 'Invalid from/to date' }, { status: 400 });
+    }
 
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/rpc/get_leads_for_display`, {
-            method: 'POST',
-            headers: {
-                apikey: secretKey,
-                Authorization: `Bearer ${secretKey}`,
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-store',
-            },
-            body: JSON.stringify({ p_from: fromISO, p_to: toISO }),
-            cache: 'no-store',
-        });
+        const client = getClient(cfg.envPrefix);
+        const { data, error } = await client
+            .from(cfg.outreachTable)
+            .select('*')
+            .gte('created_at', from.toISOString())
+            .lte('created_at', to.toISOString())
+            .order('created_at', { ascending: false });
 
-        if (!res.ok) {
-            const err = await res.text();
-            console.error('[leads] RPC error:', err);
-            return NextResponse.json({ error: 'RPC failed', detail: err }, { status: 502 });
+        if (error) {
+            console.error(`[leads:${cfg.key}] table error:`, error.message);
+            return NextResponse.json({ error: 'Query failed', detail: error.message }, { status: 502 });
         }
 
-        const data = await res.json();
+        const leads = normalizeLeads(cfg.key, data || []);
 
-        // data is { master_leads, nr_wf, followup, nurture }
-        // Combine all rows into a flat array the same way consolidateLeads expects
-        const nr_wf = Array.isArray(data.nr_wf) ? data.nr_wf : [];
-        const followup = Array.isArray(data.followup) ? data.followup : [];
-        const nurture = Array.isArray(data.nurture) ? data.nurture : [];
-        const master_leads = Array.isArray(data.master_leads) ? data.master_leads : [];
-
-        return new NextResponse(
-            JSON.stringify({ nr_wf, followup, nurture, master_leads }),
-            {
-                status: 200,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'no-store, no-cache, must-revalidate',
-                },
-            }
+        return NextResponse.json(
+            { agent: cfg.key, leads },
+            { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
         );
     } catch (err: any) {
-        console.error('[leads] fetch error:', err);
-        return NextResponse.json({ error: 'Fetch failed' }, { status: 500 });
+        console.error(`[leads:${cfg.key}] fetch error:`, err);
+        return NextResponse.json({ error: 'Fetch failed', detail: err?.message }, { status: 500 });
     }
 }

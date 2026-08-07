@@ -686,6 +686,20 @@
 .wallet-chip:hover { background: var(--fill-secondary); }
 .wallet-chip:active { transform: scale(0.95); }
 
+.wallet-bar {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--fill-tertiary);
+  cursor: default;
+  text-align: left;
+  border: none;
+  transition: background var(--duration-fast) var(--ease-standard), transform 100ms;
+}
+.wallet-bar:hover { background: var(--fill-secondary); }
+.wallet-bar:active { transform: scale(0.98); }
+
 /* ═══════════════════════════════════════════════════════════════
    MODALS / SHEETS
    ═══════════════════════════════════════════════════════════════ */

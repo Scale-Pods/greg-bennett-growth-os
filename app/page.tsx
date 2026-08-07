@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ArrowRight, Mail, MessageCircle, Mic, Sparkles } from "lucide-react";
+import { ArrowRight, Mail, Mic, Sparkles } from "lucide-react";
 import { AuthModal } from "@/components/auth/auth-modal";
 
 export default function LandingPage() {
@@ -81,19 +81,13 @@ export default function LandingPage() {
                 </div>
 
                 {/* Feature Cards */}
-                <div className="max-w-5xl mx-auto mt-20 sm:mt-28 grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="max-w-3xl mx-auto mt-20 sm:mt-28 grid grid-cols-1 md:grid-cols-2 gap-5">
                     {[
                         {
                             icon: <Mail size={20} />,
                             color: 'var(--indigo)',
                             title: 'Email Marketing',
                             description: 'Send bulk campaigns, track opens and clicks, and verify bounce rates. Integrate with Gmail for high-volume outreach with precision analytics.',
-                        },
-                        {
-                            icon: <MessageCircle size={20} />,
-                            color: 'var(--green)',
-                            title: 'WhatsApp CRM',
-                            description: 'Engage leads instantly with broadcast messages and organised chat lists. Track delivery, manage customer details, and automate replies 24/7.',
                         },
                         {
                             icon: <Mic size={20} />,
@@ -118,7 +112,7 @@ export default function LandingPage() {
                 {/* Stats */}
                 <div className="max-w-4xl mx-auto mt-14 sm:mt-24 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {[
-                        { value: '3 Channels', label: 'Email · WhatsApp · Voice' },
+                        { value: '2 Channels', label: 'Email · Voice' },
                         { value: 'Real-time', label: 'Live metrics dashboard' },
                         { value: 'AI-Powered', label: 'Intelligent automation' },
                     ].map((stat, i) => (

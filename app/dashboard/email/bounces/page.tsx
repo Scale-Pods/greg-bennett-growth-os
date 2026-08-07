@@ -3,214 +3,233 @@
 import { BennettLoader } from "@/components/bennett-loader";
 import { Input } from "@/components/ui/input";
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
     RefreshCw,
     Mail,
-    AlertCircle,
-    Info,
-    ChevronUp,
-    ChevronDown,
-    ArrowUp,
-    Search
+    Search,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useData } from "@/context/DataContext";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { startOfDay, endOfDay, subDays } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { AGENT_OPTIONS, AgentKey } from "@/lib/agents";
+import { AgentBadge } from "@/components/agents/agent-badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { NormalizedLead } from "@/lib/leads-utils";
 
-interface BounceEmail {
-    email: string;
-    type: string;
-    from: string;
-    date: string;
-}
-
-interface BounceSummary {
-    total_bounces: number;
-    hard_bounces: number;
-    soft_bounces: number;
-    technical_bounces: number;
-}
+const ITEMS_PER_PAGE = 10;
 
 export default function BouncedEmailsPage() {
-    const [bounces, setBounces] = useState<BounceEmail[]>([]);
-    const [summary, setSummary] = useState<BounceSummary>({ total_bounces: 0, hard_bounces: 0, soft_bounces: 0, technical_bounces: 0 });
+    const [leads, setLeads] = useState<NormalizedLead[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const { dateRange, setDateRange } = useData();
+    const [agentFilter, setAgentFilter] = useState<AgentKey | "all">("all");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+        from: subDays(new Date(), 90),
+        to: new Date(),
+    });
 
-    const fetchBounces = async () => {
+    const fetchBounced = useCallback(async () => {
         setLoading(true);
-        setError(null);
         try {
-            // Removed Instantly API fetch as requested
-            setSummary({ total_bounces: 0, hard_bounces: 0, soft_bounces: 0, technical_bounces: 0 });
-            setBounces([]);
-        } catch (e: any) {
+            const from = startOfDay(dateRange.from).toISOString();
+            const to = endOfDay(dateRange.to || dateRange.from).toISOString();
+            const agentsToFetch = agentFilter === "all" ? AGENT_OPTIONS.map(a => a.key) : [agentFilter];
+
+            const results = await Promise.all(
+                agentsToFetch.map(async (key) => {
+                    const res = await fetch(`/api/leads?agent=${key}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+                    if (!res.ok) return [];
+                    const data = await res.json();
+                    return Array.isArray(data.leads) ? data.leads : [];
+                })
+            );
+
+            const flat: NormalizedLead[] = results.flat();
+            const bounced = flat.filter(l => l.emailBounced);
+            bounced.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setLeads(bounced);
+        } catch (e) {
             console.error("Bounces fetch error", e);
-            setError(e.message);
         } finally {
             setLoading(false);
         }
-    };
+    }, [agentFilter, dateRange]);
 
-    useEffect(() => { fetchBounces(); }, []);
+    useEffect(() => { fetchBounced(); }, [fetchBounced]);
 
-    const filteredBounces = bounces.filter(b => {
-        const matchesSearch = b.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            b.from.toLowerCase().includes(searchTerm.toLowerCase());
-        if (!matchesSearch) return false;
-        if (dateRange?.from) {
-            const bd = b.date && b.date !== "Unknown" ? new Date(b.date) : null;
-            if (!bd || isNaN(bd.getTime())) return false;
-            const from = new Date(dateRange.from); from.setHours(0, 0, 0, 0);
-            const to = dateRange.to ? new Date(dateRange.to) : new Date(from); to.setHours(23, 59, 59, 999);
-            if (bd < from || bd > to) return false;
-        }
-        return true;
-    });
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, agentFilter, dateRange]);
+
+    const filteredLeads = useMemo(() => {
+        return leads.filter(l =>
+            l.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            l.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [leads, searchTerm]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredLeads.length / ITEMS_PER_PAGE));
+    const paginatedLeads = filteredLeads.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
-        <TooltipProvider>
-            <div className="space-y-5 pb-10 relative min-h-[500px]">
-                {loading && <BennettLoader />}
+        <div className="space-y-5 pb-10 relative min-h-[500px]">
+            {loading && leads.length === 0 && <BennettLoader />}
 
-                {error && (
-                    <Alert variant="destructive">
-                        <AlertCircle style={{ width: 14, height: 14 }} />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Bounced Emails</h1>
-                        <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Review hard and soft email bounces</p>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
-                        <button
-                            onClick={() => fetchBounces()}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}
-                        >
-                            <RefreshCw style={{ width: 14, height: 14 }} />
-                        </button>
-                    </div>
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Bounced Emails</h1>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Leads whose emails bounced during outreach.</p>
                 </div>
-
-                {/* Metrics */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    <StatCard title="Total Bounces" value={summary.total_bounces.toString()} color="var(--label-primary)" />
-                    <StatCard title="Hard Bounces" value={summary.hard_bounces.toString()} color="var(--red)" tooltip="Permanent failures. Remove these contacts." />
-                    <StatCard title="Soft Bounces" value={summary.soft_bounces.toString()} color="var(--orange)" tooltip="Temporary failures. Worth retrying later." />
-                    <StatCard title="Technical Bounces" value={summary.technical_bounces.toString()} color="var(--yellow, #FFD60A)" tooltip="Failures due to connection or server issues." />
-                </div>
-
-                {/* Search */}
-                <div className="liquid-card" style={{ padding: '12px 14px' }}>
-                    <div style={{ position: 'relative' }}>
-                        <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--label-tertiary)' }} />
-                        <Input
-                            style={{ paddingLeft: 30, height: 36, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', fontSize: 12, borderRadius: 'var(--radius-md)' }}
-                            placeholder="Search by recipient email or sender..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                {/* Bounce List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {!loading && filteredBounces.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--label-tertiary)', border: '1px dashed var(--hairline)', borderRadius: 'var(--radius-xl)', fontSize: 13 }}>
-                            No bounces found.
-                        </div>
-                    ) : (
-                        filteredBounces.map((bounce, index) => <BounceCard key={index} bounce={bounce} />)
-                    )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <DateRangePicker value={dateRange as any} onUpdate={(r: any) => setDateRange(r.range)} />
+                    <button
+                        onClick={fetchBounced}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}
+                    >
+                        <RefreshCw style={{ width: 14, height: 14, animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+                    </button>
                 </div>
             </div>
-        </TooltipProvider>
+
+            {/* Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <StatCard title="Total Bounced" value={leads.length.toString()} color="var(--label-primary)" />
+                <StatCard title="In Current Filter" value={filteredLeads.length.toString()} color="var(--red)" />
+            </div>
+
+            {/* Filters */}
+            <div className="liquid-card" style={{ padding: '12px 14px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
+                    <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--label-tertiary)' }} />
+                    <Input
+                        style={{ paddingLeft: 30, height: 36, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', fontSize: 12, borderRadius: 'var(--radius-md)' }}
+                        placeholder="Search by name or email..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <Select value={agentFilter} onValueChange={(v) => setAgentFilter(v as AgentKey | "all")}>
+                    <SelectTrigger style={{ width: 190, height: 36, fontSize: 12, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
+                        <SelectValue placeholder="Agent" />
+                    </SelectTrigger>
+                    <SelectContent className="apple-dialog">
+                        <SelectItem value="all">All Agents</SelectItem>
+                        {AGENT_OPTIONS.map(a => (
+                            <SelectItem key={a.key} value={a.key}>{a.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Bounce Table */}
+            <div className="liquid-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader style={{ borderBottom: '1px solid var(--hairline)' }}>
+                            <TableRow className="bg-[var(--fill-quaternary)] border-none hover:bg-[var(--fill-quaternary)]">
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Name</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Email</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Agent</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Status</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Date</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {!loading && paginatedLeads.length === 0 ? (
+                                <TableRow className="border-none hover:bg-transparent">
+                                    <TableCell colSpan={5} className="h-24 text-center text-[var(--label-secondary)]">
+                                        No bounced emails found.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                paginatedLeads.map((lead, idx) => {
+                                    const dateObj = lead.createdAt ? new Date(lead.createdAt) : null;
+                                    return (
+                                        <TableRow key={lead.id || idx} className="hover:bg-[var(--fill-quaternary)] border-b border-[var(--separator)] transition-colors">
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <div style={{ width: 28, height: 28, flexShrink: 0, background: 'rgba(255,69,58,0.08)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,69,58,0.15)' }}>
+                                                        <Mail style={{ width: 13, height: 13, color: 'var(--red)' }} />
+                                                    </div>
+                                                    <span className="font-medium text-[var(--label-primary)]">{lead.name || "N/A"}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-[var(--label-secondary)]">{lead.email || "No Email"}</TableCell>
+                                            <TableCell><AgentBadge agent={lead.agent} /></TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary" style={{ background: 'rgba(255,69,58,0.10)', color: 'var(--red)', border: 'none', fontSize: 10, fontWeight: 700 }}>
+                                                    Bounced
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-[var(--label-tertiary)]">
+                                                {dateObj ? dateObj.toLocaleDateString() : 'N/A'}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+                <PaginationFooter
+                    totalItems={filteredLeads.length}
+                    currentPage={currentPage}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                />
+            </div>
+        </div>
     );
 }
 
-function StatCard({ title, value, color, tooltip }: any) {
+function StatCard({ title, value, color }: any) {
     return (
         <div className="liquid-card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{title}</span>
-                {tooltip && (
-                    <Tooltip delayDuration={300}>
-                        <TooltipTrigger asChild>
-                            <span style={{ cursor: 'help', display: 'flex' }}>
-                                <Info style={{ width: 11, height: 11, color: 'var(--label-quaternary)' }} />
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p style={{ maxWidth: 200, fontSize: 11 }}>{tooltip}</p>
-                        </TooltipContent>
-                    </Tooltip>
-                )}
-            </div>
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{title}</span>
             <span style={{ fontSize: 24, fontWeight: 700, color: color || 'var(--label-primary)', letterSpacing: 'var(--ls-metric)' }}>{value}</span>
         </div>
     );
 }
 
-function BounceCard({ bounce }: { bounce: BounceEmail }) {
-    const [isOpen, setIsOpen] = useState(false);
+function PaginationFooter({ totalItems, currentPage, itemsPerPage, onPageChange }: any) {
+    if (totalItems <= itemsPerPage) return null;
 
-    let badgeBg = 'var(--fill-tertiary)';
-    let badgeColor = 'var(--label-secondary)';
-    if (bounce.type?.toLowerCase().includes("hard")) { badgeBg = 'rgba(255,69,58,0.10)'; badgeColor = 'var(--red)'; }
-    else if (bounce.type?.toLowerCase().includes("soft")) { badgeBg = 'rgba(255,159,10,0.12)'; badgeColor = 'var(--orange)'; }
-    else if (bounce.type?.toLowerCase().includes("tech")) { badgeBg = 'rgba(255,214,10,0.12)'; badgeColor = '#A0860A'; }
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="liquid-card" style={{ padding: 0, overflow: 'hidden' }}>
-            <CollapsibleTrigger asChild>
-                <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-                    <div style={{ width: 36, height: 36, flexShrink: 0, background: 'rgba(255,69,58,0.08)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,69,58,0.15)' }}>
-                        <Mail style={{ width: 15, height: 15, color: 'var(--red)' }} />
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 0, display: 'grid', gridTemplateColumns: '1fr auto auto auto', alignItems: 'center', gap: 12 }}>
-                        <div>
-                            <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--label-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bounce.email}</h4>
-                            <p style={{ fontSize: 11, color: 'var(--label-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>From: {bounce.from}</p>
-                        </div>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 8px', borderRadius: 'var(--radius-sm)', fontSize: 10, fontWeight: 700, background: badgeBg, color: badgeColor, whiteSpace: 'nowrap' }}>
-                            {bounce.type}
-                        </span>
-                        <span style={{ fontSize: 11, color: 'var(--label-tertiary)', whiteSpace: 'nowrap' }}>{bounce.date}</span>
-                    </div>
-
-                    <div style={{ flexShrink: 0, color: 'var(--label-tertiary)' }}>
-                        {isOpen ? <ChevronUp style={{ width: 13, height: 13 }} /> : <ChevronDown style={{ width: 13, height: 13 }} />}
-                    </div>
-                </div>
-            </CollapsibleTrigger>
-
-            <CollapsibleContent>
-                <div style={{ padding: '10px 16px 14px', borderTop: '1px solid var(--hairline)', background: 'var(--fill-quaternary)', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--label-secondary)', background: 'none', border: 'none', cursor: 'default' }}>
-                        View Campaign <ArrowUp style={{ width: 11, height: 11, transform: 'rotate(45deg)' }} />
-                    </button>
-                </div>
-            </CollapsibleContent>
-        </Collapsible>
+        <div className="px-6 py-4 border-t border-[var(--separator)] bg-[var(--fill-quaternary)] flex items-center justify-between">
+            <p className="text-sm text-[var(--label-secondary)]">
+                Showing <span className="font-bold text-[var(--label-primary)]">{totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-{Math.min(currentPage * itemsPerPage, totalItems)}</span> of {totalItems} items
+            </p>
+            <div className="flex items-center gap-2">
+                <button
+                    className="h-8 w-8 flex items-center justify-center rounded-md border border-[var(--glass-border)] bg-[var(--fill-tertiary)] text-[var(--label-primary)] disabled:opacity-40"
+                    onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--label-secondary)', padding: '0 8px' }}>Page {currentPage} of {totalPages}</span>
+                <button
+                    className="h-8 w-8 flex items-center justify-center rounded-md border border-[var(--glass-border)] bg-[var(--fill-tertiary)] text-[var(--label-primary)] disabled:opacity-40"
+                    onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage >= totalPages}
+                >
+                    <ChevronRight className="h-4 w-4" />
+                </button>
+            </div>
+        </div>
     );
 }

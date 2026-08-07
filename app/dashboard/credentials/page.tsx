@@ -2,47 +2,40 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Mail, MessageCircle, Mic, ExternalLink, Copy, Eye, EyeOff, Wallet, Phone, BarChart3, Smartphone } from "lucide-react";
-import React, { useState } from "react";
+import { Mail, Mic, ExternalLink, Copy, Eye, EyeOff, Wallet, Phone, BarChart3, Smartphone } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useData } from "@/context/DataContext";
 
 export default function CredentialsPage() {
-    const { calls, voiceBalance, twilioBalance, loadingBalances } = useData();
+    const { twilioBalance } = useData();
 
-    const vapiAgentUsed = React.useMemo(() => {
-        if (!calls || !Array.isArray(calls)) return 0;
-        return calls.filter((c: any) => c.source === 'vapi').reduce((acc: number, call: any) => acc + (call.breakdown?.agent || 0), 0);
-    }, [calls]);
-
-    const [senderEmails, setSenderEmails] = useState<string[]>([]);
-    const [loading, setLoading] = useState(true);
-    const router = useRouter();
-
-    React.useEffect(() => {
-        const fetchEmails = async () => {
-            try {
-                const res = await fetch('/api/email/warmup-analytics', { method: 'POST' });
-                if (!res.ok) throw new Error("Failed to fetch analytics");
-                const data = await res.json();
-
-                // Extract emails from the warmup account objects
-                if (Array.isArray(data)) {
-                    const emails = data.map((account: any) => account.email);
-                    setSenderEmails(emails);
-                }
-            } catch (err) {
-                console.error("Error fetching sender emails:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchEmails();
+    const [vapiUsed, setVapiUsed] = useState<number | null>(null);
+    useEffect(() => {
+        fetch('/api/vapi/cost')
+            .then(res => res.ok ? res.json() : null)
+            .then(data => { if (data) setVapiUsed(data.totalUsed); })
+            .catch(() => {});
     }, []);
 
-    const vapiDetails = voiceBalance?.vapi;
+    const senderEmails = [
+        "bennettrealtysolutionsInvestor@gmail.com",
+        "bennettrealtysolutionslearning@gmail.com",
+        "BRSBiglife@gmail.com",
+        "bennettrealtysolutions@gmail.com",
+        "bennettbootcamps@gmail.com",
+    ];
+    const provisionedNumbers = [
+        "16292911631",
+        "12239011899",
+        "13392554793",
+        "19516442013",
+        "19516443561",
+        "18574039803",
+    ];
+    const loading = false;
+    const router = useRouter();
 
     return (
         <div className="space-y-5 pb-8 max-w-5xl mx-auto">
@@ -52,8 +45,9 @@ export default function CredentialsPage() {
                     title="Email Integration"
                     description="Active sender accounts."
                     icon={Mail}
+                    className="md:col-span-2"
                 >
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid gap-3 md:grid-cols-3">
                         {loading ? (
                             <div className="md:col-span-2 text-sm animate-pulse" style={{ color: 'var(--label-tertiary)' }}>Detecting active email accounts...</div>
                         ) : senderEmails.length > 0 ? (
@@ -66,34 +60,17 @@ export default function CredentialsPage() {
                     </div>
                 </CredentialSection>
 
-                {/* WhatsApp Section */}
-                <CredentialSection
-                    title="WhatsApp Business API"
-                    description="Meta Business API credentials."
-                    icon={MessageCircle}
-                >
-                    <div className="grid gap-3 md:grid-cols-2">
-                        <ReadOnlyField label="WhatsApp Account 1" value="" />
-                        <ReadOnlyField label="WhatsApp Account 2" value="" />
-                    </div>
-                </CredentialSection>
-
                 {/* Provisioned Numbers Section */}
                 <CredentialSection
                     title="Provisioned Phone Numbers"
-                    description="Active telephony lines for Voice and WhatsApp."
+                    description="Active telephony lines for Voice outreach."
                     icon={Phone}
                     className="md:col-span-2"
                 >
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-3 p-3 rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
-                            <ReadOnlyField label="Twilio (UK)" value="" />
-                            <ReadOnlyField label="Agent ID" value="" />
-                        </div>
-                        <div className="space-y-3 p-3 rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
-                            <ReadOnlyField label="Twilio (US)" value="" />
-                            <ReadOnlyField label="Agent ID" value="" />
-                        </div>
+                    <div className="grid gap-3 md:grid-cols-3">
+                        {provisionedNumbers.map((num, idx) => (
+                            <ReadOnlyField key={num} label={`Line ${idx + 1}`} value={`+${num}`} />
+                        ))}
                     </div>
                 </CredentialSection>
 
@@ -102,6 +79,7 @@ export default function CredentialsPage() {
                     title="Voice Agent (Vapi)"
                     description="AI Voice configuration and wallet balances."
                     icon={Mic}
+                    className="md:col-span-2"
                     action={
                         <div className="flex items-center gap-2">
                             <Button size="sm" variant="outline" className="border-[var(--glass-border)] text-[var(--blue)] hover:bg-[var(--fill-secondary)] text-xs h-8 px-3" onClick={() => router.push('/dashboard/voice/logs')}>
@@ -115,14 +93,24 @@ export default function CredentialsPage() {
                         </div>
                     }
                 >
-                    <div className="text-center p-5 rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
-                        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--label-tertiary)' }}>Vapi Credits Used</span>
-                        <div className="text-3xl font-bold mt-1" style={{ color: 'var(--blue)' }}>
-                            ${vapiAgentUsed.toFixed(2)}
+                    <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
+                        <div className="flex items-center gap-3">
+                            <div className="p-1.5 rounded-md" style={{ background: 'var(--fill-secondary)', border: '1px solid var(--glass-border)' }}>
+                                <Mic className="h-4 w-4" style={{ color: 'var(--blue)' }} />
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold" style={{ color: 'var(--label-primary)' }}>Vapi Credits Used</p>
+                                <span className="inline-block mt-1 text-[10px] font-semibold px-2.5 py-0.5 rounded-full" style={{ background: 'rgba(10,132,255,0.10)', color: 'var(--blue)', border: '1px solid rgba(10,132,255,0.20)' }}>
+                                    Total Lifetime Consumption
+                                </span>
+                            </div>
                         </div>
-                        <span className="inline-block mt-2 text-[10px] font-semibold px-2.5 py-0.5 rounded-full" style={{ background: 'rgba(10,132,255,0.10)', color: 'var(--blue)', border: '1px solid rgba(10,132,255,0.20)' }}>
-                            Total Lifetime Consumption
-                        </span>
+                        <div className="text-right">
+                            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--label-tertiary)' }}>Used</p>
+                            <p className="text-xl font-bold" style={{ color: 'var(--blue)' }}>
+                                {vapiUsed !== null ? `$${vapiUsed.toFixed(2)}` : '---'}
+                            </p>
+                        </div>
                     </div>
                 </CredentialSection>
 

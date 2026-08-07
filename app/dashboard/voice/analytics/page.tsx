@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, CheckCircle, PhoneIncoming, Crown, RefreshCw } from "lucide-react";
+import { Phone, Clock, DollarSign, RefreshCw, GraduationCap, Home, Coins, PhoneCall, CheckCircle2, Smile } from "lucide-react";
 import { BennettLoader } from "@/components/bennett-loader";
 import {
     BarChart,
@@ -14,25 +14,28 @@ import {
     Line,
 } from "recharts";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect } from "react";
-import { format, subDays } from "date-fns";
+import { useEffect } from "react";
+import { format } from "date-fns";
 import { useData } from "@/context/DataContext";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { formatDuration } from "@/lib/utils";
 
+const AGENT_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+    recruiting: { label: "Recruiting", icon: <Home style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--blue)' },
+    coaching: { label: "Coaching", icon: <GraduationCap style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--green)' },
+    investor: { label: "Investor", icon: <Coins style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--orange)' },
+    biglife: { label: "BigLife", icon: <Coins style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--purple)' },
+    bootcampsNew: { label: "Bootcamps New Leads", icon: <GraduationCap style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--orange)' },
+    bootcampsFollowup: { label: "Bootcamps Follow-up", icon: <GraduationCap style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--red)' },
+};
 
 export default function VoiceAnalyticsPage() {
-    const { voiceMetrics, loadingVoiceMetrics, allTimeVoiceCount, allTimeOwnerVoiceCount, refreshVoiceMetrics, dateRange, setDateRange } = useData();
-
-    const [accountFilter, setAccountFilter] = useState("vapi");
-
+    const { voiceMetrics, loadingVoiceMetrics, refreshVoiceMetrics, dateRange, setDateRange } = useData();
 
     const loading = loadingVoiceMetrics;
     const m = voiceMetrics;
-
-    const showBootcamps = accountFilter === 'vapi' || accountFilter === 'bootcamps';
-    const showRealty = accountFilter === 'vapi' || accountFilter === 'realty';
-    const showWealth = accountFilter === 'vapi' || accountFilter === 'wealth';
+    const byAgent = m?.byAgent ?? [];
+    const rateByAgent = m?.rateByAgent ?? [];
 
     useEffect(() => {
         if (!dateRange?.from) return;
@@ -40,7 +43,7 @@ export default function VoiceAnalyticsPage() {
             from: dateRange.from,
             to: dateRange.to || dateRange.from,
         });
-    }, [dateRange, accountFilter, refreshVoiceMetrics]);
+    }, [dateRange, refreshVoiceMetrics]);
 
     const volumeData = (m?.dailyVolume ?? []).map(d => ({
         name: format(new Date(d.date + 'T00:00:00'), 'MMM dd'),
@@ -68,59 +71,51 @@ export default function VoiceAnalyticsPage() {
 
 
 
-            {/* Bennett Bootcamps Funnel */}
-            {showBootcamps && (
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                        <div style={{ padding: 6, borderRadius: 'var(--radius-md)', background: 'var(--blue)' }}>
-                            <PhoneIncoming style={{ width: 14, height: 14, color: '#fff' }} />
+            {/* Per-Agent Call Analytics */}
+            {Object.entries(AGENT_LABELS).map(([key, cfg]) => {
+                const agentData = byAgent.find(a => a.key === key);
+                const rateData = rateByAgent.find(a => a.key === key);
+                const calls = agentData?.calls ?? 0;
+                const avgDuration = calls > 0 ? (agentData!.duration / calls) : 0;
+                return (
+                    <div key={key}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                            <div style={{ padding: 6, borderRadius: 'var(--radius-md)', background: cfg.color }}>
+                                {cfg.icon}
+                            </div>
+                            <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--label-primary)' }}>{cfg.label} Analytics</h2>
                         </div>
-                        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--label-primary)' }}>Bennett Bootcamps Analytics</h2>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard title="Calls in Range" value={(m?.normalCalls ?? 0).toLocaleString()} change="Selected Dates" icon={<Phone style={{ width: 18, height: 18 }} />} color="var(--blue)" />
-                        <StatCard title="Call Pick-up Rate" value={`${(m?.normalPickupRate ?? 0).toFixed(1)}%`} change="Picked & duration > 18 sec" icon={<Phone style={{ width: 18, height: 18 }} />} color="var(--purple)" />
-                        <StatCard title="Completion Rate" value={`${(m?.normalCompletionRate ?? 0).toFixed(1)}%`} change="Completed Conversation" icon={<CheckCircle style={{ width: 18, height: 18 }} />} color="var(--green)" />
-                        <StatCard title="Positive Response" value={`${(m?.normalPositiveRate ?? 0).toFixed(1)}%`} change="Positive & Hesitant" icon={<CheckCircle style={{ width: 18, height: 18 }} />} color="var(--blue)" />
-                    </div>
-                </div>
-            )}
-
-            {/* Bennett Realty Solutions Funnel */}
-            {showRealty && (
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                        <div style={{ padding: 6, borderRadius: 'var(--radius-md)', background: 'var(--orange)' }}>
-                            <Crown style={{ width: 14, height: 14, color: '#fff' }} />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" style={{ marginBottom: 12 }}>
+                            <StatCard title="Calls in Range" value={calls.toLocaleString()} change="Selected Dates" icon={<Phone style={{ width: 18, height: 18 }} />} color={cfg.color} />
+                            <StatCard title="Avg Duration" value={formatDuration(avgDuration)} change="Per call" icon={<Clock style={{ width: 18, height: 18 }} />} color={cfg.color} />
+                            <StatCard title="Total Cost" value={`$${(agentData?.cost ?? 0).toFixed(2)}`} change="Selected Dates" icon={<DollarSign style={{ width: 18, height: 18 }} />} color={cfg.color} />
                         </div>
-                        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--label-primary)' }}>Bennett Realty Solutions Analytics</h2>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard title="Calls in Range" value={(m?.ownerCalls ?? 0).toLocaleString()} change="Selected Dates" icon={<Crown style={{ width: 18, height: 18 }} />} color="var(--orange)" />
-                        <StatCard title="Call Pick-up Rate" value={`${(m?.ownerPickupRate ?? 0).toFixed(1)}%`} change="Picked & duration > 18 sec" icon={<Phone style={{ width: 18, height: 18 }} />} color="var(--orange)" />
-                        <StatCard title="Completion Rate" value={`${(m?.ownerCompletionRate ?? 0).toFixed(1)}%`} change="Completed Conversation" icon={<CheckCircle style={{ width: 18, height: 18 }} />} color="var(--green)" />
-                        <StatCard title="Positive Response" value={`${(m?.ownerPositiveRate ?? 0).toFixed(1)}%`} change="EOI & Callback" icon={<CheckCircle style={{ width: 18, height: 18 }} />} color="var(--blue)" />
-                    </div>
-                </div>
-            )}
-
-            {/* Bennett Wealth Builders Foundation Funnel */}
-            {showWealth && (
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                        <div style={{ padding: 6, borderRadius: 'var(--radius-md)', background: 'var(--purple)' }}>
-                            <PhoneIncoming style={{ width: 14, height: 14, color: '#fff' }} />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <StatCard
+                                title="Call Pick-up Rate"
+                                value={`${(rateData?.pickupRate ?? 0).toFixed(1)}%`}
+                                change="Picked & duration > 18 sec"
+                                icon={<PhoneCall style={{ width: 18, height: 18 }} />}
+                                color={cfg.color}
+                            />
+                            <StatCard
+                                title="Call Completion Rate"
+                                value={`${(rateData?.completionRate ?? 0).toFixed(1)}%`}
+                                change="Completed Conversation"
+                                icon={<CheckCircle2 style={{ width: 18, height: 18 }} />}
+                                color={cfg.color}
+                            />
+                            <StatCard
+                                title="Positive Response Rate"
+                                value={`${(rateData?.positiveRate ?? 0).toFixed(1)}%`}
+                                change={rateData && rateData.positiveEligible > 0 ? `${rateData.positive} of ${rateData.positiveEligible} scored` : "No sentiment data"}
+                                icon={<Smile style={{ width: 18, height: 18 }} />}
+                                color={cfg.color}
+                            />
                         </div>
-                        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--label-primary)' }}>Bennett Wealth Builders Foundation Analytics</h2>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard title="Calls in Range" value={(m?.normalCalls ?? 0).toLocaleString()} change="Selected Dates" icon={<Phone style={{ width: 18, height: 18 }} />} color="var(--purple)" />
-                        <StatCard title="Call Pick-up Rate" value={`${(m?.normalPickupRate ?? 0).toFixed(1)}%`} change="Picked & duration > 18 sec" icon={<Phone style={{ width: 18, height: 18 }} />} color="var(--purple)" />
-                        <StatCard title="Completion Rate" value={`${(m?.normalCompletionRate ?? 0).toFixed(1)}%`} change="Completed Conversation" icon={<CheckCircle style={{ width: 18, height: 18 }} />} color="var(--green)" />
-                        <StatCard title="Positive Response" value={`${(m?.normalPositiveRate ?? 0).toFixed(1)}%`} change="Positive & Hesitant" icon={<CheckCircle style={{ width: 18, height: 18 }} />} color="var(--blue)" />
-                    </div>
-                </div>
-            )}
+                );
+            })}
 
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

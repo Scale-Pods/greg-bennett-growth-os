@@ -6,11 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import {
     LayoutDashboard, Mail, MessageCircle, Mic, Settings,
     LogOut, ChevronDown, Wallet, BarChart2, Users, Send,
-    Key, ExternalLink, Sun, Moon, Inbox, AlertCircle, UserMinus,
+    Key, ExternalLink, Inbox, AlertCircle, UserMinus,
     MessageSquare, Phone, Activity, ChevronLeft, ChevronRight
 } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
-import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DataProvider, useData } from "@/context/DataContext";
 import { logout } from "@/app/actions/auth";
@@ -41,17 +40,6 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
             { title: "Analytics", href: "/dashboard/email/analytics", icon: BarChart2 },
         ],
     },
-    whatsapp: {
-        label: "WhatsApp",
-        color: "var(--green)",
-        icon: MessageCircle,
-        items: [
-            { title: "WhatsApp Dashboard", href: "/dashboard/whatsapp", icon: LayoutDashboard },
-            { title: "Chat", href: "/dashboard/whatsapp/chat", icon: MessageSquare },
-            { title: "Leads", href: "/dashboard/whatsapp/leads", icon: Users },
-            { title: "Analytics", href: "/dashboard/whatsapp/analytics", icon: BarChart2 },
-        ],
-    },
     voice: {
         label: "Voice",
         color: "var(--orange)",
@@ -65,7 +53,7 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
     },
 };
 
-const mainApps = ['master', 'email', 'whatsapp', 'voice'];
+const mainApps = ['master', 'email', 'voice'];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -78,28 +66,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { theme, setTheme } = useTheme();
     const [sidebarExpanded, setSidebarExpanded] = useState(true);
     const [walletModal, setWalletModal] = useState<{ isOpen: boolean; type: 'vapi' | 'twilio' }>({
         isOpen: false, type: 'vapi',
     });
     const [isChannelDropdownOpen, setIsChannelDropdownOpen] = useState(false);
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const [vapiUsed, setVapiUsed] = useState<number | null>(null);
 
     const { calls, voiceBalance, twilioBalance, loadingBalances, loadingCalls, dateRange, setDateRange } = useData();
 
-    const walletChips = [
-        { type: 'vapi' as const, icon: <Mic size={13} />, color: 'var(--blue)' },
-        { type: 'twilio' as const, icon: <MessageCircle size={13} />, color: 'var(--red)' },
+    useEffect(() => {
+        fetch('/api/vapi/cost')
+            .then(res => res.ok ? res.json() : null)
+            .then(data => { if (data) setVapiUsed(data.totalUsed); })
+            .catch(() => {});
+    }, []);
+
+    const walletBars = [
+        { type: 'vapi' as const, label: 'Vapi', icon: <Mic size={12} />, color: 'var(--blue)', amount: vapiUsed },
+        { type: 'twilio' as const, label: 'Twilio', icon: <MessageCircle size={12} />, color: 'var(--red)', amount: typeof twilioBalance?.balance === 'number' ? twilioBalance.balance : null },
     ];
 
     let currentContext = "master";
     if (pathname.startsWith("/dashboard/email")) currentContext = "email";
-    else if (pathname.startsWith("/dashboard/whatsapp")) currentContext = "whatsapp";
     else if (pathname.startsWith("/dashboard/voice")) currentContext = "voice";
 
     const activeConfig = dashboardConfig[currentContext];
@@ -269,31 +258,45 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
                 {/* Bottom Actions */}
                 <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--separator)' }}>
-                    {/* Theme toggle */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: sidebarExpanded ? 'space-between' : 'center', gap: 8 }}>
-                        {mounted && (
-                            <button
-                                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                                className="nav-item"
-                                style={{ flex: sidebarExpanded ? 1 : undefined, justifyContent: 'center', padding: '7px 12px' }}
-                                title="Toggle theme"
-                            >
-                                {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-                                {sidebarExpanded && <span style={{ fontSize: 13 }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
-                            </button>
-                        )}
-                    </div>
+                    {currentContext === 'master' && sidebarExpanded && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {walletBars.map(bar => {
+                                const pct = bar.amount !== null ? Math.min(100, Math.max(4, (bar.amount / 100) * 100)) : 0;
+                                return (
+                                    <button
+                                        key={bar.type}
+                                        onClick={() => setWalletModal({ isOpen: true, type: bar.type })}
+                                        className="wallet-bar"
+                                        title={`View ${bar.label} wallet`}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: 'var(--label-secondary)' }}>
+                                                <span style={{ color: bar.color }}>{bar.icon}</span>
+                                                {bar.label}
+                                            </span>
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--label-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                                                {bar.amount !== null ? `$${bar.amount.toFixed(2)}` : '—'}
+                                            </span>
+                                        </div>
+                                        <div style={{ height: 4, borderRadius: 2, background: 'var(--fill-tertiary)', overflow: 'hidden' }}>
+                                            <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: bar.color, transition: 'width 300ms ease' }} />
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
 
-                    {currentContext === 'master' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: sidebarExpanded ? 'flex-start' : 'center', flexWrap: 'wrap' }}>
-                            {walletChips.map(chip => (
+                    {currentContext === 'master' && !sidebarExpanded && (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                            {walletBars.map(bar => (
                                 <button
-                                    key={chip.type}
-                                    onClick={() => setWalletModal({ isOpen: true, type: chip.type })}
+                                    key={bar.type}
+                                    onClick={() => setWalletModal({ isOpen: true, type: bar.type })}
                                     className="wallet-chip"
-                                    title={`View ${chip.type} wallet`}
+                                    title={`${bar.label}: ${bar.amount !== null ? `$${bar.amount.toFixed(2)}` : '—'}`}
                                 >
-                                    <span style={{ color: chip.color }}>{chip.icon}</span>
+                                    <span style={{ color: bar.color }}>{bar.icon}</span>
                                 </button>
                             ))}
                         </div>
@@ -338,17 +341,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 type={walletModal.type}
                 onClose={() => setWalletModal(m => ({ ...m, isOpen: false }))}
                 twilioBalance={twilioBalance}
-                calls={calls}
+                vapiUsed={vapiUsed}
             />
         </div>
     );
 }
 
-function SidebarWalletModal({ isOpen, onClose, type, twilioBalance, calls }: any) {
-    const vapiAgentUsed = useMemo(() => {
-        if (!calls || !Array.isArray(calls)) return 0;
-        return calls.filter((c: any) => c.source === 'vapi').reduce((acc: number, call: any) => acc + (call.breakdown?.agent || 0), 0);
-    }, [calls]);
+function SidebarWalletModal({ isOpen, onClose, type, twilioBalance, vapiUsed }: any) {
+    const vapiAgentUsed = vapiUsed ?? 0;
 
     const titles: Record<string, string> = {
         vapi: 'Vapi Wallet', twilio: 'Twilio Account',

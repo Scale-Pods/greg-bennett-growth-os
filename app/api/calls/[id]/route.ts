@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { CALL_LOG_AGENTS } from '@/app/api/calls/route';
+import { createClient } from '@supabase/supabase-js';
 
 export async function GET(
     request: NextRequest,
@@ -7,26 +9,6 @@ export async function GET(
     try {
         const vapiPrivKey = process.env.VAPI_PRIVATE_KEY;
         const { id } = await context.params;
-
-        // Fetch Leads for name resolution
-        const supabaseUrl = ((process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL_Realty) || "").trim();
-        const secretKey = ((process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY_Realty) || "").trim();
-        const leadsMap = new Map<string, string>();
-        if (supabaseUrl && secretKey) {
-            try {
-                const headers = { "apikey": secretKey, "Authorization": `Bearer ${secretKey}` };
-                const tables = ["nr_wf", "followup", "nurture"];
-                const results = await Promise.all(tables.map(t => fetch(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/${t}?select=name,phone`, { headers }).then(r => r.json())));
-                results.forEach(data => {
-                    if (Array.isArray(data)) {
-                        data.forEach(l => {
-                            const clean = String(l.phone || "").replace(/\D/g, '');
-                            if (clean && l.name) leadsMap.set(clean, l.name);
-                        });
-                    }
-                });
-            } catch (e) { }
-        }
 
         const vapiPhoneMap = new Map<string, string>();
         // Manual Overrides (User Provided) for high-fidelity identification
@@ -50,9 +32,7 @@ export async function GET(
             } catch (e) { }
         }
 
-        const resolveName = (rawName: string, phone: string) => {
-            const cleanPhone = String(phone || "").replace(/\D/g, '');
-            if (leadsMap.has(cleanPhone)) return leadsMap.get(cleanPhone);
+        const resolveName = (rawName: string) => {
             if (rawName && /^\d+$/.test(rawName.replace(/\D/g, '')) && rawName.length > 5) return "Guest";
             return rawName || "Guest";
         };
@@ -81,7 +61,7 @@ export async function GET(
                     return NextResponse.json({
                         ...data,
                         id: data.id,
-                        name: resolveName(customer.name, customerPhone),
+                        name: resolveName(customer.name),
                         startedAt: data.startedAt,
                         durationSeconds: data.durationSeconds || 0,
                         cost: typeof data.cost === 'number' ? `$${data.cost.toFixed(3)}` : (data.cost || "$0.00"),
@@ -97,48 +77,33 @@ export async function GET(
             } catch (err) { }
         }
 
-        // LAST RESORT: Check Supabase Archived Logs
-        if (supabaseUrl && secretKey) {
+        // LAST RESORT: Check per-agent Supabase archived logs
+        for (const cfg of CALL_LOG_AGENTS) {
             try {
-                const headers = { "apikey": secretKey, "Authorization": `Bearer ${secretKey}` };
-                const res = await fetch(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/vapi_call_logs?id=eq.${id}&select=*`, { headers });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data[0]) {
-                        const call = data[0];
-                        const raw = call.raw_data || {};
-                        const assistantId = call.assistantId || raw.assistantId || null;
-                        const assistantIdToPhone: Record<string, string> = {
-                            '70f05e16-18f3-4f6e-964a-f47b299c6c1d': '97148714150',
-                            'b35e3032-7865-4913-ba22-a913b5d4117b': '14782159151',
-                            '918c25eb-9882-452e-86df-b4851d464852': '447462179309',
-                            '9ac979c3-a0b3-4af6-bb0d-07ddf9c0d1cd': '447462179309',
-                            '1ef6ea66-0a75-45f5-b025-1743e048dc90': '14782159151',
-                            'd91ba874-2522-4d62-adf6-681f2a0bf4fe': '97148714150',
-                            '4a7e7a31-0bbc-4fde-831e-2489119ee226': '17624000439',
-                            'e66fe46b-9fe2-4628-a32b-08ced680bc04': '97144396291',
-                            '4baf3613-ba3d-4860-9ea1-62156686b6f1': '447462179309',
-                            '66dff692-d2a5-47d4-bbe0-245509dc7404': '14782159151',
-                        };
+                const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${cfg.envPrefix}`];
+                const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${cfg.envPrefix}`];
+                const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${cfg.envPrefix}`];
+                if (!url || !(serviceKey || anonKey)) continue;
 
-                        return NextResponse.json({
-                            ...raw, // Spreads real Vapi fields back out
-                            id: call.id,
-                            transcript: call.transcript || raw.transcript || [],
-                            analysis: { ...raw.analysis, summary: call.summary },
-                            callSummary: call.summary,
-                            startedAt: call.started_at,
-                            durationSeconds: call.duration_seconds || raw.duration_seconds || raw.durationSeconds || 0,
-                            status: call.status || call.vapi_status || raw.status || 'unknown',
-                            recordingUrl: call.recording_url,
-                            source: 'vapi',
-                            customer_number: call.customer_phone,
-                            phone: call.customer_phone,
-                            phoneNumber: call.assistant_phone || raw.phoneNumber || raw.number || (assistantId ? assistantIdToPhone[assistantId] : null) || "Unknown",
-                            assistantId: assistantId
-                        });
-                    }
-                }
+                const client = createClient(url, (serviceKey || anonKey)!);
+                const { data: call, error } = await client.from(cfg.table).select('*').eq('id', id).maybeSingle();
+                if (error || !call) continue;
+
+                return NextResponse.json({
+                    id: call.id,
+                    agent: cfg.key,
+                    transcript: call.transcript || [],
+                    callSummary: call.summary,
+                    startedAt: call.started_at,
+                    durationSeconds: call.duration_seconds || 0,
+                    status: call.status || call.voice_call_status || 'unknown',
+                    recordingUrl: call.recording_url,
+                    source: call.source || 'vapi',
+                    customer_number: call.customer_phone,
+                    phone: call.customer_phone,
+                    name: resolveName(call.customer_name),
+                    cost: `$${Number(call.cost_usd || 0).toFixed(3)}`,
+                });
             } catch (e) { }
         }
 

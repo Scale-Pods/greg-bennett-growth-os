@@ -1,157 +1,168 @@
 "use client";
 
+import { useEffect, useState, useMemo } from "react";
 import { BennettLoader } from "@/components/bennett-loader";
 import {
-    Send,
-    TrendingUp,
-    AlertTriangle,
-    Users
-} from "lucide-react";
-import { useState, useMemo } from "react";
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import {
-    AreaChart,
-    Area,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    Legend
-} from "recharts";
-import { subDays, format } from "date-fns";
-import { useData } from "@/context/DataContext";
+    Send,
+    Eye,
+    MessageSquare,
+    AlertTriangle,
+    UserMinus,
+    Link2,
+    Target,
+    DollarSign,
+    RefreshCw,
+} from "lucide-react";
+import { AGENT_OPTIONS, AgentKey } from "@/lib/agents";
+import { AgentBadge } from "@/components/agents/agent-badge";
+import type { NormalizedCampaignAnalytics } from "@/lib/email-utils";
 
+interface OverviewResponse {
+    byAgent: Record<string, { campaigns: NormalizedCampaignAnalytics[]; totals: Record<string, number> }>;
+    grandTotals: Record<string, number>;
+}
 
 export default function EmailAnalyticsPage() {
-    const { leads: allLeads, loadingLeads } = useData();
-    const { dateRange, setDateRange } = useData();
+    const [data, setData] = useState<OverviewResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [agentFilter, setAgentFilter] = useState<AgentKey | "all">("all");
 
-    const leadStats = useMemo(() => {
-        if (loadingLeads) return { totalSent: 0, totalReplies: 0, totalUnsubscribed: 0, totalLeads: 0 };
-        const start = dateRange?.from;
-        const end = dateRange?.to;
-
-        const filtered = allLeads.filter(lead => {
-            let hasEmail = false;
-            for (let i = 1; i <= 10; i++) {
-                if (lead[`Email_${i}`] || lead.stage_data?.[`Email_${i}`]) { hasEmail = true; break; }
+    const fetchAnalytics = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/email/analytics/campaigns');
+            if (res.ok) {
+                const json = await res.json();
+                setData(json);
             }
-            if (!hasEmail && !lead.email_replied) return false;
-            const dateRef = lead.last_contacted || lead.updated_at || lead.created_at;
-            if (!dateRef) return false;
-            const leadDate = new Date(dateRef);
-            if (start && leadDate < start) return false;
-            if (end) { const toDate = new Date(end); toDate.setHours(23, 59, 59, 999); if (leadDate > toDate) return false; }
-            return true;
-        });
+        } catch (e) {
+            console.error('Error fetching campaign analytics', e);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        let sent = 0, replies = 0, unsubscribed = 0;
-        filtered.forEach(lead => {
-            for (let i = 1; i <= 10; i++) {
-                const val = lead[`Email_${i}`] || lead.stage_data?.[`Email_${i}`];
-                if (val && String(val).trim() !== "" && String(val).toLowerCase() !== "no") sent++;
-            }
-            const isReplied = lead.email_replied && String(lead.email_replied).toLowerCase() !== "no" && String(lead.email_replied).toLowerCase() !== "none";
-            if (isReplied) replies++;
-            const isUnsub = lead.unsubscribed && String(lead.unsubscribed).toLowerCase().includes("yes");
-            if (isUnsub) unsubscribed++;
-        });
+    useEffect(() => {
+        fetchAnalytics();
+    }, []);
 
-        return { totalSent: sent, totalReplies: replies, totalUnsubscribed: unsubscribed, totalLeads: filtered.length };
-    }, [allLeads, loadingLeads, dateRange]);
+    const { totals, campaigns } = useMemo(() => {
+        if (!data) return { totals: null as Record<string, number> | null, campaigns: [] as NormalizedCampaignAnalytics[] };
 
-    const chartData = useMemo(() => {
-        if (loadingLeads) return [];
-        const start = dateRange?.from;
-        const end = dateRange?.to;
+        if (agentFilter === "all") {
+            const allCampaigns = Object.values(data.byAgent).flatMap(a => a.campaigns);
+            return { totals: data.grandTotals, campaigns: allCampaigns };
+        }
 
-        const counts: Record<string, { date: string, sent: number, replies: number }> = {};
+        const agentData = data.byAgent[agentFilter];
+        return { totals: agentData?.totals || null, campaigns: agentData?.campaigns || [] };
+    }, [data, agentFilter]);
 
-        allLeads.forEach(lead => {
-            const dateRef = lead.last_contacted || lead.updated_at || lead.created_at;
-            if (!dateRef) return;
-            const d = new Date(dateRef);
-            if (start && d < start) return;
-            if (end) {
-                const toDate = new Date(end);
-                toDate.setHours(23, 59, 59, 999);
-                if (d > toDate) return;
-            }
-            const dateKey = d.toISOString().split('T')[0];
-
-            let sent = 0;
-            for (let i = 1; i <= 10; i++) {
-                const val = lead[`Email_${i}`] || lead.stage_data?.[`Email_${i}`];
-                if (val && String(val).trim() !== "" && String(val).toLowerCase() !== "no") sent++;
-            }
-            const isReplied = lead.email_replied && String(lead.email_replied).toLowerCase() !== "no" && String(lead.email_replied).toLowerCase() !== "none";
-
-            if (!counts[dateKey]) {
-                counts[dateKey] = { date: dateKey, sent: 0, replies: 0 };
-            }
-            counts[dateKey].sent += sent;
-            if (isReplied) counts[dateKey].replies += 1;
-        });
-
-        return Object.values(counts)
-            .sort((a, b) => a.date.localeCompare(b.date))
-            .map(item => ({
-                ...item,
-                displayDate: format(new Date(item.date + 'T00:00:00'), 'MMM dd')
-            }));
-    }, [allLeads, loadingLeads, dateRange]);
-
-    const { totalSent, totalReplies, totalUnsubscribed, totalLeads } = leadStats;
-    const replyRate = totalLeads > 0 ? ((totalReplies / totalLeads) * 100).toFixed(2) : "0.00";
+    const openRate = totals && totals.emailsSentCount > 0 ? (totals.openCountUnique / totals.emailsSentCount) * 100 : 0;
+    const replyRate = totals && totals.emailsSentCount > 0 ? (totals.replyCountUnique / totals.emailsSentCount) * 100 : 0;
 
     return (
         <div className="space-y-6 pb-10 relative min-h-[500px]">
-            {loadingLeads && <BennettLoader />}
+            {loading && <BennettLoader />}
 
-
-            {/* Campaign Performance */}
-            <div>
-                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--label-primary)', marginBottom: 10 }}>Campaign Performance</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <MetricCard label="Total Sent" value={totalSent.toLocaleString()} icon={Send} color="var(--blue)" />
-                    <MetricCard label="Replies" value={totalReplies.toLocaleString()} subtext={`${replyRate}% Rate`} icon={TrendingUp} color="var(--blue)" />
-                    <MetricCard label="Unsubscribed" value={totalUnsubscribed.toLocaleString()} icon={AlertTriangle} color="var(--orange)" />
-                    <MetricCard label="Total Leads" value={totalLeads.toLocaleString()} icon={Users} color="var(--label-secondary)" />
+            <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Email Analytics</h1>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Campaign performance across all outreach channels.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Select value={agentFilter} onValueChange={(v) => setAgentFilter(v as AgentKey | "all")}>
+                        <SelectTrigger style={{ width: 190, height: 36, fontSize: 13, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
+                            <SelectValue placeholder="Agent" />
+                        </SelectTrigger>
+                        <SelectContent className="apple-dialog">
+                            <SelectItem value="all">All Agents</SelectItem>
+                            {AGENT_OPTIONS.map(a => (
+                                <SelectItem key={a.key} value={a.key}>{a.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="sm" onClick={fetchAnalytics} className="border-[var(--glass-border)] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] text-[var(--label-primary)] h-9">
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    </Button>
                 </div>
             </div>
 
-            {/* Campaign Outreach Trend Chart */}
-            <div className="liquid-card" style={{ padding: '20px 24px' }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--label-primary)', marginBottom: 16 }}>Campaign Outreach Trend</p>
-                {chartData.length > 0 ? (
-                    <div style={{ height: 360, width: '100%' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3B5BDB" stopOpacity={0.2}/>
-                                        <stop offset="95%" stopColor="#3B5BDB" stopOpacity={0}/>
-                                    </linearGradient>
-                                    <linearGradient id="colorReplies" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#30D158" stopOpacity={0.2}/>
-                                        <stop offset="95%" stopColor="#30D158" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(127,127,127,0.1)" />
-                                <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--label-tertiary)' }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--label-tertiary)' }} />
-                                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid var(--hairline)', background: 'var(--bg-layer1)', fontSize: 11, color: 'var(--label-primary)', boxShadow: 'var(--shadow-lg)' }} />
-                                <Legend iconType="circle" wrapperStyle={{ fontSize: 11, color: 'var(--label-secondary)' }} />
-                                <Area type="monotone" dataKey="sent" name="Emails Sent" stroke="#3B5BDB" fillOpacity={1} fill="url(#colorSent)" strokeWidth={2} />
-                                <Area type="monotone" dataKey="replies" name="Replies Received" stroke="#30D158" fillOpacity={1} fill="url(#colorReplies)" strokeWidth={2} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                ) : (
-                    <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--fill-quaternary)', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--hairline)' }}>
-                        <p style={{ fontSize: 12, color: 'var(--label-tertiary)' }}>No campaign data available in the selected range</p>
-                    </div>
-                )}
+            {/* Metric Tiles */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <MetricCard label="Total Sent" value={(totals?.emailsSentCount ?? 0).toLocaleString()} icon={Send} color="var(--blue)" />
+                <MetricCard label="Opened (Unique)" value={(totals?.openCountUnique ?? 0).toLocaleString()} subtext={`${openRate.toFixed(1)}% rate`} icon={Eye} color="var(--purple)" />
+                <MetricCard label="Replied (Unique)" value={(totals?.replyCountUnique ?? 0).toLocaleString()} subtext={`${replyRate.toFixed(1)}% rate`} icon={MessageSquare} color="var(--green)" />
+                <MetricCard label="Bounced" value={(totals?.bouncedCount ?? 0).toLocaleString()} icon={AlertTriangle} color="var(--orange)" />
+                <MetricCard label="Unsubscribed" value={(totals?.unsubscribedCount ?? 0).toLocaleString()} icon={UserMinus} color="var(--red)" />
+                <MetricCard label="Link Clicks (Unique)" value={(totals?.linkClickCountUnique ?? 0).toLocaleString()} icon={Link2} color="var(--cyan)" />
+                <MetricCard label="Opportunities" value={(totals?.totalOpportunities ?? 0).toLocaleString()} icon={Target} color="var(--label-secondary)" />
+                <MetricCard label="Opportunity Value" value={`$${(totals?.totalOpportunityValue ?? 0).toLocaleString()}`} icon={DollarSign} color="var(--green)" />
+            </div>
+
+            {/* Campaigns Table */}
+            <div className="liquid-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--separator)' }}>
+                    <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--label-primary)' }}>Campaigns</h2>
+                    <p style={{ fontSize: 12, color: 'var(--label-secondary)', marginTop: 2 }}>Real-time performance from Instantly campaign analytics.</p>
+                </div>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader style={{ borderBottom: '1px solid var(--hairline)' }}>
+                            <TableRow className="bg-[var(--fill-quaternary)] border-none hover:bg-[var(--fill-quaternary)]">
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Campaign</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Agent</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Status</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Sent</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Opened %</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Replied %</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Bounced</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Unsubscribed</TableHead>
+                                <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Opportunities</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {!loading && campaigns.length === 0 ? (
+                                <TableRow className="border-none hover:bg-transparent">
+                                    <TableCell colSpan={9} className="h-24 text-center text-[var(--label-secondary)]">
+                                        No campaigns found.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                campaigns.map((c) => {
+                                    const openPct = c.emailsSentCount > 0 ? (c.openCountUnique / c.emailsSentCount) * 100 : 0;
+                                    const replyPct = c.emailsSentCount > 0 ? (c.replyCountUnique / c.emailsSentCount) * 100 : 0;
+                                    return (
+                                        <TableRow key={c.campaignId} className="hover:bg-[var(--fill-quaternary)] border-b border-[var(--separator)] transition-colors">
+                                            <TableCell className="font-medium text-[var(--label-primary)]">{c.campaignName || 'Unnamed Campaign'}</TableCell>
+                                            <TableCell><AgentBadge agent={c.agent} /></TableCell>
+                                            <TableCell className="text-sm text-[var(--label-secondary)]">{c.campaignStatus || '—'}</TableCell>
+                                            <TableCell className="text-sm text-[var(--label-secondary)]">{c.emailsSentCount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-sm text-[var(--label-secondary)]">{openPct.toFixed(1)}%</TableCell>
+                                            <TableCell className="text-sm text-[var(--label-secondary)]">{replyPct.toFixed(1)}%</TableCell>
+                                            <TableCell className="text-sm text-[var(--label-secondary)]">{c.bouncedCount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-sm text-[var(--label-secondary)]">{c.unsubscribedCount.toLocaleString()}</TableCell>
+                                            <TableCell className="text-sm text-[var(--label-secondary)]">
+                                                {c.totalOpportunities.toLocaleString()}
+                                                {c.totalOpportunityValue > 0 && ` ($${c.totalOpportunityValue.toLocaleString()})`}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
         </div>
     );

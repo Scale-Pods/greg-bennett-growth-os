@@ -1,74 +1,111 @@
 import { NextResponse } from 'next/server';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
 export interface MasterMetrics {
     totalLeads: number;
-    oldestLeadDate: string | null;
-    totalWaReachouts: number;
-    totalWaReplies: number;
-    totalVoiceCalls: number;
-    ownerVoiceCalls: number;
-    normalVapiCost: number;
-    ownerVapiCost: number;
     leadsDaily: { date: string; leads: number }[];
-    totalOwnerLeads: number;
-    ownerWaReachouts: number;
-    ownerWaReplies: number;
 }
 
-function endOfDay(iso: string): string {
-    const d = new Date(iso);
-    if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0) {
-        d.setUTCHours(23, 59, 59, 999);
+interface MasterTableConfig {
+    key: string;
+    envPrefix: string;
+    masterTable: string;
+}
+
+const MASTER_TABLES: MasterTableConfig[] = [
+    { key: 'recruiting', envPrefix: 'Realty', masterTable: 'master_leads' },
+    { key: 'coaching', envPrefix: 'platinum', masterTable: 'coaching_master_leads' },
+    { key: 'investor', envPrefix: 'platinum', masterTable: 'investor_funnel_master_leads' },
+    { key: 'biglife', envPrefix: 'wealth', masterTable: 'biglife_master_leads' },
+    { key: 'bootcampsNew', envPrefix: 'bootcamps', masterTable: 'master_new_leads' },
+    { key: 'bootcampsFollowup', envPrefix: 'bootcamps', masterTable: 'master_followup_leads' },
+];
+
+const clientCache = new Map<string, SupabaseClient>();
+
+function getClient(envPrefix: string): SupabaseClient {
+    const cached = clientCache.get(envPrefix);
+    if (cached) return cached;
+
+    const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${envPrefix}`];
+    const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${envPrefix}`];
+    const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${envPrefix}`];
+
+    if (!url || !(serviceKey || anonKey)) {
+        throw new Error(`Missing Supabase env vars for prefix "${envPrefix}"`);
     }
-    return d.toISOString();
+
+    const client = createClient(url, (serviceKey || anonKey)!);
+    clientCache.set(envPrefix, client);
+    return client;
+}
+
+function toDayKey(iso: string): string {
+    return iso.slice(0, 10); // YYYY-MM-DD
 }
 
 export async function GET(req: Request) {
-    const supabaseUrl = ((process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL_Realty) || '').trim().replace(/\/$/, '');
-    const secretKey = ((process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY_Realty) || '').trim();
-
-    if (!supabaseUrl || !secretKey) {
-        return NextResponse.json({ error: 'Config missing' }, { status: 500 });
-    }
-
     const { searchParams } = new URL(req.url);
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
 
-    const fromISO = fromParam || new Date(Date.now() - 7 * 86400000).toISOString();
-    const toISO = toParam ? endOfDay(toParam) : endOfDay(new Date().toISOString());
+    const from = fromParam ? new Date(fromParam) : new Date(Date.now() - 7 * 86400000);
+    const to = toParam ? new Date(toParam) : new Date();
+
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+        return NextResponse.json({ error: 'Invalid from/to date' }, { status: 400 });
+    }
 
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/rpc/get_master_metrics`, {
-            method: 'POST',
-            headers: {
-                apikey: secretKey,
-                Authorization: `Bearer ${secretKey}`,
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-store',
-            },
-            body: JSON.stringify({ p_from: fromISO, p_to: toISO }),
-            cache: 'no-store',
-        });
+        const results = await Promise.all(
+            MASTER_TABLES.map(async cfg => {
+                const client = getClient(cfg.envPrefix);
+                const [countRes, dailyRes] = await Promise.all([
+                    client.from(cfg.masterTable).select('id', { count: 'exact', head: true }),
+                    client
+                        .from(cfg.masterTable)
+                        .select('created_at')
+                        .gte('created_at', from.toISOString())
+                        .lte('created_at', to.toISOString()),
+                ]);
 
-        if (!res.ok) {
-            const err = await res.text();
-            console.error('[master-metrics] RPC error:', err);
-            return NextResponse.json({ error: 'RPC failed', detail: err }, { status: 502 });
+                if (countRes.error) {
+                    console.error(`[master-metrics:${cfg.key}] count error:`, countRes.error.message);
+                }
+                if (dailyRes.error) {
+                    console.error(`[master-metrics:${cfg.key}] daily error:`, dailyRes.error.message);
+                }
+
+                return {
+                    totalLeads: countRes.count || 0,
+                    createdDates: (dailyRes.data || []).map((r: any) => r.created_at as string),
+                };
+            })
+        );
+
+        const totalLeads = results.reduce((sum, r) => sum + r.totalLeads, 0);
+
+        const dayBuckets = new Map<string, number>();
+        for (const r of results) {
+            for (const createdAt of r.createdDates) {
+                const key = toDayKey(createdAt);
+                dayBuckets.set(key, (dayBuckets.get(key) || 0) + 1);
+            }
         }
 
-        const metrics: MasterMetrics = await res.json();
-        return new NextResponse(JSON.stringify(metrics), {
-            status: 200,
-            headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-store, no-cache, must-revalidate',
-            },
+        const leadsDaily = Array.from(dayBuckets.entries())
+            .map(([date, leads]) => ({ date, leads }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+
+        const metrics: MasterMetrics = { totalLeads, leadsDaily };
+
+        return NextResponse.json(metrics, {
+            headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
         });
     } catch (err: any) {
         console.error('[master-metrics] fetch error:', err);
-        return NextResponse.json({ error: 'Fetch failed' }, { status: 500 });
+        return NextResponse.json({ error: 'Fetch failed', detail: err?.message }, { status: 500 });
     }
 }

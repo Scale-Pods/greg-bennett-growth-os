@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
     Table,
     TableBody,
@@ -9,227 +9,65 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Users, AlertCircle, Loader2, RefreshCw, Mail, MessageCircle, ChevronLeft, ChevronRight, Search, Filter } from "lucide-react";
+import { Users, AlertCircle, Loader2, RefreshCw, Mail, Phone, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BennettLoader } from "@/components/bennett-loader";
-import { useMemo } from "react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { startOfDay, endOfDay } from "date-fns";
-import { useData } from "@/context/DataContext";
+import { startOfDay, endOfDay, subDays } from "date-fns";
+import { AGENT_OPTIONS, AgentKey } from "@/lib/agents";
+import { AgentBadge } from "@/components/agents/agent-badge";
+import type { NormalizedMasterLead } from "@/lib/leads-utils";
 
-interface Lead {
-    id?: string;
-    name: string;
-    phone: string;
-    email: string;
-    replied: string;
-    email_replied?: string;
-    whatsapp_replied?: string;
-    current_loop: string;
-    stages_passed: string[];
-    lead_id?: string;
-    current_week?: string;
-    display_loop?: string;
-    source_loop?: string;
-    country_code?: string;
-}
-
-// USA Stages (Day 0: WA+Email, Day 2: WA, Day 3: Voice1, Day 3: Voice2, Day 5: Email, Day 7: Email)
-const USA_STAGES = [
-    { id: 1, label: "Day 0: WhatsApp & Email", criteria: ["WhatsApp 1", "Email 1"] }, // Both required? Usually implies "Contacted"
-    { id: 2, label: "Day 2: WhatsApp", criteria: ["WhatsApp 2"] },
-    { id: 3, label: "Day 3: Voice Call 1", criteria: ["Voice 1"] },
-    { id: 4, label: "Day 4: Voice Call 2", criteria: ["Voice 2"] },
-    { id: 5, label: "Day 5: Email", criteria: ["Email 2"] }, // Mapping to next available email
-    { id: 6, label: "Day 7: Email", criteria: ["Email 3"] }
-];
-
-// Global Stages (Day 0: WA, Day 2: WA, Day 3: Voice1, Day 3: Voice2, Day 5: WA, Day 7: WA)
-const GLOBAL_STAGES = [
-    { id: 1, label: "Day 0: WhatsApp", criteria: ["WhatsApp 1"] },
-    { id: 2, label: "Day 2: WhatsApp", criteria: ["WhatsApp 2"] },
-    { id: 3, label: "Day 3: Voice Call 1", criteria: ["Voice 1"] },
-    { id: 4, label: "Day 4: Voice Call 2", criteria: ["Voice 2"] },
-    { id: 5, label: "Day 5: WhatsApp", criteria: ["WhatsApp 3" /*, "Email 2"*/] }, // Email removed for Global
-    { id: 6, label: "Day 7: WhatsApp", criteria: ["WhatsApp 4" /*, "Email 3"*/] }  // Email removed for Global
-];
-
-const isUSALead = (phone: string) => {
-    if (!phone) return false;
-    const clean = phone.replace(/\D/g, '');
-    // standard USA format: 10 digits (no country code) or 11 digits starting with 1
-    return (clean.length === 10) || (clean.length === 11 && clean.startsWith('1'));
-};
-
-const getStagesForLead = (lead: Lead) => {
-    return isUSALead(lead.phone) ? USA_STAGES : GLOBAL_STAGES;
-};
-
-const calculateProgress = (lead: Lead) => {
-    const stages = getStagesForLead(lead);
-    const stagesPassed = lead.stages_passed || [];
-
-    // Check match count
-    let completed = 0;
-
-    // For Nurture, we might be in Week 1, 2, or 4.
-    // The requirement says "same loop only", so the stages are the same for each week.
-    // However, the data might be stored as "Email 1", "Email 2" etc which might overlap.
-    // Effectively, we just check if the specific criteria for that "Day" has been met in the current context.
-
-    stages.forEach(stage => {
-        // Broad check: if ANY of the criteria is met.
-        // For "WhatsApp & Email", strictly speaking we might want both, but usually leads data marks stages as they happen.
-        // Let's assume if ANY criteria in the list is found, that stage step is done. (OR logic)
-        // If strict AND logic is needed for Day 0 (WA AND Email), we can adjust.
-        // Given data structure usually has "Email 1" AND "WhatsApp 1", we can check if ALL are present for multi-criteria.
-
-        const isMet = stage.criteria.every(c => stagesPassed.includes(c)); // Strict AND for Day 0
-        if (isMet) completed++;
-
-        // Fallback for "WhatsApp & Email": if only one sent, is it 50% of step? 
-        // Let's keep it simple: if criteria has multiple, require all? 
-        // User request: "Day 0 whatsapp and email". If only WA sent, Day 0 incomplete.
-    });
-
-    // Special handling for Nurture Week scaling?
-    // "In Nurture loop week 1, week 2 and week 4 same loop only"
-    // This implies the structure repeats. 
-    // If we are in Nurture, we can show progress WITHIN the current week.
-
-    return Math.round((completed / stages.length) * 100);
-};
-
-
-
-function ProgressBreakdown({ lead }: { lead: Lead }) {
-    const stages = getStagesForLead(lead);
-    const stagesPassed = lead.stages_passed || [];
-
-    const breakdown = stages.map(stage => {
-        const useAndLogic = stage.label.includes("Day 0") && stage.criteria.length > 1;
-        const isMet = useAndLogic
-            ? stage.criteria.every(c => stagesPassed.includes(c))
-            : stage.criteria.some(c => stagesPassed.includes(c));
-        return { name: stage.label, value: 1, isCompleted: isMet };
-    });
-
-    const completedCount = breakdown.filter(b => b.isCompleted).length;
-    const progress = Math.round((completedCount / stages.length) * 100);
-
-    const data = [
-        { name: 'Completed', value: completedCount, color: '#10b981' }, 
-        { name: 'Remaining', value: stages.length - completedCount, color: 'var(--fill-secondary)' } 
-    ];
-
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <div className="cursor-pointer group relative">
-                    <div className="flex justify-between items-center text-xs text-[var(--label-secondary)] mb-1.5">
-                        <div className="flex items-center gap-1 group-hover:text-[var(--blue)] transition-colors">
-                            <span className="font-medium">Stage {completedCount} of {stages.length}</span>
-                            <ChevronRight className="h-3 w-3 opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
-                        </div>
-                        <span className="font-bold text-[var(--label-primary)]">{progress}%</span>
-                    </div>
-                    <Progress value={progress} className="h-2 bg-[var(--fill-secondary)] group-hover:bg-[var(--blue)]/5 transition-all" indicatorClassName="bg-[var(--blue)]" />
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-[var(--fill-secondary)] text-[var(--label-primary)] text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-[var(--glass-border)]">
-                        View Journey
-                    </div>
-                </div>
-            </DialogTrigger>
-            <DialogContent className="apple-dialog max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2" style={{ color: 'var(--label-primary)' }}>
-                        <span>Lead Journey</span>
-                        <Badge variant="outline" className="ml-2 bg-[var(--fill-secondary)] text-[var(--label-primary)] border-[var(--glass-border)]">
-                            {isUSALead(lead.phone) ? "USA Flow" : "Global Flow"}
-                        </Badge>
-                    </DialogTitle>
-                </DialogHeader>
-                <div className="grid grid-cols-2 gap-6 py-4">
-                    <div className="h-[160px] relative flex items-center justify-center">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={data}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={40}
-                                    outerRadius={60}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {data.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                            </PieChart>
-                        </ResponsiveContainer>
-                        <div className="absolute inset-0 flex items-center justify-center flex-col">
-                            <span className="text-2xl font-bold text-[var(--label-primary)]">{progress}%</span>
-                            <span className="text-[10px] text-[var(--label-tertiary)] uppercase font-bold">Complete</span>
-                        </div>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            {breakdown.map((step, i) => (
-                                <div key={i} className="flex items-center gap-2 text-sm">
-                                    <div className={`h-2 w-2 rounded-full ${step.isCompleted ? 'bg-[var(--green)]' : 'bg-[var(--fill-secondary)]'}`} />
-                                    <span className={step.isCompleted ? 'text-[var(--label-primary)] font-medium' : 'text-[var(--label-tertiary)]'}>
-                                        {step.name}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-
-
-// Restore LeadsPage component
 export default function LeadsPage() {
-    const { leads, loadingLeads, refreshLeads, dateRange, setDateRange } = useData();
+    const [leads, setLeads] = useState<NormalizedMasterLead[]>([]);
+    const [loadingLeads, setLoadingLeads] = useState(true);
+    const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+        from: subDays(new Date(), 30),
+        to: new Date(),
+    });
     const [templates, setTemplates] = useState<any[]>([]);
-    const loadingTemplates = useState(false)[0]; // Placeholder for template loading if needed
     const [view, setView] = useState<"leads" | "templates">("leads");
     const [templateFilter, setTemplateFilter] = useState<"email" | "whatsapp">("email");
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
+    const [agent, setAgent] = useState<AgentKey | "all">("all");
+
     // Filter States
     const [searchQuery, setSearchQuery] = useState("");
-    const [loopFilter, setLoopFilter] = useState("all");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [regionFilter, setRegionFilter] = useState("all");
-    const [channelFilter, setChannelFilter] = useState("all");
+    const [classificationFilter, setClassificationFilter] = useState("all");
+    const [syncFilter, setSyncFilter] = useState("all");
+
+    const fetchLeads = useCallback(async () => {
+        setLoadingLeads(true);
+        try {
+            const from = startOfDay(dateRange.from).toISOString();
+            const to = endOfDay(dateRange.to || dateRange.from).toISOString();
+            const query = new URLSearchParams({ agent, from, to });
+            const res = await fetch(`/api/leads/master?${query.toString()}`);
+            if (!res.ok) { setLeads([]); return; }
+            const data = await res.json();
+            setLeads(Array.isArray(data.leads) ? data.leads : []);
+        } catch (err) {
+            console.error('Error fetching leads:', err);
+        } finally {
+            setLoadingLeads(false);
+        }
+    }, [agent, dateRange]);
+
+    useEffect(() => {
+        fetchLeads();
+    }, [fetchLeads]);
 
     // Reset page on view or filter change
     useEffect(() => {
         setCurrentPage(1);
-    }, [view, templateFilter, searchQuery, loopFilter, statusFilter, regionFilter, channelFilter, dateRange]);
-
+    }, [view, templateFilter, searchQuery, classificationFilter, syncFilter, dateRange, agent]);
 
     const loading = view === "leads" ? loadingLeads : false;
 
@@ -254,18 +92,15 @@ export default function LeadsPage() {
         }
     }, [view]);
 
-    // Filtering Logic
+    const classificationOptions = useMemo(() => {
+        const set = new Set<string>();
+        leads.forEach(l => { if (l.leadClassification) set.add(l.leadClassification); });
+        return Array.from(set).sort();
+    }, [leads]);
+
+    // Filtering Logic (date range + agent already applied server-side via fetchLeads)
     const filteredLeads = useMemo(() => {
         return leads.filter(lead => {
-            // Date Filter
-            if (dateRange?.from) {
-                const leadDate = new Date(lead.created_at || lead.updated_at || Date.now());
-                const from = startOfDay(new Date(dateRange.from));
-                const to = dateRange.to ? endOfDay(new Date(dateRange.to)) : endOfDay(from);
-                if (leadDate < from || leadDate > to) return false;
-            }
-
-            // Search Query
             if (searchQuery) {
                 const search = searchQuery.toLowerCase();
                 const matches =
@@ -275,38 +110,18 @@ export default function LeadsPage() {
                 if (!matches) return false;
             }
 
-            // Loop Filter
-            if (loopFilter !== "all") {
-                const source = (lead.source_loop === 'nr_wf' || lead.source_loop === 'Intro') ? 'intro' : lead.source_loop;
-                if (source !== loopFilter) return false;
+            if (classificationFilter !== "all") {
+                if (lead.leadClassification !== classificationFilter) return false;
             }
 
-            // Status Filter
-            if (statusFilter !== "all") {
-                const isReplied = (lead.replied === "Yes" || (lead.email_replied && lead.email_replied !== "No") || (lead.whatsapp_replied && lead.whatsapp_replied !== "No"));
-                if (statusFilter === "replied" && !isReplied) return false;
-                if (statusFilter === "sent" && isReplied) return false;
-            }
-
-            // Region Filter
-            if (regionFilter !== "all") {
-                const isUSA = isUSALead(lead.phone);
-                if (regionFilter === "usa" && !isUSA) return false;
-                if (regionFilter === "global" && isUSA) return false;
-            }
-
-            // Channel Filter
-            if (channelFilter !== "all") {
-                const hasEmail = lead.email && lead.email !== "No Email";
-                const hasWP = !!lead.phone;
-                if (channelFilter === "email" && !hasEmail) return false;
-                if (channelFilter === "whatsapp" && !hasWP) return false;
+            if (syncFilter !== "all") {
+                if (syncFilter === "synced" && !lead.syncedToOutreach) return false;
+                if (syncFilter === "pending" && lead.syncedToOutreach) return false;
             }
 
             return true;
         });
-    }, [leads, searchQuery, loopFilter, statusFilter, regionFilter, channelFilter, dateRange]);
-
+    }, [leads, searchQuery, classificationFilter, syncFilter]);
 
     if (error) {
         return (
@@ -326,37 +141,12 @@ export default function LeadsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Leads</h1>
-                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Manage and track your leads across all loops.</p>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Manage and track your leads across all AI agents.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <DateRangePicker onUpdate={(r: any) => setDateRange(r.range)} />
-                    <div style={{ display: 'flex', background: 'var(--fill-tertiary)', borderRadius: 'var(--radius-md)', padding: 3, gap: 2 }}>
-                        <button
-                            onClick={() => setView("leads")}
-                            style={{
-                                padding: '5px 14px', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'default',
-                                background: view === "leads" ? 'var(--bg-layer1)' : 'transparent',
-                                color: view === "leads" ? 'var(--label-primary)' : 'var(--label-secondary)',
-                                boxShadow: view === "leads" ? 'var(--shadow-sm)' : 'none',
-                                transition: 'all 130ms'
-                            }}
-                        >
-                            Leads
-                        </button>
-                        <button
-                            onClick={() => setView("templates")}
-                            style={{
-                                padding: '5px 14px', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'default',
-                                background: view === "templates" ? 'var(--bg-layer1)' : 'transparent',
-                                color: view === "templates" ? 'var(--label-primary)' : 'var(--label-secondary)',
-                                boxShadow: view === "templates" ? 'var(--shadow-sm)' : 'none',
-                                transition: 'all 130ms'
-                            }}
-                        >
-                            Templates
-                        </button>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => view === "leads" ? refreshLeads() : fetchTemplates()} className="border-[var(--glass-border)] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] text-[var(--label-primary)] h-9">
+                    <DateRangePicker value={dateRange as any} onUpdate={(r: any) => setDateRange(r.range)} />
+                    
+                    <Button variant="outline" size="sm" onClick={() => view === "leads" ? fetchLeads() : fetchTemplates()} className="border-[var(--glass-border)] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] text-[var(--label-primary)] h-9">
                         <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
@@ -373,7 +163,7 @@ export default function LeadsPage() {
                         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--label-primary)' }}>{view === "leads" ? "All Leads" : "Templates Library"}</h2>
                     </div>
                     <p style={{ fontSize: 12, color: 'var(--label-secondary)', marginTop: 2 }}>
-                        {view === "leads" ? "Real-time data from your Intro and Follow-up loops." : "Manage your messaging templates."}
+                        {view === "leads" ? "Raw leads from all AI agents' master lead tables." : "Manage your messaging templates."}
                     </p>
                 </div>
 
@@ -390,62 +180,50 @@ export default function LeadsPage() {
                             />
                         </div>
                         <div className="flex items-center gap-3">
-                            <Select value={loopFilter} onValueChange={setLoopFilter}>
-                                <SelectTrigger className="border-none" style={{ width: 155, height: 40, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
-                                    <SelectValue placeholder="Loop Type" />
+                            <Select value={agent} onValueChange={(v) => setAgent(v as AgentKey | "all")}>
+                                <SelectTrigger className="border-none" style={{ width: 190, height: 40, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
+                                    <SelectValue placeholder="Agent" />
                                 </SelectTrigger>
                                 <SelectContent className="apple-dialog">
-                                    <SelectItem value="all">All Loops</SelectItem>
-                                    <SelectItem value="intro">Intro Loop</SelectItem>
-                                    <SelectItem value="followup">Follow Up</SelectItem>
-                                    <SelectItem value="nurture">Nurture Loop</SelectItem>
+                                    <SelectItem value="all">All Agents</SelectItem>
+                                    {AGENT_OPTIONS.map(a => (
+                                        <SelectItem key={a.key} value={a.key}>{a.label}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
 
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="border-none" style={{ width: 155, height: 40, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
-                                    <SelectValue placeholder="Reply Status" />
+                            <Select value={classificationFilter} onValueChange={setClassificationFilter}>
+                                <SelectTrigger className="border-none" style={{ width: 170, height: 40, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
+                                    <SelectValue placeholder="Classification" />
                                 </SelectTrigger>
                                 <SelectContent className="apple-dialog">
-                                    <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="replied">Replied</SelectItem>
-                                    <SelectItem value="sent">Sent Only</SelectItem>
+                                    <SelectItem value="all">All Classifications</SelectItem>
+                                    {classificationOptions.map(c => (
+                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
 
-                            <Select value={regionFilter} onValueChange={setRegionFilter}>
-                                <SelectTrigger className="border-none" style={{ width: 155, height: 40, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
-                                    <SelectValue placeholder="Region" />
+                            <Select value={syncFilter} onValueChange={setSyncFilter}>
+                                <SelectTrigger className="border-none" style={{ width: 165, height: 40, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
+                                    <SelectValue placeholder="Sync Status" />
                                 </SelectTrigger>
                                 <SelectContent className="apple-dialog">
-                                    <SelectItem value="all">All Regions</SelectItem>
-                                    <SelectItem value="usa">USA Leads</SelectItem>
-                                    <SelectItem value="global">Global Leads</SelectItem>
+                                    <SelectItem value="all">All Leads</SelectItem>
+                                    <SelectItem value="synced">Synced to Outreach</SelectItem>
+                                    <SelectItem value="pending">Pending Sync</SelectItem>
                                 </SelectContent>
                             </Select>
 
-                            <Select value={channelFilter} onValueChange={setChannelFilter}>
-                                <SelectTrigger className="border-none" style={{ width: 155, height: 40, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
-                                    <SelectValue placeholder="Channel" />
-                                </SelectTrigger>
-                                <SelectContent className="apple-dialog">
-                                    <SelectItem value="all">All Channels</SelectItem>
-                                    <SelectItem value="email">Email</SelectItem>
-                                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {(searchQuery || loopFilter !== "all" || statusFilter !== "all" || regionFilter !== "all" || channelFilter !== "all") && (
+                            {(searchQuery || classificationFilter !== "all" || syncFilter !== "all") && (
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     className="text-[var(--label-secondary)] hover:text-[var(--red)] h-10 px-3 hover:bg-[var(--fill-secondary)] rounded-md"
                                     onClick={() => {
                                         setSearchQuery("");
-                                        setLoopFilter("all");
-                                        setStatusFilter("all");
-                                        setRegionFilter("all");
-                                        setChannelFilter("all");
+                                        setClassificationFilter("all");
+                                        setSyncFilter("all");
                                     }}
                                 >
                                     Clear
@@ -463,18 +241,18 @@ export default function LeadsPage() {
                                     <TableHeader style={{ borderBottom: '1px solid var(--hairline)' }}>
                                         <TableRow className="bg-[var(--fill-quaternary)] border-none hover:bg-[var(--fill-quaternary)]">
                                             <TableHead className="w-[200px]" style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Name</TableHead>
+                                            <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Agent</TableHead>
                                             <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Phone</TableHead>
-                                            <TableHead className="text-center" style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Channel</TableHead>
                                             <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Email</TableHead>
-                                            <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Current Loop</TableHead>
-                                            <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Reply Status</TableHead>
-                                            <TableHead className="w-[250px]" style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Progress</TableHead>
+                                            <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Classification</TableHead>
+                                            <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Sync Status</TableHead>
+                                            <TableHead style={{ padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--label-tertiary)' }}>Created</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {loading && leads.length === 0 ? (
                                             <TableRow className="border-none hover:bg-transparent">
-                                                <TableCell colSpan={7} className="h-24 text-center">
+                                                <TableCell colSpan={7} className="h-20 text-center text-sm">
                                                     <div className="flex items-center justify-center gap-2 text-[var(--label-secondary)]">
                                                         <Loader2 className="h-4 w-4 animate-spin" />
                                                         Loading leads...
@@ -483,46 +261,37 @@ export default function LeadsPage() {
                                             </TableRow>
                                         ) : filteredLeads.length === 0 ? (
                                             <TableRow className="border-none hover:bg-transparent">
-                                                <TableCell colSpan={7} className="h-24 text-center text-[var(--label-secondary)]">
+                                                <TableCell colSpan={7} className="h-20 text-center text-sm text-[var(--label-secondary)]">
                                                     No leads matching these filters.
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
                                             filteredLeads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((lead, index) => {
                                                 return (
-                                                    <TableRow key={index} className="hover:bg-[var(--fill-quaternary)] border-b border-[var(--separator)] transition-colors">
-                                                        <TableCell className="font-medium text-[var(--label-primary)]">{lead.name}</TableCell>
-                                                        <TableCell className="text-[var(--label-secondary)]">{lead.phone}</TableCell>
-                                                        <TableCell className="text-center">
-                                                            <div className="flex flex-col items-center gap-1.5">
-                                                                {lead.email && lead.email !== "No Email" && (
-                                                                    <Badge variant="secondary" className="badge-blue border-none text-[12px] font-medium h-5 px-1.5 w-full justify-center">
-                                                                        Email
-                                                                    </Badge>
-                                                                )}
-                                                                {lead.phone && (
-                                                                    <Badge variant="secondary" className="badge-green border-none text-[12px] font-medium h-5 px-1.5 w-full justify-center">
-                                                                        WhatsApp
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
+                                                    <TableRow key={`${lead.agent}-${lead.id || index}`} className="hover:bg-[var(--fill-quaternary)] border-b border-[var(--separator)] transition-colors">
+                                                        <TableCell style={{ padding: '8px 16px' }} className="text-sm font-medium text-[var(--label-primary)]">{lead.name}</TableCell>
+                                                        <TableCell style={{ padding: '8px 16px' }}><AgentBadge agent={lead.agent} /></TableCell>
+                                                        <TableCell style={{ padding: '8px 16px' }} className="text-sm text-[var(--label-secondary)]">{lead.phone || '—'}</TableCell>
+                                                        <TableCell style={{ padding: '8px 16px' }} className={`text-sm ${!lead.email ? "text-[var(--label-tertiary)] italic" : "text-[var(--label-secondary)]"}`}>
+                                                            {lead.email || "No Email"}
                                                         </TableCell>
-                                                        <TableCell className={`text-sm ${lead.email === "No Email" ? "text-[var(--label-tertiary)] italic" : "text-[var(--label-secondary)]"}`}>
-                                                            {lead.email === "No Email" ? "No Email" : lead.email}
+                                                        <TableCell style={{ padding: '8px 16px' }}>
+                                                            {lead.leadClassification ? (
+                                                                <Badge variant="outline" className="badge-blue border-none uppercase text-[10px] font-bold tracking-wider">
+                                                                    {lead.leadClassification}
+                                                                </Badge>
+                                                            ) : (
+                                                                <span className="text-[var(--label-tertiary)] text-xs">—</span>
+                                                            )}
                                                         </TableCell>
-                                                        <TableCell>
-                                                            <Badge variant="outline" className="badge-blue border-none uppercase text-[10px] font-bold tracking-wider">
-                                                                {lead.source_loop === 'followup' ? 'FOLLOW UP' : lead.source_loop === 'nr_wf' || lead.source_loop === 'Intro' ? 'INTRO' : (lead.display_loop || lead.current_loop || lead.source_loop || "").toUpperCase()}
+                                                        <TableCell style={{ padding: '8px 16px' }}>
+                                                            <Badge variant={lead.syncedToOutreach ? "default" : "secondary"}
+                                                                className={lead.syncedToOutreach ? "badge-green border-none shadow-none font-bold capitalize" : "capitalize text-[var(--label-secondary)] bg-[var(--fill-secondary)] border-[var(--glass-border)]"}>
+                                                                {lead.syncedToOutreach ? "Synced" : "Pending"}
                                                             </Badge>
                                                         </TableCell>
-                                                        <TableCell>
-                                                            <Badge variant={(lead.replied === "Yes" || (lead.email_replied && lead.email_replied !== "No") || (lead.whatsapp_replied && lead.whatsapp_replied !== "No")) ? "default" : "secondary"}
-                                                                className={(lead.replied === "Yes" || (lead.email_replied && lead.email_replied !== "No") || (lead.whatsapp_replied && lead.whatsapp_replied !== "No")) ? "badge-green border-none shadow-none font-bold capitalize" : "capitalize text-[var(--label-secondary)] bg-[var(--fill-secondary)] border-[var(--glass-border)]"}>
-                                                                {(lead.email_replied && lead.email_replied !== "No") ? "Replied" : (lead.whatsapp_replied && lead.whatsapp_replied !== "No") ? "Replied" : lead.replied === "No" ? "Sent" : lead.replied}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <ProgressBreakdown lead={lead} />
+                                                        <TableCell style={{ padding: '8px 16px' }} className="text-sm text-[var(--label-secondary)]">
+                                                            {new Date(lead.createdAt).toLocaleDateString()}
                                                         </TableCell>
                                                     </TableRow>
                                                 );
@@ -580,7 +349,7 @@ export default function LeadsPage() {
                                                     <div style={{ background: 'var(--fill-quaternary)', borderBottom: '1px solid var(--separator)', padding: '12px 16px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                                                         <div className="flex items-center gap-3">
                                                             <div className={`p-2 rounded-md ${template.type === 'email' ? 'badge-blue' : 'badge-green'}`}>
-                                                                {template.type === 'email' ? <Mail className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+                                                                {template.type === 'email' ? <Mail className="h-4 w-4" /> : <Phone className="h-4 w-4" />}
                                                             </div>
                                                             <div className="font-semibold text-[var(--label-primary)]">
                                                                 {template.name || `Template ${idx + 1}`}

@@ -13,7 +13,7 @@ export async function GET() {
             fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Balance.json`, {
                 headers: { Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64') }
             }),
-            fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Usage/Records.json?Category=totalprice`, {
+            fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Usage/Records/AllTime.json?Category=totalprice`, {
                 headers: { Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64') }
             })
         ]);
@@ -28,12 +28,12 @@ export async function GET() {
         const usageData = await usageRes.json();
 
         const balance = parseFloat(data.balance);
-        const used = usageData.usage_records?.[0]?.price || 0;
+        const used = Math.abs(parseFloat(usageData.usage_records?.[0]?.price || '0'));
 
         return NextResponse.json({
             balance: balance,
-            used: parseFloat(used),
-            total_recharge: balance + parseFloat(used),
+            used: used,
+            total_recharge: balance + used,
             currency: data.currency,
             account_sid: data.account_sid
         });

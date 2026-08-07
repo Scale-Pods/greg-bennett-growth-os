@@ -7,6 +7,7 @@ import { format, subDays, endOfDay } from "date-fns";
 import { Instagram, Linkedin, Facebook, Globe, Users, GraduationCap, Home, Mail, Phone, Clock, ChevronRight, ChevronLeft, Inbox } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useData } from "@/context/DataContext";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 const LEADS_PER_PAGE = 10;
 
@@ -55,7 +56,7 @@ export default function InboundLeadsClient({
         { id: "realty", label: "Realty Solutions", icon: Home, color: "#6366f1", bg: "rgba(99,102,241,0.15)", data: realtyLeads },
     ];
     const [selectedBusiness, setSelectedBusiness] = useState<BusinessId>("wealth");
-    const { dateRange } = useData();
+    const { dateRange, setDateRange } = useData();
     const [selectedLead, setSelectedLead] = useState<any | null>(null);
     const [page, setPage] = useState(1);
 
@@ -196,12 +197,21 @@ export default function InboundLeadsClient({
     const keyDetailLabel = selectedBusiness === "wealth" ? "Capital" : selectedBusiness === "realty" ? "Property" : "Target Market";
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
+
+            {/* Header */}
+            <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Inbound Leads</h1>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Leads captured directly across all business units.</p>
+                </div>
+                <DateRangePicker value={dateRange as any} onUpdate={(r: any) => setDateRange(r.range)} />
+            </div>
 
             {/* Business Selection */}
             <div>
-                <h2 className="text-xs font-semibold text-[var(--label-secondary)] mb-3 uppercase tracking-wider">Select Business Unit</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <h2 className="text-[11px] font-semibold text-[var(--label-secondary)] mb-2 uppercase tracking-wider">Select Business Unit</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                     {businesses.map(bus => {
                         const isSelected = selectedBusiness === bus.id;
                         const count = getFilteredCount(bus.data);
@@ -210,24 +220,25 @@ export default function InboundLeadsClient({
                             <button
                                 key={bus.id}
                                 onClick={() => setSelectedBusiness(bus.id)}
-                                className={`liquid-card p-3 flex items-center justify-between transition-all duration-200 text-left ${
+                                className={`liquid-card flex items-center justify-between transition-all duration-200 text-left ${
                                     isSelected ? `shadow-md scale-[1.01]` : 'hover:bg-[var(--fill-tertiary)]'
                                 }`}
                                 style={{
+                                    padding: 10,
                                     boxShadow: isSelected ? `0 0 0 1.5px ${bus.color}, 0 0 15px ${bus.color}15` : 'none'
                                 }}
                             >
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: bus.bg, color: bus.color }}>
-                                        <Icon size={16} />
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: bus.bg, color: bus.color }}>
+                                        <Icon size={14} />
                                     </div>
-                                    <span className={`text-sm font-semibold ${isSelected ? 'text-[var(--label-primary)]' : 'text-[var(--label-secondary)]'}`}>
+                                    <span className={`text-xs font-semibold ${isSelected ? 'text-[var(--label-primary)]' : 'text-[var(--label-secondary)]'}`}>
                                         {bus.label}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] text-[var(--label-tertiary)] uppercase tracking-wider font-semibold">Total:</span>
-                                    <span className="text-lg font-bold tabular-nums" style={{ color: isSelected ? bus.color : 'var(--label-primary)' }}>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-[9px] text-[var(--label-tertiary)] uppercase tracking-wider font-semibold">Total:</span>
+                                    <span className="text-sm font-bold tabular-nums" style={{ color: isSelected ? bus.color : 'var(--label-primary)' }}>
                                         {count}
                                     </span>
                                 </div>
@@ -238,20 +249,20 @@ export default function InboundLeadsClient({
             </div>
 
             {/* Leads List */}
-            <div className="liquid-card overflow-hidden">
-                <div className="p-4 border-b border-[var(--separator)] flex items-center justify-between">
+            <div className="liquid-card overflow-hidden" style={{ padding: 0 }}>
+                <div style={{ padding: '10px 14px' }} className="border-b border-[var(--separator)] flex items-center justify-between">
                     <div>
-                        <h3 className="text-base font-semibold text-[var(--label-primary)]">Leads List</h3>
-                        <p className="text-xs text-[var(--label-tertiary)] mt-0.5">
+                        <h3 className="text-sm font-semibold text-[var(--label-primary)]">Leads List</h3>
+                        <p className="text-[11px] text-[var(--label-tertiary)] mt-0.5">
                             Showing {activeLeads.length} leads for {activeBusinessObj.label}
                         </p>
                     </div>
                 </div>
 
                 {activeLeads.length === 0 ? (
-                    <div className="p-8 flex flex-col items-center justify-center text-[var(--label-tertiary)]">
-                        <Inbox size={32} className="mb-3 opacity-50" />
-                        <p className="text-sm">No leads found for this selection.</p>
+                    <div className="p-6 flex flex-col items-center justify-center text-[var(--label-tertiary)]">
+                        <Inbox size={28} className="mb-2 opacity-50" />
+                        <p className="text-xs">No leads found for this selection.</p>
                     </div>
                 ) : (
                     <>
@@ -259,14 +270,14 @@ export default function InboundLeadsClient({
                             <table className="w-full text-left text-xs text-[var(--label-secondary)]">
                                 <thead className="bg-[var(--fill-secondary)] text-[10px] uppercase tracking-wider text-[var(--label-tertiary)]">
                                     <tr>
-                                        <th className="px-4 py-3 font-medium">Name</th>
-                                        <th className="px-4 py-3 font-medium">Contact</th>
-                                        <th className="px-4 py-3 font-medium">Source</th>
-                                        <th className="px-4 py-3 font-medium">{keyDetailLabel}</th>
-                                        <th className="px-4 py-3 font-medium">Created At</th>
-                                        <th className="px-4 py-3 font-medium">Score</th>
-                                        <th className="px-4 py-3 font-medium">Stage</th>
-                                        <th className="px-4 py-3"></th>
+                                        <th className="px-4 py-2 font-medium">Name</th>
+                                        <th className="px-4 py-2 font-medium">Contact</th>
+                                        <th className="px-4 py-2 font-medium">Source</th>
+                                        <th className="px-4 py-2 font-medium">{keyDetailLabel}</th>
+                                        <th className="px-4 py-2 font-medium">Created At</th>
+                                        <th className="px-4 py-2 font-medium">Score</th>
+                                        <th className="px-4 py-2 font-medium">Stage</th>
+                                        <th className="px-4 py-2"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[var(--separator)]">
@@ -280,33 +291,33 @@ export default function InboundLeadsClient({
                                                 className="hover:bg-[var(--fill-tertiary)] cursor-pointer transition-colors"
                                                 style={{ borderLeft: `3px solid ${style.color}` }}
                                             >
-                                                <td className="px-4 py-3 font-medium text-[var(--label-primary)] whitespace-nowrap">{lead.name || 'Unknown'}</td>
-                                                <td className="px-4 py-3">
+                                                <td className="px-4 py-2 font-medium text-[var(--label-primary)] whitespace-nowrap">{lead.name || 'Unknown'}</td>
+                                                <td className="px-4 py-2">
                                                     <div className="flex flex-col">
                                                         <span>{lead.email || '—'}</span>
                                                         <span className="text-[10px] text-[var(--label-tertiary)]">{lead.phone || '—'}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3">
+                                                <td className="px-4 py-2">
                                                     <SourceBadge source={lead.source} />
                                                 </td>
-                                                <td className="px-4 py-3 max-w-[200px] truncate" title={keyDetail.value}>
+                                                <td className="px-4 py-2 max-w-[200px] truncate" title={keyDetail.value}>
                                                     {keyDetail.value}
                                                 </td>
-                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                <td className="px-4 py-2 whitespace-nowrap">
                                                     {lead.created_at ? format(new Date(lead.created_at), 'MMM dd, yyyy') : '—'}
                                                 </td>
-                                                <td className="px-4 py-3">
+                                                <td className="px-4 py-2">
                                                     <div className="flex items-center gap-1.5">
-                                                        <div className="w-6 h-6 rounded-full bg-[var(--fill-secondary)] flex items-center justify-center font-semibold text-[10px] text-[var(--label-primary)]">
+                                                        <div className="w-5 h-5 rounded-full bg-[var(--fill-secondary)] flex items-center justify-center font-semibold text-[10px] text-[var(--label-primary)]">
                                                             {lead.score ?? 0}
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3">
+                                                <td className="px-4 py-2">
                                                     <Badge variant="outline" className="text-[10px] py-0">{lead.lead_stage || 'New'}</Badge>
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
+                                                <td className="px-4 py-2 text-right">
                                                     <ChevronRight size={14} className="text-[var(--label-tertiary)] ml-auto" />
                                                 </td>
                                             </tr>
@@ -318,31 +329,28 @@ export default function InboundLeadsClient({
 
                         {/* Pagination */}
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--separator)] bg-[var(--fill-quaternary)]">
-                                <p className="text-[11px] text-[var(--label-tertiary)]">
-                                    Showing <span className="font-semibold text-[var(--label-primary)]">{(page - 1) * LEADS_PER_PAGE + 1}</span>
-                                    {" – "}
-                                    <span className="font-semibold text-[var(--label-primary)]">{Math.min(page * LEADS_PER_PAGE, activeLeads.length)}</span>
-                                    {" of "}
-                                    <span className="font-semibold text-[var(--label-primary)]">{activeLeads.length}</span>
+                            <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--separator)] bg-[var(--fill-quaternary)]">
+                                <p className="text-xs text-[var(--label-secondary)]">
+                                    Showing <span className="font-bold text-[var(--label-primary)]">{(page - 1) * LEADS_PER_PAGE + 1}</span>
+                                    {"-"}
+                                    <span className="font-bold text-[var(--label-primary)]">{Math.min(page * LEADS_PER_PAGE, activeLeads.length)}</span>
+                                    {" of "}{activeLeads.length} items
                                 </p>
                                 <div className="flex items-center gap-1.5">
                                     <button
                                         onClick={() => setPage(p => Math.max(1, p - 1))}
                                         disabled={page === 1}
-                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-[var(--glass-border)] bg-[var(--fill-tertiary)] text-[var(--label-secondary)] text-[11px] font-medium disabled:opacity-40 transition-colors"
+                                        className="h-7 w-7 flex items-center justify-center rounded-md border border-[var(--glass-border)] bg-[var(--fill-tertiary)] text-[var(--label-secondary)] disabled:opacity-40 transition-colors"
                                     >
-                                        <ChevronLeft size={12} /> Prev
+                                        <ChevronLeft size={14} />
                                     </button>
-                                    <span className="text-[11px] font-semibold text-[var(--label-secondary)] px-2">
-                                        Page {page} of {totalPages}
-                                    </span>
+                                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--label-secondary)', padding: '0 6px' }}>Page {page} of {totalPages}</span>
                                     <button
                                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                         disabled={page === totalPages}
-                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-[var(--glass-border)] bg-[var(--fill-tertiary)] text-[var(--label-secondary)] text-[11px] font-medium disabled:opacity-40 transition-colors"
+                                        className="h-7 w-7 flex items-center justify-center rounded-md border border-[var(--glass-border)] bg-[var(--fill-tertiary)] text-[var(--label-secondary)] disabled:opacity-40 transition-colors"
                                     >
-                                        Next <ChevronRight size={12} />
+                                        <ChevronRight size={14} />
                                     </button>
                                 </div>
                             </div>
