@@ -74,7 +74,7 @@ export default function EmailDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<OverviewResponse | null>(null);
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: subDays(new Date(), 30),
+        from: subDays(new Date(), 7),
         to: new Date(),
     });
 

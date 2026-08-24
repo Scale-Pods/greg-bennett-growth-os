@@ -27,7 +27,7 @@ export default function UnsubscribedPage() {
     const [loading, setLoading] = useState(true);
 
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: subDays(new Date(), 90),
+        from: subDays(new Date(), 7),
         to: new Date(),
     });
 

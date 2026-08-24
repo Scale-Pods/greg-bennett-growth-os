@@ -35,7 +35,7 @@ export default function BouncedEmailsPage() {
     const [agentFilter, setAgentFilter] = useState<AgentKey | "all">("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: subDays(new Date(), 90),
+        from: subDays(new Date(), 7),
         to: new Date(),
     });
 

@@ -23,6 +23,8 @@ import {
     DollarSign,
     RefreshCw,
 } from "lucide-react";
+import { subDays } from "date-fns";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { AGENT_OPTIONS, AgentKey } from "@/lib/agents";
 import { AgentBadge } from "@/components/agents/agent-badge";
 import type { NormalizedCampaignAnalytics } from "@/lib/email-utils";
@@ -32,10 +34,29 @@ interface OverviewResponse {
     grandTotals: Record<string, number>;
 }
 
+function sumTotals(campaigns: NormalizedCampaignAnalytics[]): Record<string, number> {
+    const keys: (keyof NormalizedCampaignAnalytics)[] = [
+        'leadsCount', 'contactedCount', 'emailsSentCount', 'newLeadsContactedCount',
+        'openCount', 'openCountUnique', 'replyCount', 'replyCountUnique',
+        'replyCountAutomatic', 'replyCountAutomaticUnique', 'linkClickCount', 'linkClickCountUnique',
+        'bouncedCount', 'unsubscribedCount', 'completedCount', 'totalOpportunities', 'totalOpportunityValue',
+    ];
+    const totals: Record<string, number> = {};
+    for (const key of keys) totals[key] = 0;
+    for (const c of campaigns) {
+        for (const key of keys) totals[key] += (c[key] as number) || 0;
+    }
+    return totals;
+}
+
 export default function EmailAnalyticsPage() {
     const [data, setData] = useState<OverviewResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [agentFilter, setAgentFilter] = useState<AgentKey | "all">("all");
+    const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+        from: subDays(new Date(), 7),
+        to: new Date(),
+    });
 
     const fetchAnalytics = async () => {
         setLoading(true);
@@ -59,14 +80,19 @@ export default function EmailAnalyticsPage() {
     const { totals, campaigns } = useMemo(() => {
         if (!data) return { totals: null as Record<string, number> | null, campaigns: [] as NormalizedCampaignAnalytics[] };
 
-        if (agentFilter === "all") {
-            const allCampaigns = Object.values(data.byAgent).flatMap(a => a.campaigns);
-            return { totals: data.grandTotals, campaigns: allCampaigns };
-        }
+        const agentCampaigns = agentFilter === "all"
+            ? Object.values(data.byAgent).flatMap(a => a.campaigns)
+            : (data.byAgent[agentFilter]?.campaigns || []);
 
-        const agentData = data.byAgent[agentFilter];
-        return { totals: agentData?.totals || null, campaigns: agentData?.campaigns || [] };
-    }, [data, agentFilter]);
+        const rangeFiltered = agentCampaigns.filter(c => {
+            const updated = c.updatedAt ? new Date(c.updatedAt) : (c.reportDate ? new Date(c.reportDate) : null);
+            if (!updated || isNaN(updated.getTime())) return true;
+            const to = dateRange.to || dateRange.from;
+            return updated >= dateRange.from && updated <= new Date(to.getTime() + 86400000 - 1);
+        });
+
+        return { totals: sumTotals(rangeFiltered), campaigns: rangeFiltered };
+    }, [data, agentFilter, dateRange]);
 
     const openRate = totals && totals.emailsSentCount > 0 ? (totals.openCountUnique / totals.emailsSentCount) * 100 : 0;
     const replyRate = totals && totals.emailsSentCount > 0 ? (totals.replyCountUnique / totals.emailsSentCount) * 100 : 0;
@@ -81,6 +107,7 @@ export default function EmailAnalyticsPage() {
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Campaign performance across all outreach channels.</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <DateRangePicker value={dateRange as any} onUpdate={(r: any) => setDateRange(r.range)} />
                     <Select value={agentFilter} onValueChange={(v) => setAgentFilter(v as AgentKey | "all")}>
                         <SelectTrigger style={{ width: 190, height: 36, fontSize: 13, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
                             <SelectValue placeholder="Agent" />

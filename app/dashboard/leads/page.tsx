@@ -26,7 +26,7 @@ export default function LeadsPage() {
     const [leads, setLeads] = useState<NormalizedMasterLead[]>([]);
     const [loadingLeads, setLoadingLeads] = useState(true);
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: subDays(new Date(), 30),
+        from: subDays(new Date(), 7),
         to: new Date(),
     });
     const [templates, setTemplates] = useState<any[]>([]);

@@ -38,7 +38,7 @@ export default function SentEmailsPage() {
     const [loading, setLoading] = useState(true);
     const [agent, setAgent] = useState<AgentKey | "all">("all");
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: subDays(new Date(), 30),
+        from: subDays(new Date(), 7),
         to: new Date(),
     });
     const [searchQuery, setSearchQuery] = useState("");
