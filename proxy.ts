@@ -20,6 +20,11 @@ export async function proxy(request: NextRequest) {
 
     const token = request.cookies.get('auth_token')?.value;
 
+    // ALLOW PUBLIC ACCESS to shared call-recording links (bypassing auth entirely)
+    if (pathname.startsWith('/call/')) {
+        return NextResponse.next();
+    }
+
     // Check if the user is attempting to access a dashboard route
     if (pathname.startsWith('/dashboard')) {
         // ALLOW PUBLIC ACCESS to specific chat links (bypassing auth)

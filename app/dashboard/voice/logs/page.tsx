@@ -19,6 +19,7 @@ const AGENTS = [
     { key: "biglife", label: "BigLife", color: "#0f9d58" },
     { key: "bootcampsNew", label: "Bootcamps New Leads", color: "#e67e22" },
     { key: "bootcampsFollowup", label: "Bootcamps Follow-up", color: "#d6336c" },
+    { key: "inbound", label: "Inbound Calls", color: "#ff453a" },
 ] as const;
 
 type AgentKey = typeof AGENTS[number]["key"];
@@ -75,9 +76,16 @@ const DynamicRowCells = ({ call, leads }: { call: any, leads: any[] }) => {
                 <AgentBadge agent={call.agent} />
             </td>
             <td style={{ padding: '10px 14px' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(59,91,219,0.10)', color: 'var(--blue)' }}>
-                    {callType}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(59,91,219,0.10)', color: 'var(--blue)' }}>
+                        {callType}
+                    </span>
+                    {(call.agent === 'inbound' || call.isInbound) && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(255,69,58,0.12)', color: '#ff453a' }}>
+                            Inbound
+                        </span>
+                    )}
+                </div>
             </td>
             <td style={{ padding: '10px 14px', fontSize: 12, color: 'var(--label-secondary)', fontWeight: 500 }}>{formatDuration(call.durationSeconds)}</td>
             <td style={{ padding: '10px 14px', fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>
@@ -350,12 +358,18 @@ export default function VoiceLogsPage() {
                                     <td colSpan={8} style={{ padding: '60px 16px', textAlign: 'center', fontSize: 13, color: 'var(--label-tertiary)' }}>No calls matching filters.</td>
                                 </tr>
                             ) : (
-                                paginatedCalls.map((call) => (
+                                paginatedCalls.map((call) => {
+                                    const isInbound = call.agent === 'inbound' || call.isInbound;
+                                    return (
                                     <tr
                                         key={call.id}
-                                        style={{ borderBottom: '1px solid var(--hairline)', cursor: 'pointer', transition: 'background 120ms' }}
-                                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-quaternary)')}
-                                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                        style={{
+                                            borderBottom: '1px solid var(--hairline)', cursor: 'pointer', transition: 'background 120ms',
+                                            background: isInbound ? 'rgba(255,69,58,0.05)' : 'transparent',
+                                            borderLeft: isInbound ? '2px solid #ff453a' : '2px solid transparent',
+                                        }}
+                                        onMouseEnter={e => (e.currentTarget.style.background = isInbound ? 'rgba(255,69,58,0.10)' : 'var(--fill-quaternary)')}
+                                        onMouseLeave={e => (e.currentTarget.style.background = isInbound ? 'rgba(255,69,58,0.05)' : 'transparent')}
                                         onClick={() => { setSelectedCall(call); setModalOpen(true); }}
                                     >
                                         <DynamicRowCells call={call} leads={leads} />
@@ -366,7 +380,8 @@ export default function VoiceLogsPage() {
                                         </td>
                                         <td style={{ padding: '10px 14px', fontSize: 11, color: 'var(--label-tertiary)', whiteSpace: 'nowrap' }}>{call.displayDate}</td>
                                     </tr>
-                                ))
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>

@@ -6,31 +6,28 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Play, Pause, Volume2, VolumeX, Phone, Clock, FileText, RotateCcw, RotateCw, Download, Copy, Check } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Phone, Clock, FileText, RotateCcw, RotateCw, Download, Copy, Check, Link2 } from "lucide-react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
-interface CallDetailsModalProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    call: any;
-}
-
-export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalProps) {
+export function useCallDetails(call: any, active: boolean) {
     const [fullCall, setFullCall] = useState<any>(null);
-    const [transcriptCopied, setTranscriptCopied] = useState(false);
-
-    const displayCall = fullCall || call || {};
-    const audioUrl = displayCall.audio_url || displayCall.recordingUrl || null;
+    const [loading, setLoading] = useState(false);
+    const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
-        if (open && call?.id) {
+        if (active && call?.id) {
             setFullCall(call);
+            setNotFound(false);
+            setLoading(true);
             fetch(`/api/calls/${call.id}`)
-                .then(res => res.ok ? res.json() : null)
-                .then(data => { if (data) setFullCall(data); })
-                .catch(err => console.error("Error fetching details", err));
+                .then(res => res.ok ? res.json() : Promise.reject(new Error(`status ${res.status}`)))
+                .then(data => { setFullCall(data); })
+                .catch(err => { console.error("Error fetching details", err); setNotFound(true); })
+                .finally(() => setLoading(false));
         }
-    }, [open, call]);
+    }, [active, call]);
+
+    const displayCall = fullCall || call || {};
 
     const getMessages = (data: any) => {
         if (!data) return [];
@@ -70,6 +67,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
     };
 
     const messages = getMessages(displayCall);
+
     const getDurationData = (data: any) => {
         let seconds = 0;
         if (typeof data.durationSeconds === 'number' && data.durationSeconds > 0) seconds = data.durationSeconds;
@@ -99,7 +97,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
 
     const rawDynamicVars = displayCall.conversation_initiation_client_data?.dynamic_variables || {};
     const rawType = displayCall.type || displayCall.metadata?.type || rawDynamicVars.direction || rawDynamicVars.type || "unknown";
-    const isInbound = rawType === 'inbound';
+    const isInbound = displayCall.isInbound === true || displayCall.agent === 'inbound' || rawType === 'inbound' || String(rawType).toLowerCase() === 'inbound';
     const callTypeDisplay = isInbound ? "Inbound" : "Outbound";
 
     const guestNumber = displayCall.customer_number || displayCall.phone || displayCall.caller_number || "Unknown";
@@ -116,7 +114,8 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
         '918c25eb-9882-452e-86df-b4851d464852': 'UK AI Bot',
         '9ac979c3-a0b3-4af6-bb0d-07ddf9c0d1cd': 'UK AI Bot 2',
         '560ca61b-8cd3-4b5f-996b-2966abfa37fd': 'Secondary Leads Bot',
-        '1ef6ea66-0a75-45f5-b025-1743e048dc90': 'Open House Bot'
+        '1ef6ea66-0a75-45f5-b025-1743e048dc90': 'Open House Bot',
+        '6116e312-8b54-4097-9155-57d899a669c2': 'Inbound Receptionist (Bennett Wealth Builders)',
     };
     const assistantName = displayCall.agent_name || assistantMapping[assistantId] || (assistantId !== "N/A" ? `Agent: ${assistantId.substring(0, 8)}...` : (displayCall.source === 'vapi' ? "Vapi AI Assistant" : "AI Agent"));
 
@@ -125,6 +124,70 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
         : (displayCall.name && displayCall.name !== "Guest" && displayCall.name !== "Unknown"
             ? displayCall.name
             : (displayCall.lead?.name || displayCall.user_name || displayCall.metadata?.user_name || rawDynamicVars.user_name || displayCall.customer?.name || "Guest"));
+
+    const audioUrl = displayCall.audio_url || displayCall.recordingUrl || null;
+
+    return {
+        displayCall, messages, durationDisplay, durationSeconds, startedAtDisplay,
+        isInbound, callTypeDisplay, guestNumber, assistantName, extractedGuestName, audioUrl,
+        loading, notFound,
+    };
+}
+
+interface CallDetailsModalProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    call: any;
+}
+
+export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalProps) {
+    const details = useCallDetails(call, open);
+
+    if (!call) return null;
+
+    const phone = (details.guestNumber || 'unknown').toString();
+    const shareHref = `/call/${encodeURIComponent(call.id)}/${encodeURIComponent(phone)}`;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent
+                className="glass-modal-shell !p-5"
+                style={{
+                    display: 'flex', flexDirection: 'column',
+                    maxHeight: '85vh', height: '85vh',
+                    width: '95vw', maxWidth: 950,
+                    overflow: 'hidden',
+                    gap: 0,
+                }}
+            >
+                <DialogHeader className="sr-only"><DialogTitle>Call Detail</DialogTitle></DialogHeader>
+                <CallDetailsCard {...details} shareHref={shareHref} />
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+interface CallDetailsCardProps {
+    displayCall: any;
+    messages: any[];
+    durationDisplay: string;
+    durationSeconds: number;
+    startedAtDisplay: string;
+    isInbound: boolean;
+    callTypeDisplay: string;
+    guestNumber: string;
+    assistantName: string;
+    extractedGuestName: string;
+    audioUrl: string | null;
+    shareHref?: string;
+}
+
+export function CallDetailsCard({
+    displayCall, messages, durationDisplay, durationSeconds, startedAtDisplay,
+    isInbound, callTypeDisplay, guestNumber, assistantName, extractedGuestName, audioUrl, shareHref,
+}: CallDetailsCardProps) {
+    const [transcriptCopied, setTranscriptCopied] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
 
     const handleCopyTranscript = () => {
         if (!messages || messages.length === 0) return;
@@ -147,32 +210,48 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
         setTimeout(() => setTranscriptCopied(false), 2000);
     };
 
-    if (!call) return null;
+    const handleCopyShareLink = () => {
+        if (!shareHref) return;
+        const url = `${window.location.origin}${shareHref}`;
+        navigator.clipboard.writeText(url);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+    };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent
-                className="glass-modal-shell !p-5"
-                style={{
-                    display: 'flex', flexDirection: 'column',
-                    maxHeight: '85vh', height: '85vh',
-                    width: '95vw', maxWidth: 950,
-                    overflow: 'hidden',
-                    gap: 0,
-                }}
-            >
-                <DialogHeader className="sr-only"><DialogTitle>Call Detail</DialogTitle></DialogHeader>
-
-                {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0, paddingRight: 32 }}>
-                    <div>
-                        <h2 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: 'var(--label-primary)', letterSpacing: '-0.02em', margin: 0 }}>{extractedGuestName}</h2>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, fontSize: 12, color: 'var(--label-secondary)' }}>
-                            <span style={{ fontFamily: 'ui-monospace, monospace' }}>{guestNumber}</span>
-                            <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--label-quaternary)', display: 'inline-block' }} />
-                            <span>{callTypeDisplay}</span>
-                        </div>
+        <>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, flexShrink: 0, paddingRight: 32, gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                    <h2 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: 'var(--label-primary)', letterSpacing: '-0.02em', margin: 0 }}>{extractedGuestName}</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, fontSize: 12, color: 'var(--label-secondary)' }}>
+                        <span style={{ fontFamily: 'ui-monospace, monospace' }}>{guestNumber}</span>
+                        <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--label-quaternary)', display: 'inline-block' }} />
+                        <span>{callTypeDisplay}</span>
+                        {isInbound && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', background: 'rgba(255,69,58,0.12)', color: '#ff453a' }}>
+                                Inbound
+                            </span>
+                        )}
                     </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {shareHref && (
+                        <button
+                            onClick={handleCopyShareLink}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 5,
+                                padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                                cursor: 'pointer', transition: 'all 120ms',
+                                background: linkCopied ? 'rgba(20,184,166,0.12)' : 'var(--glass-fill)',
+                                border: `1px solid ${linkCopied ? 'rgba(20,184,166,0.28)' : 'var(--glass-border)'}`,
+                                color: linkCopied ? 'var(--teal)' : 'var(--label-primary)',
+                            }}
+                        >
+                            {linkCopied ? <Check style={{ width: 12, height: 12 }} /> : <Link2 style={{ width: 12, height: 12 }} />}
+                            {linkCopied ? 'Link Copied' : 'Copy Share Link'}
+                        </button>
+                    )}
                     <button
                         onClick={handleCopyTranscript}
                         style={{
@@ -188,95 +267,139 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                         {transcriptCopied ? 'Copied' : 'Copy Transcript'}
                     </button>
                 </div>
+            </div>
 
-                {/* Body grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 196px', gap: 12, flex: 1, overflow: 'hidden', minHeight: 0 }}>
-                    {/* Left: transcript panel */}
-                    <div className="glass-panel flex flex-col h-full min-h-0">
-                        <div className="glass-panel-header">
-                            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--label-tertiary)', display: 'flex', alignItems: 'center', gap: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                <FileText style={{ width: 12, height: 12 }} />
-                                Call Transcript
-                            </span>
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'var(--fill-secondary)', color: 'var(--label-secondary)', border: '1px solid var(--hairline)' }}>
-                                {Array.isArray(messages) ? messages.filter((m: any) => m.role !== 'system').length : 0} Turns
-                            </span>
-                        </div>
-
-                        {/* Audio player */}
-                        {audioUrl && (
-                            <div style={{ borderBottom: '1px solid var(--hairline)', flexShrink: 0 }}>
-                                <ModernAudioPlayer audioUrl={audioUrl} initialDuration={durationSeconds} />
-                            </div>
-                        )}
-
-                        {/* Messages */}
-                        <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {(!messages || messages.length === 0) ? (
-                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--label-tertiary)', gap: 8 }}>
-                                    <FileText style={{ width: 20, height: 20, opacity: 0.2 }} />
-                                    <p style={{ fontSize: 12, fontWeight: 500, margin: 0 }}>No Transcript Found</p>
-                                </div>
-                            ) : (
-                                messages.filter((m: any) => m.role !== 'system').map((msg: any, idx: number) => {
-                                    const isUser = msg.role === 'user';
-                                    let timeStr = '';
-                                    if (msg.startTime !== undefined && msg.startTime !== null) {
-                                        const m = Math.floor(msg.startTime / 60);
-                                        const s = Math.floor(msg.startTime % 60);
-                                        timeStr = `${m}:${s.toString().padStart(2, '0')}`;
-                                    }
-                                    return (
-                                        <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-start' : 'flex-end', width: '100%' }}>
-                                            <div className={`chat-bubble ${isUser ? 'chat-bubble-user' : 'chat-bubble-bot'}`}>
-                                                <div style={{ marginBottom: 3 }}>
-                                                    <span style={{ fontSize: 10, fontWeight: 700, color: isUser ? 'var(--green)' : 'var(--teal)' }}>
-                                                        {isUser ? 'User' : 'Agent'}
-                                                    </span>
-                                                </div>
-                                                <p style={{ fontSize: 12, lineHeight: 1.55, whiteSpace: 'pre-wrap', color: 'var(--label-primary)', margin: 0 }}>
-                                                    {msg.message || msg.content || msg.text || ''}
-                                                </p>
-                                            </div>
-                                            {timeStr && (
-                                                <span style={{ fontSize: 10, color: 'var(--label-tertiary)', marginTop: 3, paddingLeft: 2, paddingRight: 2 }}>
-                                                    {timeStr}
-                                                </span>
-                                            )}
-                                        </div>
-                                    );
-                                })
-                            )}
-                        </div>
+            {/* Body grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 196px', gap: 12, flex: 1, overflow: 'hidden', minHeight: 0 }}>
+                {/* Left: transcript panel */}
+                <div className="glass-panel flex flex-col h-full min-h-0">
+                    <div className="glass-panel-header">
+                        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--label-tertiary)', display: 'flex', alignItems: 'center', gap: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            <FileText style={{ width: 12, height: 12 }} />
+                            Call Transcript
+                        </span>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: 'var(--fill-secondary)', color: 'var(--label-secondary)', border: '1px solid var(--hairline)' }}>
+                            {Array.isArray(messages) ? messages.filter((m: any) => m.role !== 'system').length : 0} Turns
+                        </span>
                     </div>
 
-                    {/* Right sidebar */}
-                    <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', height: '100%', paddingRight: 2, paddingBottom: 8 }}>
-                        <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: 0 }}>Call Stats</p>
-                        <StatBox label="Duration" value={durationDisplay} icon={Clock} color="var(--teal)" />
-                        {(displayCall.metadata?.charging?.call_charge > 0) && (
-                            <StatBox label="Call Cost" value={`${displayCall.metadata.charging.call_charge} cr`} icon={Phone} color="var(--orange)" />
-                        )}
-
-                        <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0' }}>Call Info</p>
-                        <div className="glass-panel" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <div>
-                                <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Date & Time</span>
-                                <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '2px 0 0' }}>{startedAtDisplay}</p>
-                            </div>
-                            <div>
-                                <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Customer</span>
-                                <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '2px 0 0' }}>{extractedGuestName}</p>
-                            </div>
-                            <div>
-                                <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Agent</span>
-                                <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{assistantName}</p>
-                            </div>
+                    {/* Audio player */}
+                    {audioUrl && (
+                        <div style={{ borderBottom: '1px solid var(--hairline)', flexShrink: 0 }}>
+                            <ModernAudioPlayer audioUrl={audioUrl} initialDuration={durationSeconds} />
                         </div>
+                    )}
+
+                    {/* Messages */}
+                    <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {(!messages || messages.length === 0) ? (
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--label-tertiary)', gap: 8 }}>
+                                <FileText style={{ width: 20, height: 20, opacity: 0.2 }} />
+                                <p style={{ fontSize: 12, fontWeight: 500, margin: 0 }}>No Transcript Found</p>
+                            </div>
+                        ) : (
+                            messages.filter((m: any) => m.role !== 'system').map((msg: any, idx: number) => {
+                                const isUser = msg.role === 'user';
+                                let timeStr = '';
+                                if (msg.startTime !== undefined && msg.startTime !== null) {
+                                    const m = Math.floor(msg.startTime / 60);
+                                    const s = Math.floor(msg.startTime % 60);
+                                    timeStr = `${m}:${s.toString().padStart(2, '0')}`;
+                                }
+                                return (
+                                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-start' : 'flex-end', width: '100%' }}>
+                                        <div className={`chat-bubble ${isUser ? 'chat-bubble-user' : 'chat-bubble-bot'}`}>
+                                            <div style={{ marginBottom: 3 }}>
+                                                <span style={{ fontSize: 10, fontWeight: 700, color: isUser ? 'var(--green)' : 'var(--teal)' }}>
+                                                    {isUser ? 'User' : 'Agent'}
+                                                </span>
+                                            </div>
+                                            <p style={{ fontSize: 12, lineHeight: 1.55, whiteSpace: 'pre-wrap', color: 'var(--label-primary)', margin: 0 }}>
+                                                {msg.message || msg.content || msg.text || ''}
+                                            </p>
+                                        </div>
+                                        {timeStr && (
+                                            <span style={{ fontSize: 10, color: 'var(--label-tertiary)', marginTop: 3, paddingLeft: 2, paddingRight: 2 }}>
+                                                {timeStr}
+                                            </span>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
                 </div>
-            </DialogContent>
-        </Dialog>
+
+                {/* Right sidebar */}
+                <div className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', height: '100%', paddingRight: 2, paddingBottom: 8 }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: 0 }}>Call Stats</p>
+                    <StatBox label="Duration" value={durationDisplay} icon={Clock} color="var(--teal)" />
+                    {(displayCall.metadata?.charging?.call_charge > 0) && (
+                        <StatBox label="Call Cost" value={`${displayCall.metadata.charging.call_charge} cr`} icon={Phone} color="var(--orange)" />
+                    )}
+
+                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0' }}>Call Info</p>
+                    <div className="glass-panel" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div>
+                            <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Date & Time</span>
+                            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '2px 0 0' }}>{startedAtDisplay}</p>
+                        </div>
+                        <div>
+                            <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Customer</span>
+                            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '2px 0 0' }}>{extractedGuestName}</p>
+                        </div>
+                        <div>
+                            <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Agent</span>
+                            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{assistantName}</p>
+                        </div>
+                    </div>
+
+                    {(displayCall.voice1Sentiment || displayCall.call1Note || displayCall.voice2Sentiment || displayCall.call2Note) && (
+                        <>
+                            <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0' }}>Voice Analysis</p>
+                            <div className="glass-panel" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {(displayCall.voice1Sentiment || displayCall.call1Note) && (
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Call 1</span>
+                                            {displayCall.voice1Sentiment && <SentimentBadge value={displayCall.voice1Sentiment} />}
+                                        </div>
+                                        {displayCall.call1Note && (
+                                            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{displayCall.call1Note}</p>
+                                        )}
+                                    </div>
+                                )}
+                                {(displayCall.voice2Sentiment || displayCall.call2Note) && (
+                                    <div style={{ borderTop: (displayCall.voice1Sentiment || displayCall.call1Note) ? '1px solid var(--hairline)' : undefined, paddingTop: (displayCall.voice1Sentiment || displayCall.call1Note) ? 10 : 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Call 2</span>
+                                            {displayCall.voice2Sentiment && <SentimentBadge value={displayCall.voice2Sentiment} />}
+                                        </div>
+                                        {displayCall.call2Note && (
+                                            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{displayCall.call2Note}</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </>
+    );
+}
+
+function SentimentBadge({ value }: { value: string }) {
+    const v = String(value).toLowerCase();
+    const color = v === 'positive' ? 'var(--green)' : v === 'negative' ? '#ff453a' : 'var(--label-tertiary)';
+    return (
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 'var(--radius-xs)',
+            fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+            background: `color-mix(in srgb, ${color} 14%, transparent)`, color,
+        }}>
+            {value}
+        </span>
     );
 }
 
