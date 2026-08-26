@@ -202,6 +202,7 @@ export async function GET(
                     name: resolveName(call.customer_name) !== 'Guest' ? resolveName(call.customer_name) : (extractNameFromTranscript(call.transcript) || 'Guest'),
                     cost: `$${Number(call.cost_usd || 0).toFixed(3)}`,
                     type: cfg.key === 'inbound' ? 'inbound' : undefined,
+                    note: call.note ?? null,
                     voice1Sentiment: outreachMatch?.voice1_sentiment ?? call.call_sentiment ?? null,
                     call1Note: outreachMatch?.call1_note ?? null,
                     voice2Sentiment: outreachMatch?.voice2_sentiment ?? null,

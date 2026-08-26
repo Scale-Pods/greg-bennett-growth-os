@@ -354,6 +354,15 @@ export function CallDetailsCard({
                         </div>
                     </div>
 
+                    {displayCall.note && (
+                        <>
+                            <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0' }}>Note</p>
+                            <div className="glass-panel" style={{ padding: '12px 14px' }}>
+                                <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{displayCall.note}</p>
+                            </div>
+                        </>
+                    )}
+
                     {(displayCall.voice1Sentiment || displayCall.call1Note || displayCall.voice2Sentiment || displayCall.call2Note) && (
                         <>
                             <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0' }}>Voice Analysis</p>
