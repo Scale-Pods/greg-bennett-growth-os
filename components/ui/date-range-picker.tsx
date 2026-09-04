@@ -111,14 +111,16 @@ export function DateRangePicker({
     const sameDay = (a?: Date, b?: Date) =>
         !!a && !!b && startOfDay(a).getTime() === startOfDay(b).getTime();
 
-    const activeLabel = React.useMemo(() => {
+    // Computed inline, not via useMemo: this runs after the `!isMounted` early return
+    // above, so a hook here would change the hook count between renders (React #310).
+    const activeLabel = (() => {
         if (tempLabel === "Custom Range") return "Custom Range";
         const match = presets.find(p => {
             const r = p.getValue();
             return sameDay(r.from, tempDate?.from) && sameDay(r.to, tempDate?.to);
         });
         return match?.label ?? tempLabel;
-    }, [tempDate, tempLabel]);
+    })();
 
     const handlePresetChange = (value: string) => {
         const preset = presets.find(p => p.label === value);
