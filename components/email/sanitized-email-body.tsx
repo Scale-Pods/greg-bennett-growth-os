@@ -42,7 +42,11 @@ export function SanitizedEmailBody({ html, alreadySanitized = true, fallback = "
     }, [html, alreadySanitized]);
 
     if (!safeHtml) {
-        return <p style={{ fontSize: 13, color: 'var(--label-tertiary)', fontStyle: 'italic' }}>{fallback}</p>;
+        return (
+            <div className={`email-content-empty ${className || ''}`}>
+                <p style={{ fontSize: 13, color: '#64748b', fontStyle: 'italic', margin: 0 }}>{fallback}</p>
+            </div>
+        );
     }
 
     return (

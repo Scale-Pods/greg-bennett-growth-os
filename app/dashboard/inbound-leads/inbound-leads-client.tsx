@@ -8,6 +8,7 @@ import { Instagram, Linkedin, Facebook, Globe, Users, GraduationCap, Home, Mail,
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useData } from "@/context/DataContext";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { SanitizedEmailBody } from "@/components/email/sanitized-email-body";
 
 const LEADS_PER_PAGE = 10;
 
@@ -388,22 +389,14 @@ export default function InboundLeadsClient({
                             {selectedLead && renderLeadDetails(selectedLead, selectedBusiness)}
                         </TabsContent>
                         <TabsContent value="email" className="mt-4 outline-none">
-                            <div className="liquid-card p-4">
-                                <div className="text-[10px] text-[var(--label-tertiary)] mb-1.5 uppercase tracking-wider">Date Received</div>
-                                <div className="text-sm text-[var(--label-primary)] mb-4">
-                                    {selectedLead?.created_at ? format(new Date(selectedLead.created_at), 'PPpp') : '—'}
+                            <div className="space-y-3">
+                                <div className="liquid-card p-3 flex items-center justify-between text-xs">
+                                    <span className="text-[var(--label-tertiary)] uppercase tracking-wider font-semibold">Date Received</span>
+                                    <span className="text-[var(--label-primary)] font-medium">
+                                        {selectedLead?.created_at ? format(new Date(selectedLead.created_at), 'PPpp') : '—'}
+                                    </span>
                                 </div>
-                                <div className="text-[10px] text-[var(--label-tertiary)] mb-1.5 uppercase tracking-wider">Email Content</div>
-                                {selectedLead?.email_content ? (
-                                    <div 
-                                        className="bg-white text-black rounded-lg p-4 overflow-x-auto" 
-                                        dangerouslySetInnerHTML={{ __html: selectedLead.email_content }} 
-                                    />
-                                ) : (
-                                    <div className="text-sm text-[var(--label-secondary)] whitespace-pre-wrap leading-relaxed">
-                                        No email content available.
-                                    </div>
-                                )}
+                                <SanitizedEmailBody html={selectedLead?.email_content} alreadySanitized={false} />
                             </div>
                         </TabsContent>
                         <TabsContent value="conversation" className="mt-4 outline-none">

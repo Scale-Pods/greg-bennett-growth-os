@@ -252,9 +252,7 @@ export default function SentEmailsPage() {
                                 <span>•</span>
                                 <span>{format(new Date(viewingEmail.sentAt), 'PPp')}</span>
                             </div>
-                            <div className="liquid-card" style={{ padding: 16 }}>
-                                <SanitizedEmailBody html={viewingEmail.body} alreadySanitized={false} />
-                            </div>
+                            <SanitizedEmailBody html={viewingEmail.body} alreadySanitized={false} />
                         </div>
                     )}
                 </DialogContent>

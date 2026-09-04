@@ -296,17 +296,27 @@ export default function ReceivedEmailsPage() {
                                     <p style={{ fontSize: 13, color: 'var(--label-secondary)' }}>{viewingReply.sentimentReason}</p>
                                 </div>
                             )}
-                            <div className="liquid-card" style={{ padding: 16 }}>
-                                {viewingReply.cleanReplyText ? (
-                                    <p style={{ fontSize: 13, color: 'var(--label-primary)', whiteSpace: 'pre-wrap' }}>
-                                        {viewingReply.cleanReplyText}
-                                    </p>
-                                ) : viewingReply.emailBodySent ? (
+                            {viewingReply.cleanReplyText && (
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                                        Reply Received
+                                    </div>
+                                    <SanitizedEmailBody html={viewingReply.cleanReplyText} alreadySanitized={false} />
+                                </div>
+                            )}
+
+                            {viewingReply.emailBodySent && (
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                                        Original Sent Email
+                                    </div>
                                     <SanitizedEmailBody html={viewingReply.emailBodySent} alreadySanitized={true} />
-                                ) : (
-                                    <p style={{ fontSize: 13, color: 'var(--label-tertiary)' }}>No content available.</p>
-                                )}
-                            </div>
+                                </div>
+                            )}
+
+                            {!viewingReply.cleanReplyText && !viewingReply.emailBodySent && (
+                                <SanitizedEmailBody html={null} fallback="No email content available." />
+                            )}
                         </div>
                     )}
                 </DialogContent>
