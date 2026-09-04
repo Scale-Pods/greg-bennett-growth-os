@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { format, subDays, endOfDay } from "date-fns";
+import { format, subMonths, startOfDay, endOfDay } from "date-fns";
 import { Instagram, Linkedin, Facebook, Globe, Users, GraduationCap, Home, Mail, Phone, Clock, ChevronRight, ChevronLeft, Inbox } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useData } from "@/context/DataContext";
@@ -62,6 +62,13 @@ export default function InboundLeadsClient({
 
     const activeBusinessObj = businesses.find(b => b.id === selectedBusiness)!;
 
+    // Inbound leads arrive far less frequently than calls/emails, so the shared 7-day
+    // default is usually empty here and the page would render blank. Widen to 3 months
+    // once on mount so the picker always shows the window that is actually applied.
+    useEffect(() => {
+        setDateRange({ from: startOfDay(subMonths(new Date(), 3)), to: new Date() });
+    }, []);
+
     const inRange = (lead: any) => {
         if (dateRange?.from && lead.created_at) {
             const leadDate = new Date(lead.created_at);
@@ -71,20 +78,11 @@ export default function InboundLeadsClient({
         return true;
     };
 
-    // The shared dateRange defaults to the last 7 days. Inbound leads arrive far less
-    // frequently than calls/emails, so that window is often empty and the page would
-    // render as blank even though leads exist. When nothing across the three business
-    // units falls inside the window, ignore it and show everything instead.
-    const dateFilterMatchesAnything = useMemo(
-        () => businesses.some(b => b.data.some(inRange)),
-        [wealthLeads, realtyLeads, bootcampsLeads, dateRange]
-    );
-
     const activeLeads = useMemo(() => {
         return activeBusinessObj.data
-            .filter(lead => (dateFilterMatchesAnything ? inRange(lead) : true))
+            .filter(inRange)
             .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    }, [activeBusinessObj, dateRange, dateFilterMatchesAnything]);
+    }, [activeBusinessObj, dateRange]);
 
     useEffect(() => { setPage(1); }, [selectedBusiness, dateRange]);
 
@@ -94,10 +92,9 @@ export default function InboundLeadsClient({
         return activeLeads.slice(start, start + LEADS_PER_PAGE);
     }, [activeLeads, page]);
 
-    // Helper for total leads calculation considering date filter (for business cards).
-    // Follows the same fallback as activeLeads so the cards never disagree with the table.
+    // Helper for total leads calculation considering date filter (for business cards)
     const getFilteredCount = (busData: any[]) => {
-        return busData.filter(lead => (dateFilterMatchesAnything ? inRange(lead) : true)).length;
+        return busData.filter(inRange).length;
     };
 
     // Per-business questionnaire field mapping (matches each Supabase table's schema)
@@ -262,7 +259,6 @@ export default function InboundLeadsClient({
                         <h3 className="text-sm font-semibold text-[var(--label-primary)]">Leads List</h3>
                         <p className="text-[11px] text-[var(--label-tertiary)] mt-0.5">
                             Showing {activeLeads.length} leads for {activeBusinessObj.label}
-                            {!dateFilterMatchesAnything && " — no leads in the selected dates, showing all time"}
                         </p>
                     </div>
                 </div>

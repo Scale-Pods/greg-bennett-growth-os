@@ -105,6 +105,21 @@ export function DateRangePicker({
         },
     ];
 
+    // Derive the highlighted preset from the dates themselves rather than trusting
+    // tempLabel, so a range set programmatically by the page (or restored from a
+    // previous session) still highlights the preset it corresponds to.
+    const sameDay = (a?: Date, b?: Date) =>
+        !!a && !!b && startOfDay(a).getTime() === startOfDay(b).getTime();
+
+    const activeLabel = React.useMemo(() => {
+        if (tempLabel === "Custom Range") return "Custom Range";
+        const match = presets.find(p => {
+            const r = p.getValue();
+            return sameDay(r.from, tempDate?.from) && sameDay(r.to, tempDate?.to);
+        });
+        return match?.label ?? tempLabel;
+    }, [tempDate, tempLabel]);
+
     const handlePresetChange = (value: string) => {
         const preset = presets.find(p => p.label === value);
         if (preset) {
@@ -117,7 +132,7 @@ export function DateRangePicker({
         setDate(tempDate);
         setOpen(false);
         if (onUpdate) {
-            onUpdate({ range: tempDate, label: tempLabel });
+            onUpdate({ range: tempDate, label: activeLabel });
         }
     };
 
@@ -169,7 +184,7 @@ export function DateRangePicker({
                                 <button
                                     key={preset.label}
                                     onClick={() => handlePresetChange(preset.label)}
-                                    className={`w-full text-left px-2 py-1 rounded-[6px] text-[11.5px] font-medium leading-tight transition-colors ${tempLabel === preset.label ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
+                                    className={`w-full text-left px-2 py-1 rounded-[6px] text-[11.5px] font-medium leading-tight transition-colors ${activeLabel === preset.label ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
                                 >
                                     {preset.label}
                                 </button>
@@ -177,7 +192,7 @@ export function DateRangePicker({
                             <div className="h-px bg-[var(--glass-border)] my-1" />
                             <button
                                 onClick={() => setTempLabel("Custom Range")}
-                                className={`w-full text-left px-2 py-1 rounded-[6px] text-[11.5px] font-medium leading-tight transition-colors ${tempLabel === "Custom Range" ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-tertiary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
+                                className={`w-full text-left px-2 py-1 rounded-[6px] text-[11.5px] font-medium leading-tight transition-colors ${activeLabel === "Custom Range" ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-tertiary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
                             >
                                 Custom Range
                             </button>
