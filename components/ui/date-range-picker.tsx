@@ -89,6 +89,20 @@ export function DateRangePicker({
                 return { from: startOfDay(startOfMonth(today)), to: endOfMonth(today) };
             }
         },
+        {
+            label: "Last 3 months",
+            getValue: () => {
+                const today = new Date();
+                return { from: startOfDay(subMonths(today, 3)), to: today };
+            }
+        },
+        {
+            label: "Last 6 months",
+            getValue: () => {
+                const today = new Date();
+                return { from: startOfDay(subMonths(today, 6)), to: today };
+            }
+        },
     ];
 
     const handlePresetChange = (value: string) => {
