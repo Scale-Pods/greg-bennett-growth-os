@@ -21,7 +21,7 @@ async function lookupOutreachSentiment(agentKey: string, phone: string) {
         const client = createClient(url, (serviceKey || anonKey)!);
         const { data } = await client
             .from(cfg.outreachTable)
-            .select('personal_phone, created_at, voice1_sentiment, call1_note, voice2_sentiment, call2_note')
+            .select('personal_phone, created_at, master_lead_id, voice1_sentiment, call1_note, voice2_sentiment, call2_note')
             .not('personal_phone', 'is', null);
 
         // A phone number can have multiple outreach rows; prefer the one with actual
@@ -163,6 +163,7 @@ export async function GET(
                         isInbound,
                         source: 'vapi',
                         audio_url: data.recordingUrl,
+                        masterLeadId: outreachMatch?.master_lead_id ?? null,
                         voice1Sentiment: outreachMatch?.voice1_sentiment ?? inboundSentiment ?? null,
                         call1Note: outreachMatch?.call1_note ?? null,
                         voice2Sentiment: outreachMatch?.voice2_sentiment ?? null,
@@ -203,6 +204,7 @@ export async function GET(
                     cost: `$${Number(call.cost_usd || 0).toFixed(3)}`,
                     type: cfg.key === 'inbound' ? 'inbound' : undefined,
                     note: call.note ?? null,
+                    masterLeadId: outreachMatch?.master_lead_id ?? null,
                     voice1Sentiment: outreachMatch?.voice1_sentiment ?? call.call_sentiment ?? null,
                     call1Note: outreachMatch?.call1_note ?? null,
                     voice2Sentiment: outreachMatch?.voice2_sentiment ?? null,

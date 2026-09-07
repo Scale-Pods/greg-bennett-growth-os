@@ -145,9 +145,8 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
 
     if (!call) return null;
 
-    const phone = (details.guestNumber || 'unknown').toString();
-    const masterLeadsId = details.displayCall?.leadId || call.leadId || call.lead_id || call.master_leads_id || call.id;
-    const shareHref = `/call/${encodeURIComponent(masterLeadsId)}/${encodeURIComponent(phone)}`;
+    const masterLeadId = details.displayCall?.masterLeadId || call.masterLeadId || call.id;
+    const shareHref = `/call/${encodeURIComponent(masterLeadId)}`;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

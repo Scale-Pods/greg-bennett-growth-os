@@ -64,6 +64,7 @@ function normalizeRow(agent: string, d: any, telephonyCost: number | null, outre
         recordingUrl: d.recording_url || null,
         note: d.note || null,
         leadId: d.lead_id || null,
+        masterLeadId: outreachMatch?.master_lead_id ?? null,
         voice1Sentiment: outreachMatch?.voice1_sentiment ?? d.call_sentiment ?? null,
         call1Note: outreachMatch?.call1_note ?? null,
         voice2Sentiment: outreachMatch?.voice2_sentiment ?? null,
@@ -104,7 +105,7 @@ export async function GET(req: Request) {
                 .order('started_at', { ascending: false }),
             includeTelephony ? getTwilioCostLookup(from, to) : Promise.resolve(null),
             cfg.outreachTable
-                ? client.from(cfg.outreachTable).select('personal_phone, created_at, voice1_sentiment, call1_note, voice2_sentiment, call2_note')
+                ? client.from(cfg.outreachTable).select('personal_phone, created_at, master_lead_id, voice1_sentiment, call1_note, voice2_sentiment, call2_note')
                     .then(res => res.data || [])
                 : Promise.resolve([]),
         ]);
