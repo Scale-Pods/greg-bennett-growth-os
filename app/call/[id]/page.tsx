@@ -4,10 +4,10 @@ import { use, useMemo } from "react";
 import { CallDetailsCard, useCallDetails } from "@/components/voice/call-details-modal";
 import { BennettLoader } from "@/components/bennett-loader";
 
-export default function SharedCallPage({ params }: { params: Promise<{ id: string; phone: string }> }) {
+export default function SharedCallPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const call = useMemo(() => ({ id }), [id]);
-    const details = useCallDetails(call, true);
+    const call = useMemo(() => ({ masterLeadId: id }), [id]);
+    const details = useCallDetails(call, true, `/api/calls/by-lead/${encodeURIComponent(id)}`);
 
     if (details.notFound) {
         return (

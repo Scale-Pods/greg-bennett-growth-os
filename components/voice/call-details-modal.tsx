@@ -9,23 +9,25 @@ import {
 import { Play, Pause, Volume2, VolumeX, Phone, Clock, FileText, RotateCcw, RotateCw, Download, Copy, Check, Link2 } from "lucide-react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
-export function useCallDetails(call: any, active: boolean) {
+export function useCallDetails(call: any, active: boolean, fetchUrl?: string) {
     const [fullCall, setFullCall] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [notFound, setNotFound] = useState(false);
 
+    const url = fetchUrl || (call?.id ? `/api/calls/${call.id}` : null);
+
     useEffect(() => {
-        if (active && call?.id) {
-            setFullCall(call);
+        if (active && url) {
+            setFullCall(call?.id ? call : null);
             setNotFound(false);
             setLoading(true);
-            fetch(`/api/calls/${call.id}`)
+            fetch(url)
                 .then(res => res.ok ? res.json() : Promise.reject(new Error(`status ${res.status}`)))
                 .then(data => { setFullCall(data); })
                 .catch(err => { console.error("Error fetching details", err); setNotFound(true); })
                 .finally(() => setLoading(false));
         }
-    }, [active, call]);
+    }, [active, url]);
 
     const displayCall = fullCall || call || {};
 
