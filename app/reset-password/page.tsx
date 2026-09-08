@@ -122,7 +122,7 @@ export default function ResetPasswordPage() {
                                             required
                                             minLength={8}
                                             autoFocus
-                                            className="pl-10 h-11 rounded-xl"
+                                            className="pl-10 h-11 rounded-xl text-slate-900 placeholder:text-slate-400"
                                         />
                                     </div>
                                 </div>
@@ -139,7 +139,7 @@ export default function ResetPasswordPage() {
                                             type="password"
                                             placeholder="••••••••"
                                             required
-                                            className="pl-10 h-11 rounded-xl"
+                                            className="pl-10 h-11 rounded-xl text-slate-900 placeholder:text-slate-400"
                                         />
                                     </div>
                                 </div>

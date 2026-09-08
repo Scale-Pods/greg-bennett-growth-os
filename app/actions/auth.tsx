@@ -151,7 +151,7 @@ export async function resetPassword(prevState: any, formData: FormData) {
             .from('users')
             .update({
                 password_hash: passwordHash,
-                password_changed_at: new Date().toISOString(),
+                passwords_changed_at: new Date().toISOString(),
             })
             .eq('email', user.email);
 
