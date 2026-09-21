@@ -138,6 +138,7 @@ export default function VoiceLogsPage() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [agent, setAgent] = useState<AgentKey | "all">("all");
     const [phoneFilter, setPhoneFilter] = useState("");
+    const [newLeadOnly, setNewLeadOnly] = useState(false);
     const [sortBy, setSortBy] = useState("newest");
     const [exporting, setExporting] = useState(false);
 
@@ -196,12 +197,13 @@ export default function VoiceLogsPage() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [dateRange, statusFilter, agent, phoneFilter, sortBy]);
+    }, [dateRange, statusFilter, agent, phoneFilter, newLeadOnly, sortBy]);
 
     useEffect(() => {
         const resolved = mappedCalls();
         const filteredCalls = resolved.filter((call: any) => {
             if (statusFilter !== "all" && call.status !== statusFilter) return false;
+            if (newLeadOnly && (call.name || "").trim().toLowerCase() !== "new lead") return false;
             if (phoneFilter) {
                 const searchStr = phoneFilter.toLowerCase().trim();
                 const phoneSearch = searchStr.replace(/\D/g, '');
@@ -221,7 +223,7 @@ export default function VoiceLogsPage() {
         });
 
         setCalls(sortedCalls);
-    }, [allCallsMapped, statusFilter, phoneFilter, sortBy, mappedCalls]);
+    }, [allCallsMapped, statusFilter, phoneFilter, newLeadOnly, sortBy, mappedCalls]);
 
     const handleRefresh = () => {
         fetchCallsForAgents();
@@ -329,9 +331,26 @@ export default function VoiceLogsPage() {
                     </SelectContent>
                 </Select>
 
-                {(phoneFilter || statusFilter !== "all" || agent !== "all" || sortBy !== "newest") && (
+                <button
+                    onClick={() => setNewLeadOnly(v => !v)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '2px 10px', height: 34, borderRadius: 'var(--radius-xs)',
+                        fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em',
+                        background: newLeadOnly ? 'rgba(255,69,58,0.14)' : 'var(--fill-tertiary)',
+                        color: newLeadOnly ? '#ff453a' : 'var(--label-secondary)',
+                        border: `1px solid ${newLeadOnly ? 'rgba(255,69,58,0.35)' : 'var(--glass-border)'}`,
+                        cursor: 'default',
+                    }}
+                    title="Show only inbound calls that created a brand-new lead"
+                >
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff453a', flexShrink: 0 }} />
+                    New Lead
+                </button>
+
+                {(phoneFilter || statusFilter !== "all" || agent !== "all" || newLeadOnly || sortBy !== "newest") && (
                     <button
-                        onClick={() => { setPhoneFilter(""); setStatusFilter("all"); setAgent("all"); setSortBy("newest"); }}
+                        onClick={() => { setPhoneFilter(""); setStatusFilter("all"); setAgent("all"); setNewLeadOnly(false); setSortBy("newest"); }}
                         style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-secondary)', background: 'none', border: 'none', cursor: 'default', padding: '6px 10px', borderRadius: 'var(--radius-sm)' }}
                         onMouseEnter={e => (e.currentTarget.style.background = 'var(--fill-secondary)')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'none')}
