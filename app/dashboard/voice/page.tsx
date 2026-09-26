@@ -107,6 +107,7 @@ const AGENT_LABELS: Record<string, { label: string; icon: React.ReactNode; color
     coaching: { label: "Coaching", icon: <GraduationCap size={20} />, color: 'var(--green)', bg: 'rgba(15,157,88,0.15)' },
     investor: { label: "Investor", icon: <Coins size={20} />, color: 'var(--orange)', bg: 'rgba(230,126,34,0.15)' },
     biglife: { label: "BigLife", icon: <Coins size={20} />, color: 'var(--green)', bg: 'rgba(15,157,88,0.15)' },
+    homeSeller: { label: "Home Seller Leads", icon: <Home size={20} />, color: 'var(--teal)', bg: 'rgba(64,203,224,0.15)' },
     bootcampsNew: { label: "Bootcamps New Leads", icon: <GraduationCap size={20} />, color: 'var(--orange)', bg: 'rgba(230,126,34,0.15)' },
     bootcampsFollowup: { label: "Bootcamps Follow-up", icon: <GraduationCap size={20} />, color: 'var(--orange)', bg: 'rgba(230,126,34,0.15)' },
 };
@@ -176,7 +177,7 @@ export default function VoiceDashboardPage() {
             </div>
 
             {/* Per-Agent Call Banners */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 16 }}>
                 {Object.entries(AGENT_LABELS).map(([key, cfg]) => {
                     const agentData = byAgent.find(a => a.key === key);
                     return (

@@ -14,6 +14,7 @@ const AGENTS = [
     { key: "coaching", label: "Coaching" },
     { key: "investor", label: "Investor" },
     { key: "biglife", label: "BigLife" },
+    { key: "homeSeller", label: "Home Seller Leads" },
     { key: "bootcampsNew", label: "Bootcamps New Leads" },
     { key: "bootcampsFollowup", label: "Bootcamps Follow-up" },
 ] as const;

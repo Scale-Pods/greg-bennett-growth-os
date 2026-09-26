@@ -17,6 +17,7 @@ const AGENTS = [
     { key: "coaching", label: "Coaching", color: "#22c55e" },
     { key: "investor", label: "Investor", color: "#f59e0b" },
     { key: "biglife", label: "BigLife", color: "#0f9d58" },
+    { key: "homeSeller", label: "Home Seller Leads", color: "#40cbe0" },
     { key: "bootcampsNew", label: "Bootcamps New Leads", color: "#e67e22" },
     { key: "bootcampsFollowup", label: "Bootcamps Follow-up", color: "#d6336c" },
     { key: "inbound", label: "Inbound Calls", color: "#ff453a" },

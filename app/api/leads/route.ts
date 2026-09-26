@@ -15,6 +15,7 @@ export const AGENTS: AgentConfig[] = [
     { key: 'coaching', envPrefix: 'platinum', outreachTable: 'coaching_ai_agent_outreach' },
     { key: 'investor', envPrefix: 'platinum', outreachTable: 'investor_funnel_ai_agent_outreach' },
     { key: 'biglife', envPrefix: 'wealth', outreachTable: 'biglife_new_leads_outreach' },
+    { key: 'homeSeller', envPrefix: 'wealth', outreachTable: 'home_seller_leads_outreach' },
     { key: 'bootcampsNew', envPrefix: 'bootcamps', outreachTable: 'bootcamps_new_leads_outreach' },
     { key: 'bootcampsFollowup', envPrefix: 'bootcamps', outreachTable: 'bootcamps_follow_up_outreach' },
 ];

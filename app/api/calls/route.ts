@@ -16,6 +16,7 @@ export const CALL_LOG_AGENTS: CallLogAgentConfig[] = [
     { key: 'coaching', envPrefix: 'platinum', table: 'vapi_call_logs_coaching', outreachTable: 'coaching_ai_agent_outreach' },
     { key: 'investor', envPrefix: 'platinum', table: 'vapi_call_logs_investor', outreachTable: 'investor_funnel_ai_agent_outreach' },
     { key: 'biglife', envPrefix: 'wealth', table: 'vapi_call_logs_biglife', outreachTable: 'biglife_new_leads_outreach' },
+    { key: 'homeSeller', envPrefix: 'wealth', table: 'vapi_call_logs_home_seller_leads', outreachTable: 'home_seller_leads_outreach' },
     { key: 'bootcampsNew', envPrefix: 'bootcamps', table: 'vapi_call_logs_new_leads', outreachTable: 'bootcamps_new_leads_outreach' },
     { key: 'bootcampsFollowup', envPrefix: 'bootcamps', table: 'vapi_call_logs_followup', outreachTable: 'bootcamps_follow_up_outreach' },
     { key: 'inbound', envPrefix: 'wealth', table: 'vapi_call_logs_inbound' }, // no outreach table: inbound callers have no pre-existing lead record
