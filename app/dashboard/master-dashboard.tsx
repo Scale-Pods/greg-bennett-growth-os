@@ -278,7 +278,6 @@ export default function MasterDashboard() {
                 { key: "coaching", title: "Coaching AI Agent", icon: <GraduationCap size={12} />, iconBg: "rgba(34,197,94,0.15)", iconColor: "#22c55e" },
                 { key: "investor", title: "Investor AI Agent", icon: <Coins size={12} />, iconBg: "rgba(245,158,11,0.15)", iconColor: "#f59e0b" },
                 { key: "biglife", title: "BigLife AI Agent", icon: <Wallet size={12} />, iconBg: "rgba(15,157,88,0.15)", iconColor: "#22c55e" },
-                { key: "bootcampsNew", title: "Bootcamps New Leads AI Agent", icon: <img src="/bootcamps.png" className="w-3 h-3 object-contain" alt="" />, iconBg: "rgba(230,126,34,0.15)", iconColor: "#f59e0b" },
                 { key: "bootcampsFollowup", title: "Bootcamps Follow-up Leads AI Agent", icon: <img src="/bootcamps.png" className="w-3 h-3 object-contain" alt="" />, iconBg: "rgba(230,126,34,0.15)", iconColor: "#e67e22" },
             ].map(agent => {
                 const am = agentMetrics?.[agent.key];

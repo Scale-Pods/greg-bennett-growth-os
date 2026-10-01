@@ -19,7 +19,6 @@ const MASTER_TABLES: MasterTableConfig[] = [
     { key: 'coaching', envPrefix: 'platinum', masterTable: 'coaching_master_leads' },
     { key: 'investor', envPrefix: 'platinum', masterTable: 'investor_funnel_master_leads' },
     { key: 'biglife', envPrefix: 'wealth', masterTable: 'biglife_master_leads' },
-    { key: 'bootcampsNew', envPrefix: 'bootcamps', masterTable: 'master_new_leads' },
     { key: 'bootcampsFollowup', envPrefix: 'bootcamps', masterTable: 'master_followup_leads' },
 ];
 

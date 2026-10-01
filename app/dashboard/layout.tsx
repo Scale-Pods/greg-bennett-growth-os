@@ -7,7 +7,8 @@ import {
     LayoutDashboard, Mail, MessageCircle, Mic, Settings,
     LogOut, ChevronDown, Wallet, BarChart2, Users, Send,
     Key, ExternalLink, Inbox, AlertCircle, UserMinus,
-    MessageSquare, Phone, Activity, ChevronLeft, ChevronRight
+    MessageSquare, Phone, Activity, ChevronLeft, ChevronRight,
+    Clapperboard, Youtube, Share2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -48,12 +49,20 @@ const dashboardConfig: Record<string, { label: string; color: string; icon: any;
             { title: "Voice Dashboard", href: "/dashboard/voice", icon: LayoutDashboard },
             { title: "Call Logs", href: "/dashboard/voice/logs", icon: Phone },
             { title: "Analytics", href: "/dashboard/voice/analytics", icon: BarChart2 },
-            { title: "Calculator", href: "/dashboard/voice/calculator", icon: Activity },
+        ],
+    },
+    content: {
+        label: "Content",
+        color: "var(--purple)",
+        icon: Clapperboard,
+        items: [
+            { title: "YouTube Approvals", href: "/dashboard/content/youtube", icon: Youtube },
+            { title: "Facebook & Instagram", href: "/dashboard/content/social", icon: Share2 },
         ],
     },
 };
 
-const mainApps = ['master', 'email', 'voice'];
+const mainApps = ['master', 'email', 'voice', 'content'];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -90,6 +99,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     let currentContext = "master";
     if (pathname.startsWith("/dashboard/email")) currentContext = "email";
     else if (pathname.startsWith("/dashboard/voice")) currentContext = "voice";
+    else if (pathname.startsWith("/dashboard/content")) currentContext = "content";
 
     const activeConfig = dashboardConfig[currentContext];
 

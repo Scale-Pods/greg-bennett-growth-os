@@ -26,7 +26,6 @@ const MASTER_TABLES: Record<string, string> = {
     coaching: 'coaching_master_leads',
     investor: 'investor_funnel_master_leads',
     biglife: 'biglife_master_leads',
-    bootcampsNew: 'master_new_leads',
     bootcampsFollowup: 'master_followup_leads',
 };
 

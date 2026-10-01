@@ -25,8 +25,8 @@ const AGENT_LABELS: Record<string, { label: string; icon: React.ReactNode; color
     coaching: { label: "Coaching", icon: <GraduationCap style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--green)' },
     investor: { label: "Investor", icon: <Coins style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--orange)' },
     biglife: { label: "BigLife", icon: <Coins style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--purple)' },
+    bigLifeNewCampaign: { label: "Big Life New Campaign", icon: <Coins style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--pink)' },
     homeSeller: { label: "Home Seller Leads", icon: <Home style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--teal)' },
-    bootcampsNew: { label: "Bootcamps New Leads", icon: <GraduationCap style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--orange)' },
     bootcampsFollowup: { label: "Bootcamps Follow-up", icon: <GraduationCap style={{ width: 14, height: 14, color: '#fff' }} />, color: 'var(--red)' },
 };
 
