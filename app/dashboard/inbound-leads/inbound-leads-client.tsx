@@ -3,12 +3,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { format, subMonths, startOfDay, endOfDay } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { Instagram, Linkedin, Facebook, Globe, Users, GraduationCap, Home, Mail, Phone, Clock, ChevronRight, ChevronLeft, Inbox } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useData } from "@/context/DataContext";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { SanitizedEmailBody } from "@/components/email/sanitized-email-body";
+import { BennettLoader } from "@/components/bennett-loader";
 
 const LEADS_PER_PAGE = 10;
 
@@ -42,15 +43,12 @@ function SourceBadge({ source }: { source: string | null | undefined }) {
     );
 }
 
-export default function InboundLeadsClient({
-    wealthLeads,
-    realtyLeads,
-    bootcampsLeads,
-}: {
-    wealthLeads: any[];
-    realtyLeads: any[];
-    bootcampsLeads: any[];
-}) {
+export default function InboundLeadsClient() {
+    const [wealthLeads, setWealthLeads] = useState<any[]>([]);
+    const [realtyLeads, setRealtyLeads] = useState<any[]>([]);
+    const [bootcampsLeads, setBootcampsLeads] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
     const businesses: { id: BusinessId; label: string; icon: any; color: string; bg: string; data: any[] }[] = [
         { id: "wealth", label: "Wealth Builders", icon: Users, color: "#22c55e", bg: "rgba(34,197,94,0.15)", data: wealthLeads },
         { id: "bootcamps", label: "Bootcamps", icon: GraduationCap, color: "#f59e0b", bg: "rgba(245,158,11,0.15)", data: bootcampsLeads },
@@ -63,27 +61,34 @@ export default function InboundLeadsClient({
 
     const activeBusinessObj = businesses.find(b => b.id === selectedBusiness)!;
 
-    // Inbound leads arrive far less frequently than calls/emails, so the shared 7-day
-    // default is usually empty here and the page would render blank. Widen to 3 months
-    // once on mount so the picker always shows the window that is actually applied.
+    // Re-fetch from the server (filtered by created_at) whenever the date range changes,
+    // instead of fetching everything once and filtering client-side — that silently missed
+    // any rows outside Supabase's default row cap or added after the initial page load.
     useEffect(() => {
-        setDateRange({ from: startOfDay(subMonths(new Date(), 3)), to: new Date() });
-    }, []);
+        if (!dateRange?.from) return;
+        const from = dateRange.from;
+        const to = dateRange.to || dateRange.from;
 
-    const inRange = (lead: any) => {
-        if (dateRange?.from && lead.created_at) {
-            const leadDate = new Date(lead.created_at);
-            if (leadDate < dateRange.from) return false;
-            if (dateRange.to && leadDate > endOfDay(dateRange.to)) return false;
-        }
-        return true;
-    };
+        setLoading(true);
+        const query = new URLSearchParams({
+            from: startOfDay(from).toISOString(),
+            to: endOfDay(to).toISOString(),
+        });
+
+        fetch(`/api/inbound-leads?${query.toString()}`)
+            .then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to fetch inbound leads')))
+            .then(data => {
+                setWealthLeads(Array.isArray(data.wealth) ? data.wealth : []);
+                setRealtyLeads(Array.isArray(data.realty) ? data.realty : []);
+                setBootcampsLeads(Array.isArray(data.bootcamps) ? data.bootcamps : []);
+            })
+            .catch(err => console.error('InboundLeadsClient fetch error:', err))
+            .finally(() => setLoading(false));
+    }, [dateRange]);
 
     const activeLeads = useMemo(() => {
-        return activeBusinessObj.data
-            .filter(inRange)
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    }, [activeBusinessObj, dateRange]);
+        return [...activeBusinessObj.data].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }, [activeBusinessObj]);
 
     useEffect(() => { setPage(1); }, [selectedBusiness, dateRange]);
 
@@ -93,10 +98,9 @@ export default function InboundLeadsClient({
         return activeLeads.slice(start, start + LEADS_PER_PAGE);
     }, [activeLeads, page]);
 
-    // Helper for total leads calculation considering date filter (for business cards)
-    const getFilteredCount = (busData: any[]) => {
-        return busData.filter(inRange).length;
-    };
+    // Business card counts now come straight from the server-filtered data, so no
+    // extra client-side date check is needed here.
+    const getFilteredCount = (busData: any[]) => busData.length;
 
     // Per-business questionnaire field mapping (matches each Supabase table's schema)
     const getQuestions = (lead: any, businessId: BusinessId) => {
@@ -202,7 +206,8 @@ export default function InboundLeadsClient({
     const keyDetailLabel = selectedBusiness === "wealth" ? "Capital" : selectedBusiness === "realty" ? "Property" : "Target Market";
 
     return (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 relative min-h-[500px]">
+            {loading && <BennettLoader />}
 
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-3">
