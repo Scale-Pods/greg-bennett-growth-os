@@ -14,7 +14,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { format, subDays } from "date-fns";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { AGENT_OPTIONS } from "@/lib/agents";
 import { AgentBadge } from "@/components/agents/agent-badge";
 
@@ -74,14 +74,16 @@ export default function EmailDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<OverviewResponse | null>(null);
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: subDays(new Date(), 7),
+        from: startOfDay(subDays(new Date(), 7)),
         to: new Date(),
     });
 
     const fetchOverview = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/email/overview?from=${dateRange.from.toISOString()}&to=${(dateRange.to || dateRange.from).toISOString()}`);
+            const from = startOfDay(dateRange.from).toISOString();
+            const to = endOfDay(dateRange.to || dateRange.from).toISOString();
+            const res = await fetch(`/api/email/overview?from=${from}&to=${to}`);
             if (res.ok) {
                 const json = await res.json();
                 setData(json);

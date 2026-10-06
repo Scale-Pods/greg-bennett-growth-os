@@ -2,7 +2,6 @@
 
 import { BennettLoader } from "@/components/bennett-loader";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { startOfDay, endOfDay, subDays } from "date-fns";
 import { UserMinus, Search, Mail, Calendar, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,7 +14,6 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { AGENT_OPTIONS, AgentKey } from "@/lib/agents";
 import { AgentBadge } from "@/components/agents/agent-badge";
 import type { NormalizedLead } from "@/lib/leads-utils";
@@ -26,42 +24,29 @@ export default function UnsubscribedPage() {
     const [leads, setLeads] = useState<NormalizedLead[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
-
     const [searchTerm, setSearchTerm] = useState("");
     const [agentFilter, setAgentFilter] = useState<AgentKey | "all">("all");
     const [repliedFilter, setRepliedFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
 
+    // No unsubscribe-event timestamp exists on these tables, so this is an
+    // all-time list filtered server-side by agent (see /api/email/unsubscribed).
     const fetchUnsubscribed = useCallback(async () => {
         setLoading(true);
         try {
-            const from = startOfDay(dateRange.from).toISOString();
-            const to = endOfDay(dateRange.to || dateRange.from).toISOString();
-            const agentsToFetch = agentFilter === "all" ? AGENT_OPTIONS.map(a => a.key) : [agentFilter];
-
-            const results = await Promise.all(
-                agentsToFetch.map(async (key) => {
-                    const res = await fetch(`/api/leads?agent=${key}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
-                    if (!res.ok) return [];
-                    const data = await res.json();
-                    return Array.isArray(data.leads) ? data.leads : [];
-                })
-            );
-
-            const flat: NormalizedLead[] = results.flat();
-            const unsubscribed = flat.filter(l => l.emailUnsubscribed);
-            unsubscribed.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setLeads(unsubscribed);
+            const res = await fetch(`/api/email/unsubscribed?agent=${agentFilter}`);
+            if (!res.ok) {
+                setLeads([]);
+                return;
+            }
+            const data = await res.json();
+            setLeads(Array.isArray(data.leads) ? data.leads : []);
         } catch (err) {
             console.error("Error fetching unsubscribed leads:", err);
         } finally {
             setLoading(false);
         }
-    }, [agentFilter, dateRange]);
+    }, [agentFilter]);
 
     useEffect(() => {
         fetchUnsubscribed();
@@ -69,7 +54,7 @@ export default function UnsubscribedPage() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, agentFilter, repliedFilter, dateRange]);
+    }, [searchTerm, agentFilter, repliedFilter]);
 
     const filteredLeads = useMemo(() => {
         return leads.filter(l => {
@@ -91,10 +76,9 @@ export default function UnsubscribedPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Unsubscribed</h1>
-                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Leads who have opted out of email outreach.</p>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>All-time leads who have opted out of email outreach.</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <DateRangePicker value={dateRange as any} onUpdate={(r: any) => setDateRange(r.range)} />
                     <button
                         onClick={fetchUnsubscribed}
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}

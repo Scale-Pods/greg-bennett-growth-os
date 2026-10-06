@@ -34,11 +34,11 @@ interface SentEmailRow {
 const ITEMS_PER_PAGE = 10;
 
 export default function SentEmailsPage() {
-    const [leads, setLeads] = useState<NormalizedLead[]>([]);
+    const [rows, setRows] = useState<SentEmailRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [agent, setAgent] = useState<AgentKey | "all">("all");
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: subDays(new Date(), 7),
+        from: startOfDay(subDays(new Date(), 7)),
         to: new Date(),
     });
     const [searchQuery, setSearchQuery] = useState("");
@@ -54,22 +54,23 @@ export default function SentEmailsPage() {
 
             const results = await Promise.all(
                 agentsToFetch.map(async (key) => {
-                    const res = await fetch(`/api/leads?agent=${key}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+                    const res = await fetch(`/api/email/sent?agent=${key}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
                     if (!res.ok) return [];
                     const data = await res.json();
-                    return Array.isArray(data.leads) ? data.leads : [];
+                    return Array.isArray(data.sentEmails) ? data.sentEmails : [];
                 })
             );
 
-            const flat: NormalizedLead[] = results.flat();
+            const flat: SentEmailRow[] = results.flat();
             const seen = new Set<string>();
-            const deduped = flat.filter(l => {
-                const dedupeKey = `${l.agent}-${l.id}`;
+            const deduped = flat.filter(r => {
+                const dedupeKey = `${r.lead.agent}-${r.lead.id}-${r.step}`;
                 if (seen.has(dedupeKey)) return false;
                 seen.add(dedupeKey);
                 return true;
             });
-            setLeads(deduped);
+            deduped.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+            setRows(deduped);
         } catch (err) {
             console.error("Error fetching sent emails:", err);
         } finally {
@@ -84,20 +85,6 @@ export default function SentEmailsPage() {
     useEffect(() => {
         setCurrentPage(1);
     }, [agent, dateRange, searchQuery]);
-
-    const rows = useMemo(() => {
-        const flat: SentEmailRow[] = [];
-        for (const lead of leads) {
-            if (lead.email1.sentAt) {
-                flat.push({ lead, step: 1, body: lead.email1.body, status: lead.email1.status, sentAt: lead.email1.sentAt });
-            }
-            if (lead.email2.sentAt) {
-                flat.push({ lead, step: 2, body: lead.email2.body, status: lead.email2.status, sentAt: lead.email2.sentAt });
-            }
-        }
-        flat.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
-        return flat;
-    }, [leads]);
 
     const filteredRows = useMemo(() => {
         if (!searchQuery) return rows;

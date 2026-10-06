@@ -24,7 +24,7 @@ export function DateRangePicker({
     value,
 }: DateRangePickerProps) {
     const [date, setDate] = React.useState<DateRange | undefined>(value || {
-        from: subDays(new Date(), 7),
+        from: startOfDay(subDays(new Date(), 7)),
         to: new Date(),
     })
 

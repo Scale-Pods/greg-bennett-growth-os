@@ -23,8 +23,6 @@ import {
     DollarSign,
     RefreshCw,
 } from "lucide-react";
-import { subDays } from "date-fns";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { AGENT_OPTIONS, AgentKey } from "@/lib/agents";
 import { AgentBadge } from "@/components/agents/agent-badge";
 import type { NormalizedCampaignAnalytics } from "@/lib/email-utils";
@@ -53,10 +51,6 @@ export default function EmailAnalyticsPage() {
     const [data, setData] = useState<OverviewResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [agentFilter, setAgentFilter] = useState<AgentKey | "all">("all");
-    const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
 
     const fetchAnalytics = async () => {
         setLoading(true);
@@ -84,15 +78,8 @@ export default function EmailAnalyticsPage() {
             ? Object.values(data.byAgent).flatMap(a => a.campaigns)
             : (data.byAgent[agentFilter]?.campaigns || []);
 
-        const rangeFiltered = agentCampaigns.filter(c => {
-            const updated = c.updatedAt ? new Date(c.updatedAt) : (c.reportDate ? new Date(c.reportDate) : null);
-            if (!updated || isNaN(updated.getTime())) return true;
-            const to = dateRange.to || dateRange.from;
-            return updated >= dateRange.from && updated <= new Date(to.getTime() + 86400000 - 1);
-        });
-
-        return { totals: sumTotals(rangeFiltered), campaigns: rangeFiltered };
-    }, [data, agentFilter, dateRange]);
+        return { totals: sumTotals(agentCampaigns), campaigns: agentCampaigns };
+    }, [data, agentFilter]);
 
     const openRate = totals && totals.emailsSentCount > 0 ? (totals.openCountUnique / totals.emailsSentCount) * 100 : 0;
     const replyRate = totals && totals.emailsSentCount > 0 ? (totals.replyCountUnique / totals.emailsSentCount) * 100 : 0;
@@ -104,10 +91,9 @@ export default function EmailAnalyticsPage() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Email Analytics</h1>
-                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Campaign performance across all outreach channels.</p>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>All-time campaign performance across all outreach channels.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <DateRangePicker value={dateRange as any} onUpdate={(r: any) => setDateRange(r.range)} />
                     <Select value={agentFilter} onValueChange={(v) => setAgentFilter(v as AgentKey | "all")}>
                         <SelectTrigger style={{ width: 190, height: 36, fontSize: 13, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
                             <SelectValue placeholder="Agent" />

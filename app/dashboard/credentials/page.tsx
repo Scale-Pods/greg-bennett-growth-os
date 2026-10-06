@@ -19,20 +19,37 @@ export default function CredentialsPage() {
             .catch(() => {});
     }, []);
 
-    const senderEmails = [
-        "bennettrealtysolutionsInvestor@gmail.com",
-        "bennettrealtysolutionslearning@gmail.com",
-        "BRSBiglife@gmail.com",
-        "bennettrealtysolutions@gmail.com",
-        "bennettbootcamps@gmail.com",
+    const emailGroups = [
+        {
+            business: "Platinum Coaching",
+            emails: ["platinum@joinbrs.com", "platinumcoaching@joinbrs.com"],
+        },
+        {
+            business: "Big Life",
+            emails: ["biglifeinsurance@joinbrs.com", "biglifebusiness@joinbrs.com", "brsbiglife@gmail.com"],
+        },
+        {
+            business: "Bennett Realty Solutions",
+            emails: ["investor@joinbrs.com", "bennettrealty@joinbrs.com"],
+        },
+        {
+            business: "Bennett Bootcamps",
+            emails: ["bennettbootcamps@joinbrs.com", "bennettbootcamp@joinbrs.com"],
+        },
+        {
+            business: "Bennett Realty Solutions – Recruiting",
+            emails: ["bennettrealtysolutions@joinbrs.com", "brsrecruiting@joinbrs.com", "bennettrealtysolutions@gmail.com"],
+        },
     ];
+
     const provisionedNumbers = [
-        "16292911631",
-        "12239011899",
-        "13392554793",
-        "19516442013",
-        "19516443561",
-        "18574039803",
+        { number: "16292911631", label: "Bennett Realty Solutions" },
+        { number: "13392554793", label: "Bootcamps Follow-up Leads AI Agent Calling" },
+        { number: "12239011899", label: "Inbound Leads AI Agent Calling", note: "Calls to this number are treated as new leads, added to GHL (Inbound Leads AI Agent)" },
+        { number: "19516442013", label: "Big Life AI Agent Calling", note: "Also handles inbound — new Phase 5B" },
+        { number: "19516443561", label: "Investor AI Agent Calling" },
+        { number: "18574039803", label: "Coaching AI Agent Calling" },
+        { number: "12054602058", label: "Home Seller Leads Calling" },
     ];
     const loading = false;
     const router = useRouter();
@@ -43,19 +60,24 @@ export default function CredentialsPage() {
                 {/* Email Section */}
                 <CredentialSection
                     title="Email Integration"
-                    description="Active sender accounts."
+                    description="Active sender accounts, grouped by business."
                     icon={Mail}
                     className="md:col-span-2"
                 >
-                    <div className="grid gap-3 md:grid-cols-3">
+                    <div className="space-y-5">
                         {loading ? (
-                            <div className="md:col-span-2 text-sm animate-pulse" style={{ color: 'var(--label-tertiary)' }}>Detecting active email accounts...</div>
-                        ) : senderEmails.length > 0 ? (
-                            senderEmails.map((email, idx) => (
-                                <ReadOnlyField key={idx} label={`Project Email ${idx + 1}`} value={email} />
-                            ))
+                            <div className="text-sm animate-pulse" style={{ color: 'var(--label-tertiary)' }}>Detecting active email accounts...</div>
                         ) : (
-                            <ReadOnlyField label="Connected Email" value="No active emails detected" />
+                            emailGroups.map((group) => (
+                                <div key={group.business}>
+                                    <p className="text-xs font-semibold mb-2" style={{ color: 'var(--label-secondary)' }}>{group.business}</p>
+                                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                        {group.emails.map((email, idx) => (
+                                            <ReadOnlyField key={email} label={`Sender ${idx + 1}`} value={email} />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </div>
                 </CredentialSection>
@@ -67,9 +89,9 @@ export default function CredentialsPage() {
                     icon={Phone}
                     className="md:col-span-2"
                 >
-                    <div className="grid gap-3 md:grid-cols-3">
-                        {provisionedNumbers.map((num, idx) => (
-                            <ReadOnlyField key={num} label={`Line ${idx + 1}`} value={`+${num}`} />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {provisionedNumbers.map((entry) => (
+                            <PhoneNumberField key={entry.number} number={entry.number} label={entry.label} note={entry.note} />
                         ))}
                     </div>
                 </CredentialSection>
@@ -186,6 +208,29 @@ function CredentialSection({ title, description, icon: Icon, children, action, c
             </div>
             <div style={{ padding: 14 }}>
                 {children}
+            </div>
+        </div>
+    );
+}
+
+function PhoneNumberField({ number, label, note }: { number: string; label: string; note?: string }) {
+    return (
+        <div className="p-3 rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold" style={{ color: 'var(--label-primary)' }}>{label}</p>
+                    <p className="text-base font-bold font-mono mt-1 tabular-nums" style={{ color: 'var(--blue)' }}>+{number}</p>
+                    {note && (
+                        <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'var(--label-tertiary)' }}>{note}</p>
+                    )}
+                </div>
+                <button
+                    onClick={() => navigator.clipboard.writeText(`+${number}`)}
+                    className="h-6 w-6 flex items-center justify-center rounded-md shrink-0"
+                    style={{ color: 'var(--label-tertiary)', border: '1px solid var(--glass-border)' }}
+                >
+                    <Copy className="h-3 w-3" />
+                </button>
             </div>
         </div>
     );

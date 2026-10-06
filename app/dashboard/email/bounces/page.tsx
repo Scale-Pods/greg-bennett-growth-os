@@ -19,8 +19,6 @@ import {
     ChevronRight,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { startOfDay, endOfDay, subDays } from "date-fns";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { AGENT_OPTIONS, AgentKey } from "@/lib/agents";
 import { AgentBadge } from "@/components/agents/agent-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -34,43 +32,31 @@ export default function BouncedEmailsPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [agentFilter, setAgentFilter] = useState<AgentKey | "all">("all");
     const [currentPage, setCurrentPage] = useState(1);
-    const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-        from: subDays(new Date(), 7),
-        to: new Date(),
-    });
 
+    // No bounce-event timestamp exists on these tables, so this is an all-time
+    // list filtered server-side by agent (see /api/email/bounced).
     const fetchBounced = useCallback(async () => {
         setLoading(true);
         try {
-            const from = startOfDay(dateRange.from).toISOString();
-            const to = endOfDay(dateRange.to || dateRange.from).toISOString();
-            const agentsToFetch = agentFilter === "all" ? AGENT_OPTIONS.map(a => a.key) : [agentFilter];
-
-            const results = await Promise.all(
-                agentsToFetch.map(async (key) => {
-                    const res = await fetch(`/api/leads?agent=${key}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
-                    if (!res.ok) return [];
-                    const data = await res.json();
-                    return Array.isArray(data.leads) ? data.leads : [];
-                })
-            );
-
-            const flat: NormalizedLead[] = results.flat();
-            const bounced = flat.filter(l => l.emailBounced);
-            bounced.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setLeads(bounced);
+            const res = await fetch(`/api/email/bounced?agent=${agentFilter}`);
+            if (!res.ok) {
+                setLeads([]);
+                return;
+            }
+            const data = await res.json();
+            setLeads(Array.isArray(data.leads) ? data.leads : []);
         } catch (e) {
             console.error("Bounces fetch error", e);
         } finally {
             setLoading(false);
         }
-    }, [agentFilter, dateRange]);
+    }, [agentFilter]);
 
     useEffect(() => { fetchBounced(); }, [fetchBounced]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, agentFilter, dateRange]);
+    }, [searchTerm, agentFilter]);
 
     const filteredLeads = useMemo(() => {
         return leads.filter(l =>
@@ -90,10 +76,9 @@ export default function BouncedEmailsPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Bounced Emails</h1>
-                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Leads whose emails bounced during outreach.</p>
+                    <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>All-time leads whose emails bounced during outreach.</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <DateRangePicker value={dateRange as any} onUpdate={(r: any) => setDateRange(r.range)} />
                     <button
                         onClick={fetchBounced}
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-secondary)', cursor: 'default' }}

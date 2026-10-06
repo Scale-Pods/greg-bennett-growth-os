@@ -25,17 +25,28 @@ export async function GET() {
         }
 
         const data = await balRes.json();
-        const usageData = await usageRes.json();
+
+        let used = 0;
+        let usageError = false;
+        if (usageRes.ok) {
+            const usageData = await usageRes.json();
+            used = Math.abs(parseFloat(usageData.usage_records?.[0]?.price || '0'));
+        } else {
+            usageError = true;
+            console.error('Twilio Usage API Error:', await usageRes.text());
+        }
 
         const balance = parseFloat(data.balance);
-        const used = Math.abs(parseFloat(usageData.usage_records?.[0]?.price || '0'));
 
         return NextResponse.json({
-            balance: balance,
-            used: used,
+            balance,
+            used,
+            // Approximation: assumes nothing besides usage has affected the balance
+            // (e.g. free trial credit, manual adjustments aren't accounted for).
             total_recharge: balance + used,
             currency: data.currency,
-            account_sid: data.account_sid
+            account_sid: data.account_sid,
+            ...(usageError ? { usageWarning: 'Usage total unavailable — showing balance only.' } : {}),
         });
     } catch (error) {
         console.error('Twilio Balance Fetch Exception:', error);
