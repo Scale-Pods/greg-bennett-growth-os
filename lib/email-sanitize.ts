@@ -1,13 +1,16 @@
-import DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtml from 'sanitize-html';
 
-const SANITIZE_OPTIONS = {
-    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'style', 'link', 'meta', 'base', 'form'],
-    FORBID_ATTR: [
-        'onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur',
-        'onchange', 'onsubmit', 'onkeydown', 'onkeyup', 'onkeypress',
-    ],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.:-]|$))/i,
-};
+// sanitize-html is pure JS (no jsdom/native deps), unlike isomorphic-dompurify
+// which pulls in jsdom and reliably crashes Vercel's serverless Node runtime
+// at module-load time (every request to a route importing it returns a
+// platform-level 500 before the route handler ever runs).
+const FORBIDDEN_TAGS = ['script', 'iframe', 'object', 'embed', 'style', 'link', 'meta', 'base', 'form'];
+const BLOCKED_EVENT_ATTRS = [
+    'onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur',
+    'onchange', 'onsubmit', 'onkeydown', 'onkeyup', 'onkeypress',
+];
+
+const ALLOWED_TAGS = sanitizeHtml.defaults.allowedTags.filter((tag) => !FORBIDDEN_TAGS.includes(tag));
 
 /** Pulls the inner content of a <body>...</body> block out of a full HTML
  *  document string. Falls back to the raw string if no body tag is found
@@ -27,7 +30,16 @@ export function sanitizeEmailHtml(raw: string | null | undefined): string | null
     if (!trimmed) return null;
 
     const bodyContent = extractBodyContent(trimmed);
-    const clean = DOMPurify.sanitize(bodyContent, SANITIZE_OPTIONS);
+    const clean = sanitizeHtml(bodyContent, {
+        disallowedTagsMode: 'discard',
+        allowedTags: ALLOWED_TAGS,
+        allowedAttributes: false, // keep all attributes on allowed tags; event handlers stripped below via exclusiveFilter
+        allowedSchemes: ['http', 'https', 'mailto'],
+        allowProtocolRelative: false,
+        exclusiveFilter: (frame) =>
+            BLOCKED_EVENT_ATTRS.some((attr) => Object.prototype.hasOwnProperty.call(frame.attribs || {}, attr)),
+    });
+
     const result = String(clean).trim();
     return result || null;
 }
