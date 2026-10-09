@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, RefreshCw, Loader2, Eye, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Search, RefreshCw, Loader2, Eye, ChevronLeft, ChevronRight, Sparkles, Link2, Check } from "lucide-react";
 import { BennettLoader } from "@/components/bennett-loader";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { startOfDay, endOfDay, subDays, format } from "date-fns";
@@ -45,6 +45,15 @@ export default function ReceivedEmailsPage() {
     const [sentimentFilter, setSentimentFilter] = useState("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [viewingReply, setViewingReply] = useState<NormalizedReply | null>(null);
+    const [linkCopied, setLinkCopied] = useState(false);
+
+    const handleCopyShareLink = () => {
+        if (!viewingReply) return;
+        const url = `${window.location.origin}/reply/${encodeURIComponent(viewingReply.messageId)}`;
+        navigator.clipboard.writeText(url);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+    };
 
     const fetchReplies = useCallback(async () => {
         setLoading(true);
@@ -270,12 +279,30 @@ export default function ReceivedEmailsPage() {
                 />
             </div>
 
-            <Dialog open={!!viewingReply} onOpenChange={(open) => { if (!open) setViewingReply(null); }}>
+            <Dialog open={!!viewingReply} onOpenChange={(open) => { if (!open) { setViewingReply(null); setLinkCopied(false); } }}>
                 <DialogContent className="apple-dialog max-w-2xl max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle style={{ color: 'var(--label-primary)' }}>
-                            {viewingReply?.replySubject || 'Reply'}
-                        </DialogTitle>
+                        <div className="flex items-start justify-between gap-3 pr-6">
+                            <DialogTitle style={{ color: 'var(--label-primary)' }}>
+                                {viewingReply?.replySubject || 'Reply'}
+                            </DialogTitle>
+                            {viewingReply && (
+                                <button
+                                    onClick={handleCopyShareLink}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
+                                        padding: '5px 11px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                                        cursor: 'pointer', transition: 'all 120ms',
+                                        background: linkCopied ? 'rgba(20,184,166,0.12)' : 'var(--glass-fill)',
+                                        border: `1px solid ${linkCopied ? 'rgba(20,184,166,0.28)' : 'var(--glass-border)'}`,
+                                        color: linkCopied ? 'var(--teal)' : 'var(--label-primary)',
+                                    }}
+                                >
+                                    {linkCopied ? <Check style={{ width: 12, height: 12 }} /> : <Link2 style={{ width: 12, height: 12 }} />}
+                                    {linkCopied ? 'Link Copied' : 'Copy Share Link'}
+                                </button>
+                            )}
+                        </div>
                     </DialogHeader>
                     {viewingReply && (
                         <div className="space-y-3 pt-2">

@@ -25,6 +25,11 @@ export async function proxy(request: NextRequest) {
         return NextResponse.next();
     }
 
+    // ALLOW PUBLIC ACCESS to shared email-reply links (bypassing auth entirely)
+    if (pathname.startsWith('/reply/')) {
+        return NextResponse.next();
+    }
+
     // Check if the user is attempting to access a dashboard route
     if (pathname.startsWith('/dashboard')) {
         // ALLOW PUBLIC ACCESS to specific chat links (bypassing auth)
