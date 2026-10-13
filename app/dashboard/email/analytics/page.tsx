@@ -20,7 +20,6 @@ import {
     UserMinus,
     Link2,
     Target,
-    DollarSign,
     RefreshCw,
 } from "lucide-react";
 import { AGENT_OPTIONS, AgentKey } from "@/lib/agents";
@@ -120,7 +119,6 @@ export default function EmailAnalyticsPage() {
                 <MetricCard label="Unsubscribed" value={(totals?.unsubscribedCount ?? 0).toLocaleString()} icon={UserMinus} color="var(--red)" />
                 <MetricCard label="Link Clicks (Unique)" value={(totals?.linkClickCountUnique ?? 0).toLocaleString()} icon={Link2} color="var(--cyan)" />
                 <MetricCard label="Opportunities" value={(totals?.totalOpportunities ?? 0).toLocaleString()} icon={Target} color="var(--label-secondary)" />
-                <MetricCard label="Opportunity Value" value={`$${(totals?.totalOpportunityValue ?? 0).toLocaleString()}`} icon={DollarSign} color="var(--green)" />
             </div>
 
             {/* Campaigns Table */}
@@ -167,7 +165,6 @@ export default function EmailAnalyticsPage() {
                                             <TableCell className="text-sm text-[var(--label-secondary)]">{c.unsubscribedCount.toLocaleString()}</TableCell>
                                             <TableCell className="text-sm text-[var(--label-secondary)]">
                                                 {c.totalOpportunities.toLocaleString()}
-                                                {c.totalOpportunityValue > 0 && ` ($${c.totalOpportunityValue.toLocaleString()})`}
                                             </TableCell>
                                         </TableRow>
                                     );
