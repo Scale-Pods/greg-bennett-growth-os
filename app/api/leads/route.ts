@@ -1,42 +1,19 @@
 import { NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { normalizeLeads } from '@/lib/leads-utils';
+import { getProjectClient } from '@/lib/supabase-projects';
+import { getAgent, AGENTS } from '@/lib/agents';
+import { extractDate } from '@/lib/leads-utils';
 
 export const dynamic = 'force-dynamic';
 
-interface AgentConfig {
-    key: string;
-    envPrefix: string;
-    outreachTable: string;
-}
+// Re-exported so existing importers (e.g. metrics/voice's OUTREACH_AGENTS)
+// keep working against the single source of truth in lib/agents.ts, now
+// covering all 8 businesses instead of the old hardcoded 7-entry list.
+export { AGENTS };
 
-export const AGENTS: AgentConfig[] = [
-    { key: 'recruiting', envPrefix: 'Realty', outreachTable: 'recruiting_ai_agent_outreach' },
-    { key: 'coaching', envPrefix: 'platinum', outreachTable: 'coaching_ai_agent_outreach' },
-    { key: 'investor', envPrefix: 'platinum', outreachTable: 'investor_funnel_ai_agent_outreach' },
-    { key: 'biglife', envPrefix: 'wealth', outreachTable: 'biglife_new_leads_outreach' },
-    { key: 'bigLifeNewCampaign', envPrefix: 'wealth', outreachTable: 'big_life_new_campaign_outreach' },
-    { key: 'homeSeller', envPrefix: 'wealth', outreachTable: 'home_seller_leads_outreach' },
-    { key: 'bootcampsFollowup', envPrefix: 'bootcamps', outreachTable: 'bootcamps_follow_up_outreach' },
-];
-
-const clientCache = new Map<string, SupabaseClient>();
-
-function getClient(envPrefix: string): SupabaseClient {
-    const cached = clientCache.get(envPrefix);
-    if (cached) return cached;
-
-    const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${envPrefix}`];
-    const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${envPrefix}`];
-    const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${envPrefix}`];
-
-    if (!url || !(serviceKey || anonKey)) {
-        throw new Error(`Missing Supabase env vars for prefix "${envPrefix}"`);
-    }
-
-    const client = createClient(url, (serviceKey || anonKey)!);
-    clientCache.set(envPrefix, client);
-    return client;
+function isTruthyText(v: unknown): boolean {
+    if (v === null || v === undefined) return false;
+    const s = String(v).trim();
+    return s !== '' && s.toLowerCase() !== 'no' && s.toLowerCase() !== 'null';
 }
 
 export async function GET(req: Request) {
@@ -45,7 +22,7 @@ export async function GET(req: Request) {
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
 
-    const cfg = AGENTS.find(a => a.key === agentKey);
+    const cfg = agentKey ? getAgent(agentKey) : undefined;
     if (!cfg) {
         return NextResponse.json(
             { error: `Invalid or missing "agent" param. Valid values: ${AGENTS.map(a => a.key).join(', ')}` },
@@ -61,23 +38,47 @@ export async function GET(req: Request) {
     }
 
     try {
-        const client = getClient(cfg.envPrefix);
-        const { data, error } = await client
-            .from(cfg.outreachTable)
-            .select('*')
-            .gte('created_at', from.toISOString())
-            .lte('created_at', to.toISOString())
-            .order('created_at', { ascending: false });
+        const client = getProjectClient(cfg.envPrefix);
+
+        // Realty's get_leads(from, to) takes no agent param (single-agent
+        // project); the other 3 projects' get_leads(from, to, agent) require it.
+        const rpcParams: Record<string, string> =
+            cfg.envPrefix === 'Realty'
+                ? { p_from: from.toISOString(), p_to: to.toISOString() }
+                : { p_from: from.toISOString(), p_to: to.toISOString(), p_agent: cfg.rpcAgentKey };
+
+        const { data, error } = await client.rpc('get_leads', rpcParams);
 
         if (error) {
-            console.error(`[leads:${cfg.key}] table error:`, error.message);
+            console.error(`[leads:${cfg.key}] rpc error:`, error.message);
             return NextResponse.json({ error: 'Query failed', detail: error.message }, { status: 502 });
         }
 
-        const leads = normalizeLeads(cfg.key, data || []);
+        const agent = data?.agent ?? cfg.key;
+        const rawLeads: any[] = Array.isArray(data?.leads) ? data.leads : [];
+
+        // The RPC returns raw emailReplyTrack/callReplyTrack text fields rather
+        // than the derived emailReplied/emailReplyDate/callReplied/callReplyDate
+        // booleans+dates that the frontend expects (previously computed by
+        // normalizeLeads). Derive them here using the same extractDate/
+        // isTruthyText logic from lib/leads-utils.ts.
+        const leads = rawLeads.map((r: any) => {
+            const emailReplyDate = extractDate(r.emailReplyTrack);
+            const callReplyDate = extractDate(r.callReplyTrack);
+
+            const { emailReplyTrack, callReplyTrack, ...rest } = r;
+
+            return {
+                ...rest,
+                emailReplied: isTruthyText(emailReplyTrack),
+                emailReplyDate: emailReplyDate ? emailReplyDate.toISOString() : null,
+                callReplied: isTruthyText(callReplyTrack),
+                callReplyDate: callReplyDate ? callReplyDate.toISOString() : null,
+            };
+        });
 
         return NextResponse.json(
-            { agent: cfg.key, leads },
+            { agent, leads },
             { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
         );
     } catch (err: any) {

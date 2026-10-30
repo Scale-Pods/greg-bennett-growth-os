@@ -1,75 +1,56 @@
 import { NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getProjectClient, ProjectPrefix } from '@/lib/supabase-projects';
 import { getTwilioCostLookup } from '@/lib/twilio-cost';
 
 export const dynamic = 'force-dynamic';
 
 interface CallLogAgentConfig {
     key: string;
-    envPrefix: string;
-    table: string;
+    envPrefix: ProjectPrefix;
     outreachTable?: string;
 }
 
+// Mirrors the OLD voice/calls-domain agent list (used only by the calls/voice
+// routes, distinct from lib/agents.ts's AGENTS list). 'inbound' has no
+// outreach table. bootcampsNewLeads is ADDED here (the old list omitted it
+// even though its table/outreach exist and the RPCs now support it).
 export const CALL_LOG_AGENTS: CallLogAgentConfig[] = [
-    { key: 'recruiting', envPrefix: 'Realty', table: 'vapi_call_logs_brs', outreachTable: 'recruiting_ai_agent_outreach' },
-    { key: 'coaching', envPrefix: 'platinum', table: 'vapi_call_logs_coaching', outreachTable: 'coaching_ai_agent_outreach' },
-    { key: 'investor', envPrefix: 'platinum', table: 'vapi_call_logs_investor', outreachTable: 'investor_funnel_ai_agent_outreach' },
-    { key: 'biglife', envPrefix: 'wealth', table: 'vapi_call_logs_biglife', outreachTable: 'biglife_new_leads_outreach' },
-    { key: 'bigLifeNewCampaign', envPrefix: 'wealth', table: 'vapi_call_logs_big_life_new_campaign', outreachTable: 'big_life_new_campaign_outreach' },
-    { key: 'homeSeller', envPrefix: 'wealth', table: 'vapi_call_logs_home_seller_leads', outreachTable: 'home_seller_leads_outreach' },
-    { key: 'bootcampsFollowup', envPrefix: 'bootcamps', table: 'vapi_call_logs_followup', outreachTable: 'bootcamps_follow_up_outreach' },
-    { key: 'inbound', envPrefix: 'wealth', table: 'vapi_call_logs_inbound' }, // no outreach table: inbound callers have no pre-existing lead record
+    { key: 'recruiting', envPrefix: 'Realty', outreachTable: 'recruiting_ai_agent_outreach' },
+    { key: 'coaching', envPrefix: 'platinum', outreachTable: 'coaching_ai_agent_outreach' },
+    { key: 'investor', envPrefix: 'platinum', outreachTable: 'investor_funnel_ai_agent_outreach' },
+    { key: 'biglife', envPrefix: 'wealth', outreachTable: 'biglife_new_leads_outreach' },
+    { key: 'bigLifeNewCampaign', envPrefix: 'wealth', outreachTable: 'big_life_new_campaign_outreach' },
+    { key: 'homeSeller', envPrefix: 'wealth', outreachTable: 'home_seller_leads_outreach' },
+    { key: 'bootcampsFollowup', envPrefix: 'bootcamps', outreachTable: 'bootcamps_follow_up_outreach' },
+    { key: 'bootcampsNewLeads', envPrefix: 'bootcamps', outreachTable: 'bootcamps_new_leads_outreach' },
+    { key: 'inbound', envPrefix: 'wealth' }, // no outreach table: inbound callers have no pre-existing lead record
 ];
 
-function normalizePhone(phone: unknown): string {
-    return typeof phone === 'string' ? phone.replace(/\D/g, '') : '';
-}
-
-const clientCache = new Map<string, SupabaseClient>();
-
-function getClient(envPrefix: string): SupabaseClient {
-    const cached = clientCache.get(envPrefix);
-    if (cached) return cached;
-
-    const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${envPrefix}`];
-    const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${envPrefix}`];
-    const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${envPrefix}`];
-
-    if (!url || !(serviceKey || anonKey)) {
-        throw new Error(`Missing Supabase env vars for prefix "${envPrefix}"`);
-    }
-
-    const client = createClient(url, (serviceKey || anonKey)!);
-    clientCache.set(envPrefix, client);
-    return client;
-}
-
-function normalizeRow(agent: string, d: any, telephonyCost: number | null, outreachMatch?: any) {
-    const agentCost = d.cost_usd ?? 0;
+function normalizeRpcRow(row: any, telephonyCost: number | null) {
+    const agentCost = row.cost ?? 0;
     return {
-        id: d.id,
-        agent,
-        isInbound: agent === 'inbound',
-        startedAt: d.started_at,
-        durationSeconds: d.duration_seconds || 0,
+        id: row.id,
+        agent: row.agent,
+        isInbound: row.isInbound ?? (row.agent === 'inbound'),
+        startedAt: row.startedAt,
+        durationSeconds: row.durationSeconds || 0,
         cost: agentCost,
         telephonyCost,
         totalCost: telephonyCost !== null ? agentCost + telephonyCost : agentCost,
-        phone: d.customer_phone || 'Unknown',
-        name: d.customer_name || 'Guest',
-        status: d.status || null,
-        voiceCallStatus: d.voice_call_status || null,
-        source: d.source || null,
-        summary: d.summary || null,
-        recordingUrl: d.recording_url || null,
-        note: d.note || null,
-        leadId: d.lead_id || null,
-        masterLeadId: outreachMatch?.master_lead_id ?? null,
-        voice1Sentiment: outreachMatch?.voice1_sentiment ?? d.call_sentiment ?? null,
-        call1Note: outreachMatch?.call1_note ?? null,
-        voice2Sentiment: outreachMatch?.voice2_sentiment ?? null,
-        call2Note: outreachMatch?.call2_note ?? null,
+        phone: row.phone || 'Unknown',
+        name: row.name || 'Guest',
+        status: row.status || null,
+        voiceCallStatus: row.voiceCallStatus || null,
+        source: row.source || null,
+        summary: row.summary || null,
+        recordingUrl: row.recordingUrl || null,
+        note: row.note || null,
+        leadId: row.leadId || null,
+        masterLeadId: row.masterLeadId ?? null,
+        voice1Sentiment: row.voice1Sentiment ?? null,
+        call1Note: row.call1Note ?? null,
+        voice2Sentiment: row.voice2Sentiment ?? null,
+        call2Note: row.call2Note ?? null,
     };
 }
 
@@ -96,46 +77,25 @@ export async function GET(req: Request) {
     }
 
     try {
-        const client = getClient(cfg.envPrefix);
-        const [{ data, error }, telephonyLookup, outreachRows] = await Promise.all([
-            client
-                .from(cfg.table)
-                .select('*')
-                .gte('started_at', from.toISOString())
-                .lte('started_at', to.toISOString())
-                .order('started_at', { ascending: false }),
+        const client = getProjectClient(cfg.envPrefix);
+        const [{ data, error }, telephonyLookup] = await Promise.all([
+            client.rpc('get_calls', { p_from: from.toISOString(), p_to: to.toISOString() }),
             includeTelephony ? getTwilioCostLookup(from, to) : Promise.resolve(null),
-            cfg.outreachTable
-                ? client.from(cfg.outreachTable).select('personal_phone, created_at, master_lead_id, voice1_sentiment, call1_note, voice2_sentiment, call2_note')
-                    .then(res => res.data || [])
-                : Promise.resolve([]),
         ]);
 
         if (error) {
-            console.error(`[calls:${cfg.key}] table error:`, error.message);
+            console.error(`[calls:${cfg.key}] rpc error:`, error.message);
             return NextResponse.json({ error: 'Query failed', detail: error.message }, { status: 502 });
         }
 
-        // A phone number can have multiple outreach rows (re-imports, duplicate leads).
-        // Prefer the row that actually has sentiment data; break ties by most recent.
-        const outreachByPhone = new Map<string, any>();
-        for (const row of outreachRows) {
-            const key = normalizePhone(row.personal_phone);
-            if (!key) continue;
-            const existing = outreachByPhone.get(key);
-            if (!existing) { outreachByPhone.set(key, row); continue; }
-            const rowHasData = !!(row.voice1_sentiment || row.call1_note || row.voice2_sentiment || row.call2_note);
-            const existingHasData = !!(existing.voice1_sentiment || existing.call1_note || existing.voice2_sentiment || existing.call2_note);
-            if (rowHasData && !existingHasData) { outreachByPhone.set(key, row); continue; }
-            if (rowHasData === existingHasData && new Date(row.created_at || 0) > new Date(existing.created_at || 0)) {
-                outreachByPhone.set(key, row);
-            }
-        }
+        // get_calls is project-scoped (returns ALL businesses in that project combined),
+        // so filter down to just the rows matching the requested agent.
+        const allRows: any[] = Array.isArray(data) ? data : [];
+        const filtered = allRows.filter(row => row.agent === cfg.key);
 
-        const calls = (data || []).map((row: any) => {
-            const telephonyCost = telephonyLookup ? telephonyLookup(row.customer_phone, row.started_at) : null;
-            const outreachMatch = outreachByPhone.get(normalizePhone(row.customer_phone));
-            return normalizeRow(cfg.key, row, telephonyCost, outreachMatch);
+        const calls = filtered.map((row: any) => {
+            const telephonyCost = telephonyLookup ? telephonyLookup(row.phone, row.startedAt) : null;
+            return normalizeRpcRow(row, telephonyCost);
         });
 
         return NextResponse.json(calls, {

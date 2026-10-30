@@ -1,36 +1,29 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getProjectClient } from '@/lib/supabase-projects';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const supabaseWealth = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL_wealth!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY_wealth! || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_wealth!
-        );
-
-        const supabaseRealty = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL_Realty!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY_Realty! || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_Realty!
-        );
-
-        const supabaseBootcamps = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL_bootcamps!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY_bootcamps! || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_bootcamps!
-        );
-
-        const [wealthRes, realtyRes, bootcampsRes] = await Promise.all([
-            supabaseWealth.from('bennett_wealth_inbound_leads').select('id', { count: 'exact' }),
-            supabaseRealty.from('bennett_realty_inbound_leads').select('id', { count: 'exact' }),
-            supabaseBootcamps.from('bennett_bootcamps_inbound_leads').select('id', { count: 'exact' }),
+        const [realtyRes, wealthRes, bootcampsRes] = await Promise.all([
+            getProjectClient('Realty').rpc('get_inbound_leads_count'),
+            getProjectClient('wealth').rpc('get_inbound_leads_count'),
+            getProjectClient('bootcamps').rpc('get_inbound_leads_count'),
         ]);
 
+        if (realtyRes.error) console.error('[inbound-leads-metrics:realty] rpc error:', realtyRes.error.message);
+        if (wealthRes.error) console.error('[inbound-leads-metrics:wealth] rpc error:', wealthRes.error.message);
+        if (bootcampsRes.error) console.error('[inbound-leads-metrics:bootcamps] rpc error:', bootcampsRes.error.message);
+
+        const realtyCount = realtyRes.data?.realtyCount ?? 0;
+        const wealthCount = wealthRes.data?.wealthCount ?? 0;
+        const bootcampsCount = bootcampsRes.data?.bootcampsCount ?? 0;
+
         return NextResponse.json({
-            wealthCount: wealthRes.count || 0,
-            realtyCount: realtyRes.count || 0,
-            bootcampsCount: bootcampsRes.count || 0,
-            totalCount: (wealthRes.count || 0) + (realtyRes.count || 0) + (bootcampsRes.count || 0)
+            wealthCount,
+            realtyCount,
+            bootcampsCount,
+            totalCount: wealthCount + realtyCount + bootcampsCount,
         });
     } catch (err: any) {
         console.error('[inbound-leads-metrics] fetch error:', err);

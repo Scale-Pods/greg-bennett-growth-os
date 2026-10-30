@@ -1,38 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getProjectClient } from '@/lib/supabase-projects';
+import type { ProjectPrefix } from '@/lib/supabase-projects';
 
 export const dynamic = 'force-dynamic';
 
-interface BusinessConfig {
-    key: string;
-    envPrefix: string;
-    table: string;
-}
-
-const BUSINESSES: BusinessConfig[] = [
-    { key: 'wealth', envPrefix: 'wealth', table: 'bennett_wealth_inbound_leads' },
-    { key: 'realty', envPrefix: 'Realty', table: 'bennett_realty_inbound_leads' },
-    { key: 'bootcamps', envPrefix: 'bootcamps', table: 'bennett_bootcamps_inbound_leads' },
-];
-
-const clientCache = new Map<string, SupabaseClient>();
-
-function getClient(envPrefix: string): SupabaseClient {
-    const cached = clientCache.get(envPrefix);
-    if (cached) return cached;
-
-    const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${envPrefix}`];
-    const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${envPrefix}`];
-    const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${envPrefix}`];
-
-    if (!url || !(serviceKey || anonKey)) {
-        throw new Error(`Missing Supabase env vars for prefix "${envPrefix}"`);
-    }
-
-    const client = createClient(url, (serviceKey || anonKey)!);
-    clientCache.set(envPrefix, client);
-    return client;
-}
+// platinum has no raw inbound-leads table/RPC, so it is intentionally excluded.
+const INBOUND_PROJECTS: ProjectPrefix[] = ['Realty', 'wealth', 'bootcamps'];
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -48,25 +21,23 @@ export async function GET(req: Request) {
 
     try {
         const results = await Promise.all(
-            BUSINESSES.map(async cfg => {
-                const client = getClient(cfg.envPrefix);
-                const { data, error } = await client
-                    .from(cfg.table)
-                    .select('*')
-                    .gte('created_at', from.toISOString())
-                    .lte('created_at', to.toISOString())
-                    .order('created_at', { ascending: false });
+            INBOUND_PROJECTS.map(async envPrefix => {
+                const client = getProjectClient(envPrefix);
+                const { data, error } = await client.rpc('get_inbound_leads', {
+                    p_from: from.toISOString(),
+                    p_to: to.toISOString(),
+                });
 
                 if (error) {
-                    console.error(`[inbound-leads:${cfg.key}] table error:`, error.message);
-                    return { key: cfg.key, leads: [] };
+                    console.error(`[inbound-leads:${envPrefix}] rpc error:`, error.message);
+                    return {};
                 }
 
-                return { key: cfg.key, leads: data || [] };
+                return (data && typeof data === 'object') ? data : {};
             })
         );
 
-        const byKey = Object.fromEntries(results.map(r => [r.key, r.leads]));
+        const byKey = Object.assign({}, ...results);
 
         return NextResponse.json(byKey, {
             headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },

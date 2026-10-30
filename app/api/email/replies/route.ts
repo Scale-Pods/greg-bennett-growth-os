@@ -1,33 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { getAgent } from '@/lib/agents';
-import { normalizeReplies, LeadLookup } from '@/lib/email-utils';
+import { getProjectClient } from '@/lib/supabase-projects';
 import { sanitizeEmailHtml } from '@/lib/email-sanitize';
 
 export const dynamic = 'force-dynamic';
-
-const clientCache = new Map<string, SupabaseClient>();
-
-function getClient(envPrefix: string): SupabaseClient {
-    const cached = clientCache.get(envPrefix);
-    if (cached) return cached;
-
-    const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${envPrefix}`];
-    const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${envPrefix}`];
-    const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${envPrefix}`];
-
-    if (!url || !(serviceKey || anonKey)) {
-        throw new Error(`Missing Supabase env vars for prefix "${envPrefix}"`);
-    }
-
-    const client = createClient(url, (serviceKey || anonKey)!);
-    clientCache.set(envPrefix, client);
-    return client;
-}
-
-function normalizeEmailKey(v: unknown): string {
-    return String(v || '').trim().toLowerCase();
-}
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -50,47 +26,32 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Invalid from/to date' }, { status: 400 });
     }
 
+    // Businesses with no Instantly replies table by design (e.g. bigLifeNewCampaign,
+    // homeSeller, bootcampsNewLeads) simply have no reply data -- return an empty
+    // list rather than calling a nonexistent RPC path for them.
+    if (cfg.repliesTable === null) {
+        return NextResponse.json(
+            { agent: cfg.key, replies: [] },
+            { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
+        );
+    }
+
     try {
-        const client = getClient(cfg.envPrefix);
+        const client = getProjectClient(cfg.envPrefix);
+        const { data, error } = await client.rpc('get_email_replies', {
+            p_from: from.toISOString(),
+            p_to: to.toISOString(),
+        });
 
-        const [repliesRes, leadsRes] = await Promise.all([
-            client
-                .from(cfg.repliesTable)
-                .select('*')
-                .gte('reply_timestamp', from.toISOString())
-                .lte('reply_timestamp', to.toISOString())
-                .order('reply_timestamp', { ascending: false }),
-            client
-                .from(cfg.outreachTable)
-                .select('id, full_name, First_Name, Personal_Email, Lead_Classification'),
-        ]);
-
-        if (repliesRes.error) {
-            console.error(`[email-replies:${cfg.key}] replies table error:`, repliesRes.error.message);
-            return NextResponse.json({ error: 'Query failed', detail: repliesRes.error.message }, { status: 502 });
-        }
-        if (leadsRes.error) {
-            console.error(`[email-replies:${cfg.key}] outreach table error:`, leadsRes.error.message);
+        if (error) {
+            console.error(`[email-replies:${cfg.key}] rpc error:`, error.message);
+            return NextResponse.json({ error: 'Query failed', detail: error.message }, { status: 502 });
         }
 
-        const leadsByEmail = new Map<string, LeadLookup>();
-        for (const row of leadsRes.data || []) {
-            const email = row.Personal_Email;
-            if (!email) continue;
-            leadsByEmail.set(normalizeEmailKey(email), {
-                id: String(row.id),
-                name: row.full_name || row.First_Name || 'Unknown',
-                email,
-                leadClassification: row.Lead_Classification || null,
-            });
-        }
-
-        const sanitizedRows = (repliesRes.data || []).map((r: any) => ({
-            ...r,
-            emailbody_sent: sanitizeEmailHtml(r.emailbody_sent),
-        }));
-
-        const replies = normalizeReplies(cfg.key, sanitizedRows, leadsByEmail);
+        const allReplies = Array.isArray(data) ? data : [];
+        const replies = allReplies
+            .filter((r: any) => r.agent === cfg.key)
+            .map((r: any) => ({ ...r, emailBodySent: sanitizeEmailHtml(r.emailBodySent) }));
 
         return NextResponse.json(
             { agent: cfg.key, replies },

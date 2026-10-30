@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { CALL_LOG_AGENTS } from '@/app/api/calls/route';
+import { getProjectClient, PROJECT_PREFIXES } from '@/lib/supabase-projects';
 import { GET as getCallById } from '@/app/api/calls/[id]/route';
 
 export const dynamic = 'force-dynamic';
@@ -8,14 +8,16 @@ export const dynamic = 'force-dynamic';
 /**
  * Public, shareable call view resolved by master_lead_id.
  *
- * master_lead_id lives on the *_outreach rows (one per lead). The call log rows
- * (vapi_call_logs_*) reference that outreach row via lead_id (= outreach.id).
- * So: master_lead_id -> outreach.id -> call log row -> call id, then we reuse the
+ * get_call_by_master_lead(masterLeadId, agent) requires knowing the agent
+ * ahead of time (it's not master-lead-id-ambiguous within a project's
+ * multi-business RPCs), so we try it across all plausible (project, agent)
+ * pairs in parallel and take the first non-null result, then delegate to the
  * existing /api/calls/[id] resolver for the full transcript/recording payload.
  *
  * Inbound calls (vapi_call_logs_inbound) have no outreach row / master_lead_id,
- * so the share link carries the call-log row id directly. When no outreach
- * mapping resolves, we fall back to treating the id as a direct call-log id.
+ * so the share link carries the call-log row id directly. When no
+ * master-lead match resolves, we fall back to treating the id as a direct
+ * call-log row id via get_call_by_id across all 4 projects.
  */
 export async function GET(
     _request: NextRequest,
@@ -26,64 +28,56 @@ export async function GET(
         return NextResponse.json({ error: 'Missing master lead id' }, { status: 400 });
     }
 
-    for (const cfg of CALL_LOG_AGENTS) {
-        if (!cfg.outreachTable) continue;
-        try {
-            const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${cfg.envPrefix}`];
-            const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${cfg.envPrefix}`];
-            const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${cfg.envPrefix}`];
-            if (!url || !(serviceKey || anonKey)) continue;
+    // Try get_call_by_master_lead across all 8 agents (their respective projects) in parallel.
+    const agentsWithOutreach = CALL_LOG_AGENTS.filter(a => a.outreachTable);
+    try {
+        const results = await Promise.all(
+            agentsWithOutreach.map(async cfg => {
+                try {
+                    const client = getProjectClient(cfg.envPrefix);
+                    const { data, error } = await client.rpc('get_call_by_master_lead', {
+                        p_master_lead_id: masterLeadId,
+                        p_agent: cfg.key,
+                    });
+                    if (error || !data) return null;
+                    return data;
+                } catch (e) {
+                    return null;
+                }
+            })
+        );
 
-            const client = createClient(url, (serviceKey || anonKey)!);
-
-            const { data: outreachRows } = await client
-                .from(cfg.outreachTable)
-                .select('id')
-                .eq('master_lead_id', masterLeadId);
-
-            const outreachIds = (outreachRows || []).map((r: any) => String(r.id));
-            if (outreachIds.length === 0) continue;
-
-            const { data: callRows } = await client
-                .from(cfg.table)
-                .select('id, started_at')
-                .in('lead_id', outreachIds)
-                .order('started_at', { ascending: false })
-                .limit(1);
-
-            const callId = callRows?.[0]?.id;
-            if (!callId) continue;
-
-            // Reuse the existing single-call resolver (Vapi + archived logs + sentiment).
-            return getCallById(_request, { params: Promise.resolve({ id: String(callId) }) });
-        } catch (e) {
-            // try next agent
+        const match = results.find(r => r != null);
+        if (match?.id) {
+            return getCallById(_request, { params: Promise.resolve({ id: String(match.id) }) });
         }
+    } catch (e) {
+        // fall through to fallback
     }
 
-    // Fallback: no outreach mapping resolved. The id may be a call-log row id
+    // Fallback: no master-lead mapping resolved. The id may be a call-log row id
     // directly — this is how inbound calls (vapi_call_logs_inbound), which have
-    // no outreach row, are shared. Check the call-log tables for a matching id.
-    for (const cfg of CALL_LOG_AGENTS) {
-        try {
-            const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${cfg.envPrefix}`];
-            const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${cfg.envPrefix}`];
-            const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${cfg.envPrefix}`];
-            if (!url || !(serviceKey || anonKey)) continue;
+    // no outreach row, are shared. Check get_call_by_id across all 4 projects.
+    try {
+        const results = await Promise.all(
+            PROJECT_PREFIXES.map(async prefix => {
+                try {
+                    const client = getProjectClient(prefix);
+                    const { data, error } = await client.rpc('get_call_by_id', { p_id: masterLeadId });
+                    if (error || !data) return null;
+                    return data;
+                } catch (e) {
+                    return null;
+                }
+            })
+        );
 
-            const client = createClient(url, (serviceKey || anonKey)!);
-            const { data: callRow } = await client
-                .from(cfg.table)
-                .select('id')
-                .eq('id', masterLeadId)
-                .maybeSingle();
-
-            if (!callRow?.id) continue;
-
-            return getCallById(_request, { params: Promise.resolve({ id: String(callRow.id) }) });
-        } catch (e) {
-            // try next table
+        const call = results.find(r => r != null);
+        if (call?.id) {
+            return getCallById(_request, { params: Promise.resolve({ id: String(call.id) }) });
         }
+    } catch (e) {
+        // fall through to not-found
     }
 
     return NextResponse.json({ error: 'Call not found' }, { status: 404 });

@@ -1,48 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getProjectClient, PROJECT_PREFIXES } from '@/lib/supabase-projects';
 
 export const dynamic = 'force-dynamic';
 
 export interface MasterMetrics {
     totalLeads: number;
     leadsDaily: { date: string; leads: number }[];
-}
-
-interface MasterTableConfig {
-    key: string;
-    envPrefix: string;
-    masterTable: string;
-}
-
-const MASTER_TABLES: MasterTableConfig[] = [
-    { key: 'recruiting', envPrefix: 'Realty', masterTable: 'master_leads' },
-    { key: 'coaching', envPrefix: 'platinum', masterTable: 'coaching_master_leads' },
-    { key: 'investor', envPrefix: 'platinum', masterTable: 'investor_funnel_master_leads' },
-    { key: 'biglife', envPrefix: 'wealth', masterTable: 'biglife_master_leads' },
-    { key: 'bootcampsFollowup', envPrefix: 'bootcamps', masterTable: 'master_followup_leads' },
-];
-
-const clientCache = new Map<string, SupabaseClient>();
-
-function getClient(envPrefix: string): SupabaseClient {
-    const cached = clientCache.get(envPrefix);
-    if (cached) return cached;
-
-    const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${envPrefix}`];
-    const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${envPrefix}`];
-    const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${envPrefix}`];
-
-    if (!url || !(serviceKey || anonKey)) {
-        throw new Error(`Missing Supabase env vars for prefix "${envPrefix}"`);
-    }
-
-    const client = createClient(url, (serviceKey || anonKey)!);
-    clientCache.set(envPrefix, client);
-    return client;
-}
-
-function toDayKey(iso: string): string {
-    return iso.slice(0, 10); // YYYY-MM-DD
 }
 
 export async function GET(req: Request) {
@@ -59,27 +22,21 @@ export async function GET(req: Request) {
 
     try {
         const results = await Promise.all(
-            MASTER_TABLES.map(async cfg => {
-                const client = getClient(cfg.envPrefix);
-                const [countRes, dailyRes] = await Promise.all([
-                    client.from(cfg.masterTable).select('id', { count: 'exact', head: true }),
-                    client
-                        .from(cfg.masterTable)
-                        .select('created_at')
-                        .gte('created_at', from.toISOString())
-                        .lte('created_at', to.toISOString()),
-                ]);
+            PROJECT_PREFIXES.map(async envPrefix => {
+                const client = getProjectClient(envPrefix);
+                const { data, error } = await client.rpc('get_master_metrics', {
+                    p_from: from.toISOString(),
+                    p_to: to.toISOString(),
+                });
 
-                if (countRes.error) {
-                    console.error(`[master-metrics:${cfg.key}] count error:`, countRes.error.message);
-                }
-                if (dailyRes.error) {
-                    console.error(`[master-metrics:${cfg.key}] daily error:`, dailyRes.error.message);
+                if (error) {
+                    console.error(`[master-metrics:${envPrefix}] rpc error:`, error.message);
+                    return { totalLeads: 0, leadsDaily: [] as { date: string; leads: number }[] };
                 }
 
                 return {
-                    totalLeads: countRes.count || 0,
-                    createdDates: (dailyRes.data || []).map((r: any) => r.created_at as string),
+                    totalLeads: typeof data?.totalLeads === 'number' ? data.totalLeads : 0,
+                    leadsDaily: Array.isArray(data?.leadsDaily) ? data.leadsDaily : [],
                 };
             })
         );
@@ -88,9 +45,9 @@ export async function GET(req: Request) {
 
         const dayBuckets = new Map<string, number>();
         for (const r of results) {
-            for (const createdAt of r.createdDates) {
-                const key = toDayKey(createdAt);
-                dayBuckets.set(key, (dayBuckets.get(key) || 0) + 1);
+            for (const entry of r.leadsDaily) {
+                const key = entry.date;
+                dayBuckets.set(key, (dayBuckets.get(key) || 0) + (entry.leads || 0));
             }
         }
 

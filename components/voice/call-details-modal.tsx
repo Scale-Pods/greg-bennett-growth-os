@@ -6,7 +6,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Play, Pause, Volume2, VolumeX, Phone, Clock, FileText, RotateCcw, RotateCw, Download, Copy, Check, Link2 } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Phone, Clock, FileText, RotateCcw, RotateCw, Download, Copy, Check, Link2, Loader2 } from "lucide-react";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
 export function useCallDetails(call: any, active: boolean, fetchUrl?: string) {
@@ -163,7 +163,7 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
                 }}
             >
                 <DialogHeader className="sr-only"><DialogTitle>Call Detail</DialogTitle></DialogHeader>
-                <CallDetailsCard {...details} shareHref={shareHref} />
+                <CallDetailsCard {...details} shareHref={shareHref} loading={details.loading} />
             </DialogContent>
         </Dialog>
     );
@@ -182,11 +182,12 @@ interface CallDetailsCardProps {
     extractedGuestName: string;
     audioUrl: string | null;
     shareHref?: string;
+    loading?: boolean;
 }
 
 export function CallDetailsCard({
     displayCall, messages, durationDisplay, durationSeconds, startedAtDisplay,
-    isInbound, callTypeDisplay, guestNumber, assistantName, extractedGuestName, audioUrl, shareHref,
+    isInbound, callTypeDisplay, guestNumber, assistantName, extractedGuestName, audioUrl, shareHref, loading,
 }: CallDetailsCardProps) {
     const [transcriptCopied, setTranscriptCopied] = useState(false);
     const [linkCopied, setLinkCopied] = useState(false);
@@ -294,7 +295,12 @@ export function CallDetailsCard({
 
                     {/* Messages */}
                     <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {(!messages || messages.length === 0) ? (
+                        {loading && (!messages || messages.length === 0) ? (
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--label-tertiary)', gap: 8 }}>
+                                <Loader2 className="animate-spin" style={{ width: 20, height: 20, opacity: 0.4 }} />
+                                <p style={{ fontSize: 12, fontWeight: 500, margin: 0 }}>Loading transcript...</p>
+                            </div>
+                        ) : (!messages || messages.length === 0) ? (
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--label-tertiary)', gap: 8 }}>
                                 <FileText style={{ width: 20, height: 20, opacity: 0.2 }} />
                                 <p style={{ fontSize: 12, fontWeight: 500, margin: 0 }}>No Transcript Found</p>

@@ -1,33 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { AGENTS } from '@/lib/agents';
-import { normalizeReplies, LeadLookup } from '@/lib/email-utils';
+import { PROJECT_PREFIXES, getProjectClient } from '@/lib/supabase-projects';
 import { sanitizeEmailHtml } from '@/lib/email-sanitize';
 
 export const dynamic = 'force-dynamic';
-
-const clientCache = new Map<string, SupabaseClient>();
-
-function getClient(envPrefix: string): SupabaseClient {
-    const cached = clientCache.get(envPrefix);
-    if (cached) return cached;
-
-    const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${envPrefix}`];
-    const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${envPrefix}`];
-    const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${envPrefix}`];
-
-    if (!url || !(serviceKey || anonKey)) {
-        throw new Error(`Missing Supabase env vars for prefix "${envPrefix}"`);
-    }
-
-    const client = createClient(url, (serviceKey || anonKey)!);
-    clientCache.set(envPrefix, client);
-    return client;
-}
-
-function normalizeEmailKey(v: unknown): string {
-    return String(v || '').trim().toLowerCase();
-}
 
 /**
  * Public, shareable single-reply view resolved by a token that is either the
@@ -36,8 +11,10 @@ function normalizeEmailKey(v: unknown): string {
  * only have the thread id on hand; when a thread has multiple replies the
  * most recent one is returned).
  *
- * The token alone doesn't say which agent's table the reply lives in, so
- * every agent's repliesTable is tried in turn until one matches.
+ * The token alone doesn't say which project's replies table the reply lives
+ * in, so each of the 4 projects' get_email_reply_by_token RPC is tried in
+ * turn (each RPC already internally covers whichever of its own businesses
+ * has a replies table) until one returns a non-null result.
  */
 export async function GET(
     _request: Request,
@@ -48,58 +25,26 @@ export async function GET(
         return NextResponse.json({ error: 'Missing reply id' }, { status: 400 });
     }
 
-    for (const cfg of AGENTS) {
+    for (const prefix of PROJECT_PREFIXES) {
         try {
-            const client = getClient(cfg.envPrefix);
+            const client = getProjectClient(prefix);
+            const { data, error } = await client.rpc('get_email_reply_by_token', { p_token: token });
 
-            // Try message_id first (exact, unique match).
-            let { data: row } = await client
-                .from(cfg.repliesTable)
-                .select('*')
-                .eq('message_id', token)
-                .maybeSingle();
-
-            // Fall back to thread_id (most recent reply on that thread).
-            if (!row) {
-                const { data: byThread } = await client
-                    .from(cfg.repliesTable)
-                    .select('*')
-                    .eq('thread_id', token)
-                    .order('reply_timestamp', { ascending: false })
-                    .limit(1);
-                row = byThread?.[0] ?? null;
+            if (error) {
+                console.error(`[email-reply-by-id:${prefix}] rpc error:`, error.message);
+                continue;
             }
 
-            if (!row) continue;
+            if (!data) continue;
 
-            const leadsByEmail = new Map<string, LeadLookup>();
-            if (row.lead_email_id) {
-                const { data: leadRows } = await client
-                    .from(cfg.outreachTable)
-                    .select('id, full_name, First_Name, Personal_Email, Lead_Classification')
-                    .ilike('Personal_Email', row.lead_email_id);
-
-                for (const leadRow of leadRows || []) {
-                    const email = leadRow.Personal_Email;
-                    if (!email) continue;
-                    leadsByEmail.set(normalizeEmailKey(email), {
-                        id: String(leadRow.id),
-                        name: leadRow.full_name || leadRow.First_Name || 'Unknown',
-                        email,
-                        leadClassification: leadRow.Lead_Classification || null,
-                    });
-                }
-            }
-
-            const sanitizedRow = { ...row, emailbody_sent: sanitizeEmailHtml(row.emailbody_sent) };
-            const [reply] = normalizeReplies(cfg.key, [sanitizedRow], leadsByEmail);
+            const reply = { ...data, emailBodySent: sanitizeEmailHtml((data as any).emailBodySent) };
 
             return NextResponse.json(
                 { reply },
                 { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
             );
         } catch (err) {
-            // try next agent's table
+            // try next project
         }
     }
 

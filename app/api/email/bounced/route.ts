@@ -1,28 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { getAgent, AGENTS } from '@/lib/agents';
-import { normalizeLeads } from '@/lib/leads-utils';
+import { getAgent } from '@/lib/agents';
+import { getProjectClient, PROJECT_PREFIXES } from '@/lib/supabase-projects';
 
 export const dynamic = 'force-dynamic';
-
-const clientCache = new Map<string, SupabaseClient>();
-
-function getClient(envPrefix: string): SupabaseClient {
-    const cached = clientCache.get(envPrefix);
-    if (cached) return cached;
-
-    const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${envPrefix}`];
-    const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${envPrefix}`];
-    const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${envPrefix}`];
-
-    if (!url || !(serviceKey || anonKey)) {
-        throw new Error(`Missing Supabase env vars for prefix "${envPrefix}"`);
-    }
-
-    const client = createClient(url, (serviceKey || anonKey)!);
-    clientCache.set(envPrefix, client);
-    return client;
-}
 
 // There's no bounce-event timestamp column on these tables, only the
 // email_bounced flag, so this is an all-time list (no date filtering).
@@ -30,34 +10,32 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const agentKey = searchParams.get('agent');
 
-    const agentsToFetch = agentKey && agentKey !== 'all' ? [getAgent(agentKey)].filter(Boolean) : AGENTS;
-    if (agentKey && agentKey !== 'all' && agentsToFetch.length === 0) {
+    if (agentKey && agentKey !== 'all' && !getAgent(agentKey)) {
         return NextResponse.json({ error: `Invalid "agent" param.` }, { status: 400 });
     }
 
     try {
-        const perAgent = await Promise.all(
-            agentsToFetch.map(async cfg => {
-                const client = getClient(cfg!.envPrefix);
-                const { data, error } = await client
-                    .from(cfg!.outreachTable)
-                    .select('*')
-                    .not('email_bounced', 'is', null)
-                    .not('email_bounced', 'eq', '')
-                    .not('email_bounced', 'ilike', 'no')
-                    .not('email_bounced', 'ilike', 'null')
-                    .order('created_at', { ascending: false });
+        const perProject = await Promise.all(
+            PROJECT_PREFIXES.map(async prefix => {
+                const client = getProjectClient(prefix);
+                const { data, error } = await client.rpc('get_email_bounced');
 
                 if (error) {
-                    console.error(`[email-bounced:${cfg!.key}] table error:`, error.message);
+                    console.error(`[email-bounced:${prefix}] rpc error:`, error.message);
                     return [];
                 }
 
-                return normalizeLeads(cfg!.key, data || []);
+                return Array.isArray(data?.leads) ? data.leads : [];
             })
         );
 
-        const leads = perAgent.flat().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        let leads = perProject.flat();
+
+        if (agentKey && agentKey !== 'all') {
+            leads = leads.filter((l: any) => l.agent === agentKey);
+        }
+
+        leads.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         return NextResponse.json(
             { leads },

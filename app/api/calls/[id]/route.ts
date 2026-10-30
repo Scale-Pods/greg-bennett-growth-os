@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CALL_LOG_AGENTS } from '@/app/api/calls/route';
-import { createClient } from '@supabase/supabase-js';
+import { getProjectClient, PROJECT_PREFIXES } from '@/lib/supabase-projects';
 
 function normalizePhone(phone: unknown): string {
     return typeof phone === 'string' ? phone.replace(/\D/g, '') : '';
 }
 
+/**
+ * Resolves outreach-matched sentiment/masterLeadId for a given agent+phone via
+ * the targeted get_outreach_match_by_phone RPC (indexed single-phone lookup),
+ * instead of pulling the entire all-time get_calls() result set just to find
+ * one row -- that previously made every call-detail page load take 5-8s.
+ */
 async function lookupOutreachSentiment(agentKey: string, phone: string) {
     const cfg = CALL_LOG_AGENTS.find(a => a.key === agentKey);
     if (!cfg?.outreachTable) return null;
@@ -13,28 +19,20 @@ async function lookupOutreachSentiment(agentKey: string, phone: string) {
     if (!targetPhone) return null;
 
     try {
-        const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${cfg.envPrefix}`];
-        const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${cfg.envPrefix}`];
-        const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${cfg.envPrefix}`];
-        if (!url || !(serviceKey || anonKey)) return null;
-
-        const client = createClient(url, (serviceKey || anonKey)!);
-        const { data } = await client
-            .from(cfg.outreachTable)
-            .select('personal_phone, created_at, master_lead_id, voice1_sentiment, call1_note, voice2_sentiment, call2_note')
-            .not('personal_phone', 'is', null);
-
-        // A phone number can have multiple outreach rows; prefer the one with actual
-        // sentiment data, breaking ties by most recently created.
-        const candidates = (data || []).filter((row: any) => normalizePhone(row.personal_phone) === targetPhone);
-        if (candidates.length === 0) return null;
-        candidates.sort((a: any, b: any) => {
-            const aHasData = !!(a.voice1_sentiment || a.call1_note || a.voice2_sentiment || a.call2_note);
-            const bHasData = !!(b.voice1_sentiment || b.call1_note || b.voice2_sentiment || b.call2_note);
-            if (aHasData !== bHasData) return aHasData ? -1 : 1;
-            return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        const client = getProjectClient(cfg.envPrefix);
+        const { data, error } = await client.rpc('get_outreach_match_by_phone', {
+            p_agent: agentKey,
+            p_phone: targetPhone,
         });
-        return candidates[0];
+        if (error || !data) return null;
+
+        return {
+            master_lead_id: data.masterLeadId ?? null,
+            voice1_sentiment: data.voice1Sentiment ?? null,
+            call1_note: data.call1Note ?? null,
+            voice2_sentiment: data.voice2Sentiment ?? null,
+            call2_note: data.call2Note ?? null,
+        };
     } catch (e) {
         return null;
     }
@@ -42,18 +40,14 @@ async function lookupOutreachSentiment(agentKey: string, phone: string) {
 
 // Inbound calls have no outreach table (callers aren't pre-existing leads); their sentiment
 // is saved directly on vapi_call_logs_inbound (call_sentiment) by the n8n receptionist workflow.
+// get_call_by_id in the wealth project already returns this as callSentiment for inbound rows.
 async function lookupInboundCallSentiment(callId: string): Promise<string | null> {
-    const cfg = CALL_LOG_AGENTS.find(a => a.key === 'inbound');
-    if (!cfg) return null;
     try {
-        const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${cfg.envPrefix}`];
-        const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${cfg.envPrefix}`];
-        const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${cfg.envPrefix}`];
-        if (!url || !(serviceKey || anonKey)) return null;
-
-        const client = createClient(url, (serviceKey || anonKey)!);
-        const { data } = await client.from(cfg.table).select('call_sentiment').eq('id', callId).maybeSingle();
-        return data?.call_sentiment ?? null;
+        const client = getProjectClient('wealth');
+        const { data, error } = await client.rpc('get_call_by_id', { p_id: callId });
+        if (error || !data) return null;
+        if (data.agent !== 'inbound') return null;
+        return data.callSentiment ?? null;
     } catch (e) {
         return null;
     }
@@ -173,45 +167,51 @@ export async function GET(
             } catch (err) { }
         }
 
-        // LAST RESORT: Check per-agent Supabase archived logs
-        for (const cfg of CALL_LOG_AGENTS) {
-            try {
-                const url = process.env[`NEXT_PUBLIC_SUPABASE_URL_${cfg.envPrefix}`];
-                const serviceKey = process.env[`SUPABASE_SERVICE_ROLE_KEY_${cfg.envPrefix}`];
-                const anonKey = process.env[`NEXT_PUBLIC_SUPABASE_ANON_KEY_${cfg.envPrefix}`];
-                if (!url || !(serviceKey || anonKey)) continue;
+        // LAST RESORT: try get_call_by_id across all 4 projects in parallel, take
+        // the first non-null result (mirrors the old sequential 8-table loop).
+        try {
+            const results = await Promise.all(
+                PROJECT_PREFIXES.map(async prefix => {
+                    try {
+                        const client = getProjectClient(prefix);
+                        const { data, error } = await client.rpc('get_call_by_id', { p_id: id });
+                        if (error || !data) return null;
+                        return data;
+                    } catch (e) {
+                        return null;
+                    }
+                })
+            );
 
-                const client = createClient(url, (serviceKey || anonKey)!);
-                const { data: call, error } = await client.from(cfg.table).select('*').eq('id', id).maybeSingle();
-                if (error || !call) continue;
-
-                const outreachMatch = await lookupOutreachSentiment(cfg.key, call.customer_phone);
+            const call = results.find(r => r != null);
+            if (call) {
+                const outreachMatch = await lookupOutreachSentiment(call.agent, call.phone);
 
                 return NextResponse.json({
                     id: call.id,
-                    agent: cfg.key,
-                    isInbound: cfg.key === 'inbound',
+                    agent: call.agent,
+                    isInbound: call.isInbound ?? (call.agent === 'inbound'),
                     transcript: call.transcript || [],
-                    callSummary: call.summary,
-                    startedAt: call.started_at,
-                    durationSeconds: call.duration_seconds || 0,
-                    status: call.status || call.voice_call_status || 'unknown',
-                    recordingUrl: call.recording_url,
+                    callSummary: call.callSummary,
+                    startedAt: call.startedAt,
+                    durationSeconds: call.durationSeconds || 0,
+                    status: call.status || call.voiceCallStatus || 'unknown',
+                    recordingUrl: call.recordingUrl,
                     source: call.source || 'vapi',
-                    customer_number: call.customer_phone,
-                    phone: call.customer_phone,
-                    name: resolveName(call.customer_name) !== 'Guest' ? resolveName(call.customer_name) : (extractNameFromTranscript(call.transcript) || 'Guest'),
-                    cost: `$${Number(call.cost_usd || 0).toFixed(3)}`,
-                    type: cfg.key === 'inbound' ? 'inbound' : undefined,
+                    customer_number: call.phone,
+                    phone: call.phone,
+                    name: resolveName(call.name) !== 'Guest' ? resolveName(call.name) : (extractNameFromTranscript(call.transcript) || 'Guest'),
+                    cost: `$${Number(call.cost || 0).toFixed(3)}`,
+                    type: call.agent === 'inbound' ? 'inbound' : undefined,
                     note: call.note ?? null,
                     masterLeadId: outreachMatch?.master_lead_id ?? null,
-                    voice1Sentiment: outreachMatch?.voice1_sentiment ?? call.call_sentiment ?? null,
+                    voice1Sentiment: outreachMatch?.voice1_sentiment ?? call.callSentiment ?? null,
                     call1Note: outreachMatch?.call1_note ?? null,
                     voice2Sentiment: outreachMatch?.voice2_sentiment ?? null,
                     call2Note: outreachMatch?.call2_note ?? null,
                 });
-            } catch (e) { }
-        }
+            }
+        } catch (e) { }
 
         return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     } catch (error) {
