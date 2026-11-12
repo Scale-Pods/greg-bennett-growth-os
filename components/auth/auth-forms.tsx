@@ -2,7 +2,7 @@
 
 import { useState, useActionState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { login, forgotPassword } from '@/app/actions/auth';
 
 type AuthMode = 'login' | 'forgot';
@@ -10,6 +10,8 @@ type AuthMode = 'login' | 'forgot';
 function StyledInput({ id, name, type, placeholder, required }: {
     id: string; name: string; type: string; placeholder: string; required?: boolean;
 }) {
+    const [show, setShow] = useState(false);
+    const isPassword = type === 'password';
     return (
         <div className="relative">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--label-tertiary)] pointer-events-none flex">
@@ -18,11 +20,23 @@ function StyledInput({ id, name, type, placeholder, required }: {
             <input
                 id={id}
                 name={name}
-                type={type}
+                type={isPassword && show ? 'text' : type}
                 placeholder={placeholder}
                 required={required}
                 className="auth-input"
+                style={isPassword ? { paddingRight: '2.75rem' } : undefined}
             />
+            {isPassword && (
+                <button
+                    type="button"
+                    onClick={() => setShow(s => !s)}
+                    aria-label={show ? 'Hide password' : 'Show password'}
+                    aria-pressed={show}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 flex p-1 text-[var(--label-tertiary)] hover:text-[var(--teal)] bg-transparent border-none cursor-pointer transition-colors"
+                >
+                    {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+            )}
         </div>
     );
 }

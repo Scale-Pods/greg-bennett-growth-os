@@ -6,12 +6,14 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Lock, ArrowRight, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Lock, ArrowRight, Loader2, CheckCircle2, XCircle, Eye, EyeOff } from 'lucide-react';
 import { resetPassword } from '@/app/actions/auth';
 
 export default function ResetPasswordPage() {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [hashError, setHashError] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
     const router = useRouter();
 
     const [state, action, isPending] = useActionState(resetPassword, null as any);
@@ -117,13 +119,23 @@ export default function ResetPasswordPage() {
                                         <Input
                                             id="password"
                                             name="password"
-                                            type="password"
+                                            type={showPassword ? 'text' : 'password'}
                                             placeholder="••••••••"
                                             required
                                             minLength={8}
                                             autoFocus
-                                            className="pl-10 h-11 rounded-xl text-slate-900 placeholder:text-slate-400"
+                                            className="pl-10 pr-11 h-11 rounded-xl text-slate-900 placeholder:text-slate-400"
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(s => !s)}
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                            aria-pressed={showPassword}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-transparent border-none cursor-pointer"
+                                            style={{ color: 'var(--label-tertiary)' }}
+                                        >
+                                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
                                     </div>
                                 </div>
 
@@ -136,11 +148,21 @@ export default function ResetPasswordPage() {
                                         <Input
                                             id="confirmPassword"
                                             name="confirmPassword"
-                                            type="password"
+                                            type={showConfirm ? 'text' : 'password'}
                                             placeholder="••••••••"
                                             required
-                                            className="pl-10 h-11 rounded-xl text-slate-900 placeholder:text-slate-400"
+                                            className="pl-10 pr-11 h-11 rounded-xl text-slate-900 placeholder:text-slate-400"
                                         />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirm(s => !s)}
+                                            aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                                            aria-pressed={showConfirm}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-transparent border-none cursor-pointer"
+                                            style={{ color: 'var(--label-tertiary)' }}
+                                        >
+                                            {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
                                     </div>
                                 </div>
 

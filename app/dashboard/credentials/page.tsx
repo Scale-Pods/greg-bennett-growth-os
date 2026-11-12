@@ -55,8 +55,8 @@ export default function CredentialsPage() {
     const router = useRouter();
 
     return (
-        <div className="space-y-5 pb-8 max-w-5xl mx-auto">
-            <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-6 relative min-h-[500px]">
+            <div className="grid gap-6 md:grid-cols-2">
                 {/* Email Section */}
                 <CredentialSection
                     title="Email Integration"
@@ -191,7 +191,7 @@ export default function CredentialsPage() {
 
 function CredentialSection({ title, description, icon: Icon, children, action, className }: any) {
     return (
-        <div className={`liquid-card overflow-hidden ${className || ""}`} style={{ padding: 0 }}>
+        <div className={`liquid-card ${className || ""}`} style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--separator)' }}>
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
