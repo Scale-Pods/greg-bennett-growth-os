@@ -14,7 +14,7 @@ function StyledInput({ id, name, type, placeholder, required }: {
     const isPassword = type === 'password';
     return (
         <div className="relative">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--label-tertiary)] pointer-events-none flex">
+            <div className="auth-input-icon">
                 {type === 'email' ? <Mail size={16} /> : <Lock size={16} />}
             </div>
             <input
@@ -32,7 +32,7 @@ function StyledInput({ id, name, type, placeholder, required }: {
                     onClick={() => setShow(s => !s)}
                     aria-label={show ? 'Hide password' : 'Show password'}
                     aria-pressed={show}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 flex p-1 text-[var(--label-tertiary)] hover:text-[var(--teal)] bg-transparent border-none cursor-pointer transition-colors"
+                    className="auth-input-toggle"
                 >
                     {show ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>

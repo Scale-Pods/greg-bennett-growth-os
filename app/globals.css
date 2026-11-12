@@ -521,6 +521,40 @@
   box-shadow: 0 0 0 3px rgba(10,132,255,0.20);
 }
 .auth-input::placeholder { color: var(--label-tertiary); font-weight: 400; }
+/* Keep browser autofill from painting a light background that hides the icons */
+.auth-input:-webkit-autofill,
+.auth-input:-webkit-autofill:hover,
+.auth-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--label-primary);
+  caret-color: var(--label-primary);
+  box-shadow: 0 0 0 1000px var(--fill-tertiary) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+/* Leading icon + show/hide toggle sit above the input and stay visible */
+.auth-input-icon,
+.auth-input-toggle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--label-secondary);
+}
+.auth-input-icon { left: 14px; pointer-events: none; }
+.auth-input-toggle {
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease;
+}
+.auth-input-toggle:hover { color: var(--blue); background: var(--fill-tertiary); }
+.auth-input-toggle:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 
 /* ═══════════════════════════════════════════════════════════════
    MODAL / DIALOG OVERRIDES
