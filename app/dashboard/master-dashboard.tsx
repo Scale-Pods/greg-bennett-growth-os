@@ -220,7 +220,7 @@ export default function MasterDashboard() {
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Master Dashboard</h1>
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Overview of all your campaigns</p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     <DateRangePicker value={dateRange as any} onUpdate={r => setDateRange(r.range)} />
                     <button
                         onClick={() => { if (dateRange?.from) { refreshMasterMetrics({ from: dateRange.from, to: dateRange.to || dateRange.from }); fetchInboundMetrics(); fetchAgentMetrics(dateRange.from, dateRange.to || dateRange.from); fetchVoiceTotals(dateRange.from, dateRange.to || dateRange.from); } }}

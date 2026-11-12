@@ -191,7 +191,7 @@ export function TwilioDialer() {
             {/* Floating trigger button */}
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-8 right-8 z-40 h-14 w-14 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-white shadow-[0_0_30px_-5px_rgba(15,157,88,0.7)] transition-all duration-200 flex items-center justify-center group"
+                className="fixed bottom-[16px] right-[16px] sm:bottom-8 sm:right-8 z-40 h-14 w-14 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-white shadow-[0_0_30px_-5px_rgba(15,157,88,0.7)] transition-all duration-200 flex items-center justify-center group"
                 aria-label="Open dialer"
             >
                 <Phone className="h-6 w-6 transition-transform duration-200 group-hover:rotate-12" />

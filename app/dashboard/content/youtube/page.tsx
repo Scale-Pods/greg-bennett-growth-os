@@ -143,7 +143,7 @@ export default function YoutubeApprovalsPage() {
             </div>
 
             <div className="liquid-card" style={{ padding: 16 }}>
-                <div className="flex flex-wrap items-center gap-2 mb-4">
+                <div data-filter-row className="flex flex-wrap items-center gap-2 mb-4">
                     <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
                         <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: 'var(--label-tertiary)' }} />
                         <Input
@@ -210,7 +210,7 @@ export default function YoutubeApprovalsPage() {
                 </Table>
 
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-4 pt-3" style={{ borderTop: '1px solid var(--separator)' }}>
+                    <div className="pagination-footer flex items-center justify-between mt-4 pt-3" style={{ borderTop: '1px solid var(--separator)' }}>
                         <span style={{ fontSize: 12, color: 'var(--label-tertiary)' }}>
                             Page {currentPage} of {totalPages} · {filteredRows.length} total
                         </span>

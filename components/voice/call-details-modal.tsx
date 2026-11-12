@@ -273,7 +273,7 @@ export function CallDetailsCard({
             </div>
 
             {/* Body grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 196px', gap: 12, flex: 1, overflow: 'hidden', minHeight: 0 }}>
+            <div className="call-body-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 196px', gap: 12, flex: 1, overflow: 'hidden', minHeight: 0 }}>
                 {/* Left: transcript panel */}
                 <div className="glass-panel flex flex-col h-full min-h-0">
                     <div className="glass-panel-header">

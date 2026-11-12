@@ -290,7 +290,7 @@ export default function VoiceLogsPage() {
             </div>
 
             {/* Filters Bar */}
-            <div className="liquid-card" style={{ padding: '10px 12px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+            <div data-filter-row className="liquid-card" style={{ padding: '10px 12px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                 <div style={{ position: 'relative', width: 180 }}>
                     <Search style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--label-tertiary)' }} />
                     <Input
@@ -408,7 +408,7 @@ export default function VoiceLogsPage() {
                 </div>
 
                 {/* Footer */}
-                <div style={{ padding: '12px 16px', borderTop: '1px solid var(--hairline)', background: 'var(--fill-quaternary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div className="pagination-footer" style={{ padding: '12px 16px', borderTop: '1px solid var(--hairline)', background: 'var(--fill-quaternary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <p style={{ fontSize: 12, color: 'var(--label-tertiary)' }}>
                         Showing <span style={{ fontWeight: 700, color: 'var(--label-primary)' }}>{calls.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}–{Math.min(currentPage * itemsPerPage, calls.length)}</span> of <span style={{ fontWeight: 700, color: 'var(--label-primary)' }}>{calls.length}</span> calls
                     </p>

@@ -175,32 +175,32 @@ export function DateRangePicker({
                     </button>
                 </PopoverTrigger>
                 <PopoverContent
-                    className="w-auto max-w-none p-0 border border-[var(--glass-border)] bg-[var(--bg-layer1)] rounded-[10px] shadow-lg overflow-hidden"
+                    className="w-auto max-w-[calc(100vw-16px)] p-0 border border-[var(--glass-border)] bg-[var(--bg-layer1)] rounded-[10px] shadow-lg overflow-hidden"
                     align="end"
                     sideOffset={6}
                 >
-                    <div className="flex">
+                    <div className="flex flex-col sm:flex-row">
                         {/* Preset List */}
-                        <div className="p-1.5 border-r border-[var(--glass-border)] w-[124px] flex flex-col gap-0.5">
+                        <div className="p-1.5 border-b sm:border-b-0 sm:border-r border-[var(--glass-border)] w-full sm:w-[124px] flex flex-row flex-wrap sm:flex-col gap-0.5">
                             {presets.map((preset) => (
                                 <button
                                     key={preset.label}
                                     onClick={() => handlePresetChange(preset.label)}
-                                    className={`w-full text-left px-2 py-1 rounded-[6px] text-[11.5px] font-medium leading-tight transition-colors ${activeLabel === preset.label ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
+                                    className={`sm:w-full text-left px-2 py-1 rounded-[6px] text-[11.5px] font-medium leading-tight transition-colors ${activeLabel === preset.label ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-secondary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
                                 >
                                     {preset.label}
                                 </button>
                             ))}
-                            <div className="h-px bg-[var(--glass-border)] my-1" />
+                            <div className="hidden sm:block h-px bg-[var(--glass-border)] my-1" />
                             <button
                                 onClick={() => setTempLabel("Custom Range")}
-                                className={`w-full text-left px-2 py-1 rounded-[6px] text-[11.5px] font-medium leading-tight transition-colors ${activeLabel === "Custom Range" ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-tertiary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
+                                className={`sm:w-full text-left px-2 py-1 rounded-[6px] text-[11.5px] font-medium leading-tight transition-colors ${activeLabel === "Custom Range" ? 'text-[var(--blue)] bg-[var(--blue)]/10' : 'text-[var(--label-tertiary)] hover:text-[var(--label-primary)] hover:bg-[var(--fill-tertiary)]'}`}
                             >
                                 Custom Range
                             </button>
                         </div>
                         {/* Calendar */}
-                        <div className="p-0">
+                        <div className="p-0 flex justify-center">
                             <Calendar
                                 initialFocus
                                 mode="range"

@@ -339,7 +339,7 @@ export default function InboundLeadsClient() {
 
                         {/* Pagination */}
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--separator)] bg-[var(--fill-quaternary)]">
+                            <div className="pagination-footer flex items-center justify-between px-4 py-2.5 border-t border-[var(--separator)] bg-[var(--fill-quaternary)]">
                                 <p className="text-xs text-[var(--label-secondary)]">
                                     Showing <span className="font-bold text-[var(--label-primary)]">{(page - 1) * LEADS_PER_PAGE + 1}</span>
                                     {"-"}

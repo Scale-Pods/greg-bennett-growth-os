@@ -8,7 +8,7 @@ import {
     LogOut, ChevronDown, Wallet, BarChart2, Users, Send,
     Key, ExternalLink, Inbox, AlertCircle, UserMinus,
     MessageSquare, Phone, Activity, ChevronLeft, ChevronRight,
-    Clapperboard, Youtube, Share2
+    Clapperboard, Youtube, Share2, Menu
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -75,7 +75,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const [sidebarExpanded, setSidebarExpanded] = useState(true);
+    const [hoverExpanded, setSidebarExpanded] = useState(true);
+    const [isMobile, setIsMobile] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const sidebarExpanded = isMobile || hoverExpanded;
     const [walletModal, setWalletModal] = useState<{ isOpen: boolean; type: 'vapi' | 'twilio' }>({
         isOpen: false, type: 'vapi',
     });
@@ -83,6 +86,23 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     const [vapiUsed, setVapiUsed] = useState<number | null>(null);
 
     const { calls, voiceBalance, twilioBalance, loadingBalances, loadingCalls, dateRange, setDateRange } = useData();
+
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 1023px)');
+        const update = () => { setIsMobile(mq.matches); if (!mq.matches) setMobileOpen(false); };
+        update();
+        mq.addEventListener('change', update);
+        return () => mq.removeEventListener('change', update);
+    }, []);
+
+    useEffect(() => { setMobileOpen(false); }, [pathname]);
+
+    useEffect(() => {
+        if (!mobileOpen) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [mobileOpen]);
 
     useEffect(() => {
         fetch('/api/vapi/cost')
@@ -110,7 +130,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     const sidebarWidth = sidebarExpanded ? 260 : 80;
 
     return (
-        <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-app)' }}>
+        <div className="flex h-[100dvh] overflow-hidden" style={{ background: 'var(--bg-app)' }}>
             {/* Sidebar */}
             <aside
                 style={{
@@ -123,9 +143,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     flexDirection: 'column',
                     position: 'relative',
                 }}
-                className="app-sidebar"
-                onMouseEnter={() => setSidebarExpanded(true)}
-                onMouseLeave={() => setSidebarExpanded(false)}
+                className={`app-sidebar${mobileOpen ? ' mobile-open' : ''}`}
+                onMouseEnter={() => { if (!isMobile) setSidebarExpanded(true); }}
+                onMouseLeave={() => { if (!isMobile) setSidebarExpanded(false); }}
             >
                 {/* Logo Area */}
                 <div style={{ height: 72, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -338,9 +358,25 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 </div>
             </aside>
 
+            {/* Mobile drawer backdrop */}
+            {mobileOpen && <div className="app-sidebar-backdrop" onClick={() => setMobileOpen(false)} aria-hidden />}
+
             {/* MAIN AREA */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
-                <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+                {/* Mobile top bar */}
+                <header className="app-mobile-bar">
+                    <button
+                        type="button"
+                        onClick={() => setMobileOpen(true)}
+                        aria-label="Open navigation menu"
+                        aria-expanded={mobileOpen}
+                        className="app-mobile-menu-btn"
+                    >
+                        <Menu size={20} />
+                    </button>
+                    <span className="app-mobile-title">{currentPageTitle}</span>
+                </header>
+                <main className="app-main">
                     {children}
                 </main>
             </div>

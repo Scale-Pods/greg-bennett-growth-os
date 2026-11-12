@@ -193,7 +193,7 @@ function CredentialSection({ title, description, icon: Icon, children, action, c
     return (
         <div className={`liquid-card ${className || ""}`} style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--separator)' }}>
-                <div className="flex items-center justify-between gap-[12px]">
+                <div className="flex flex-wrap items-center justify-between gap-[12px]">
                     <div className="flex items-center gap-[12px] min-w-0">
                         <div className="w-[32px] h-[32px] rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--fill-tertiary)' }}>
                             <Icon className="h-[16px] w-[16px]" style={{ color: 'var(--label-secondary)' }} />

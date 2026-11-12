@@ -114,7 +114,7 @@ export default function EmailDashboardPage() {
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Email Dashboard</h1>
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Overview of email campaigns across all agents</p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     <DateRangePicker value={dateRange as any} onUpdate={(r: any) => setDateRange(r.range)} />
                     <button
                         onClick={fetchOverview}

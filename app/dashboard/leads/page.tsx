@@ -168,7 +168,7 @@ export default function LeadsPage() {
                 </div>
 
                 {view === "leads" && (
-                    <div style={{ padding: '12px 14px', background: 'var(--fill-quaternary)', borderBottom: '1px solid var(--separator)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+                    <div data-filter-row style={{ padding: '12px 14px', background: 'var(--fill-quaternary)', borderBottom: '1px solid var(--separator)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
                         <div style={{ position: 'relative', flex: 1, minWidth: 240 }}>
                             <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--label-tertiary)', pointerEvents: 'none' }} />
                             <Input
@@ -393,7 +393,7 @@ function PaginationFooter({ totalItems, currentPage, itemsPerPage, onPageChange 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <div className="px-[24px] py-[16px] border-t border-[var(--separator)] bg-[var(--fill-quaternary)] flex items-center justify-between">
+        <div className="pagination-footer px-[24px] py-[16px] border-t border-[var(--separator)] bg-[var(--fill-quaternary)] flex items-center justify-between">
             <p className="text-sm text-[var(--label-secondary)]">
                 Showing <span className="font-bold text-[var(--label-primary)]">{totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-{Math.min(currentPage * itemsPerPage, totalItems)}</span> of {totalItems} items
             </p>

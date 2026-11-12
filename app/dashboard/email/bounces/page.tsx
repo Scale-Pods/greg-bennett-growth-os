@@ -95,7 +95,7 @@ export default function BouncedEmailsPage() {
             </div>
 
             {/* Filters */}
-            <div className="liquid-card" style={{ padding: '12px 14px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+            <div data-filter-row className="liquid-card" style={{ padding: '12px 14px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                 <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
                     <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--label-tertiary)' }} />
                     <Input
@@ -194,7 +194,7 @@ function PaginationFooter({ totalItems, currentPage, itemsPerPage, onPageChange 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <div className="px-6 py-4 border-t border-[var(--separator)] bg-[var(--fill-quaternary)] flex items-center justify-between">
+        <div className="pagination-footer px-6 py-4 border-t border-[var(--separator)] bg-[var(--fill-quaternary)] flex items-center justify-between">
             <p className="text-sm text-[var(--label-secondary)]">
                 Showing <span className="font-bold text-[var(--label-primary)]">{totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-{Math.min(currentPage * itemsPerPage, totalItems)}</span> of {totalItems} items
             </p>
