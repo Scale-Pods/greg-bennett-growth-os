@@ -125,9 +125,9 @@ export default function LeadsPage() {
 
     if (error) {
         return (
-            <div className="p-6">
+            <div className="p-[24px]">
                 <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
+                    <AlertCircle className="h-[16px] w-[16px]" />
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
@@ -136,18 +136,18 @@ export default function LeadsPage() {
     }
 
     return (
-        <div className="space-y-6 relative min-h-[500px]">
+        <div className="space-y-[24px] relative min-h-[500px]">
             {loading && leads.length === 0 && <BennettLoader />}
             <div className="flex items-center justify-between">
                 <div>
                     <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-heading)', color: 'var(--label-primary)' }}>Leads</h1>
                     <p style={{ fontSize: 13, color: 'var(--label-secondary)', marginTop: 2 }}>Manage and track your leads across all AI agents.</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-[8px]">
                     <DateRangePicker value={dateRange as any} onUpdate={(r: any) => setDateRange(r.range)} />
                     
                     <Button variant="outline" size="sm" onClick={() => view === "leads" ? fetchLeads() : fetchTemplates()} className="border-[var(--glass-border)] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] text-[var(--label-primary)] h-9">
-                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`h-[16px] w-[16px] mr-[8px] ${loading ? 'animate-spin' : ''}`} />
                         Refresh
                     </Button>
                     <div style={{ background: 'var(--fill-secondary)', border: '1px solid var(--glass-border)', padding: '6px 12px', borderRadius: 'var(--radius-md)', fontSize: 13, fontWeight: 500, color: 'var(--label-secondary)' }}>
@@ -158,8 +158,8 @@ export default function LeadsPage() {
 
             <div className="liquid-card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--separator)' }}>
-                    <div className="flex items-center gap-2">
-                        {view === "leads" ? <Users className="h-5 w-5 text-[var(--blue)]" /> : <AlertCircle className="h-5 w-5 text-[var(--purple)]" />}
+                    <div className="flex items-center gap-[8px]">
+                        {view === "leads" ? <Users className="h-[20px] w-[20px] text-[var(--blue)]" /> : <AlertCircle className="h-[20px] w-[20px] text-[var(--purple)]" />}
                         <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--label-primary)' }}>{view === "leads" ? "All Leads" : "Templates Library"}</h2>
                     </div>
                     <p style={{ fontSize: 12, color: 'var(--label-secondary)', marginTop: 2 }}>
@@ -179,7 +179,7 @@ export default function LeadsPage() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-[12px]">
                             <Select value={agent} onValueChange={(v) => setAgent(v as AgentKey | "all")}>
                                 <SelectTrigger className="border-none" style={{ width: 190, height: 40, background: 'var(--fill-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--label-primary)', borderRadius: 'var(--radius-md)' }}>
                                     <SelectValue placeholder="Agent" />
@@ -219,7 +219,7 @@ export default function LeadsPage() {
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="text-[var(--label-secondary)] hover:text-[var(--red)] h-10 px-3 hover:bg-[var(--fill-secondary)] rounded-md"
+                                    className="text-[var(--label-secondary)] hover:text-[var(--red)] h-10 px-[12px] hover:bg-[var(--fill-secondary)] rounded-md"
                                     onClick={() => {
                                         setSearchQuery("");
                                         setClassificationFilter("all");
@@ -253,8 +253,8 @@ export default function LeadsPage() {
                                         {loading && leads.length === 0 ? (
                                             <TableRow className="border-none hover:bg-transparent">
                                                 <TableCell colSpan={7} className="h-20 text-center text-sm">
-                                                    <div className="flex items-center justify-center gap-2 text-[var(--label-secondary)]">
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    <div className="flex items-center justify-center gap-[8px] text-[var(--label-secondary)]">
+                                                        <Loader2 className="h-[16px] w-[16px] animate-spin" />
                                                         Loading leads...
                                                     </div>
                                                 </TableCell>
@@ -308,15 +308,15 @@ export default function LeadsPage() {
                             />
                         </>
                     ) : (
-                        <div className="p-6 space-y-6">
+                        <div className="p-[24px] space-y-[24px]">
                             {/* Template Type Toggles */}
                             <div className="flex justify-center">
-                                <div className="bg-[var(--fill-tertiary)] p-1 rounded-lg inline-flex items-center gap-1">
+                                <div className="bg-[var(--fill-tertiary)] p-[4px] rounded-lg inline-flex items-center gap-[4px]">
                                     <Button
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => setTemplateFilter("email")}
-                                        className={`text-xs h-8 px-4 rounded-md transition-all ${templateFilter === "email" ? "bg-[var(--bg-layer1)] text-[var(--label-primary)] shadow-sm font-semibold" : "text-[var(--label-secondary)] hover:text-[var(--label-primary)]"}`}
+                                        className={`text-xs h-[32px] px-[16px] rounded-md transition-all ${templateFilter === "email" ? "bg-[var(--bg-layer1)] text-[var(--label-primary)] shadow-sm font-semibold" : "text-[var(--label-secondary)] hover:text-[var(--label-primary)]"}`}
                                     >
                                         Email Templates
                                     </Button>
@@ -324,7 +324,7 @@ export default function LeadsPage() {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => setTemplateFilter("whatsapp")}
-                                        className={`text-xs h-8 px-4 rounded-md transition-all ${templateFilter === "whatsapp" ? "bg-[var(--bg-layer1)] text-[var(--label-primary)] shadow-sm font-semibold" : "text-[var(--label-secondary)] hover:text-[var(--label-primary)]"}`}
+                                        className={`text-xs h-[32px] px-[16px] rounded-md transition-all ${templateFilter === "whatsapp" ? "bg-[var(--bg-layer1)] text-[var(--label-primary)] shadow-sm font-semibold" : "text-[var(--label-secondary)] hover:text-[var(--label-primary)]"}`}
                                     >
                                         WhatsApp Templates
                                     </Button>
@@ -332,24 +332,24 @@ export default function LeadsPage() {
                             </div>
 
                             {loading && templates.length === 0 ? (
-                                <div className="flex items-center justify-center h-24 text-[var(--label-secondary)] gap-2">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                <div className="flex items-center justify-center h-24 text-[var(--label-secondary)] gap-[8px]">
+                                    <Loader2 className="h-[16px] w-[16px] animate-spin" />
                                     Loading templates...
                                 </div>
                             ) : templates.filter(t => t.type === templateFilter).length === 0 ? (
                                 <div className="text-center text-[var(--label-secondary)] py-10">No {templateFilter} templates found.</div>
                             ) : (
                                 <>
-                                    <div className="grid grid-cols-1 gap-6 max-w-4xl mx-auto">
+                                    <div className="grid grid-cols-1 gap-[24px] max-w-4xl mx-auto">
                                         {templates
                                             .filter(t => t.type === templateFilter)
                                             .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                                             .map((template: any, idx) => (
                                                 <div key={template.id || idx} className="liquid-card border-none overflow-hidden" style={{ padding: 0 }}>
                                                     <div style={{ background: 'var(--fill-quaternary)', borderBottom: '1px solid var(--separator)', padding: '12px 16px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`p-2 rounded-md ${template.type === 'email' ? 'badge-blue' : 'badge-green'}`}>
-                                                                {template.type === 'email' ? <Mail className="h-4 w-4" /> : <Phone className="h-4 w-4" />}
+                                                        <div className="flex items-center gap-[12px]">
+                                                            <div className={`p-[8px] rounded-md ${template.type === 'email' ? 'badge-blue' : 'badge-green'}`}>
+                                                                {template.type === 'email' ? <Mail className="h-[16px] w-[16px]" /> : <Phone className="h-[16px] w-[16px]" />}
                                                             </div>
                                                             <div className="font-semibold text-[var(--label-primary)]">
                                                                 {template.name || `Template ${idx + 1}`}
@@ -361,7 +361,7 @@ export default function LeadsPage() {
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <div className="p-6 bg-transparent">
+                                                    <div className="p-[24px] bg-transparent">
                                                         <div className="whitespace-pre-wrap text-[var(--label-secondary)] font-sans leading-relaxed">
                                                             {typeof template.body === 'string' ? template.body :
                                                                 typeof template.components === 'object' ? JSON.stringify(template.components, null, 2) :
@@ -393,21 +393,21 @@ function PaginationFooter({ totalItems, currentPage, itemsPerPage, onPageChange 
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     return (
-        <div className="px-6 py-4 border-t border-[var(--separator)] bg-[var(--fill-quaternary)] flex items-center justify-between">
+        <div className="px-[24px] py-[16px] border-t border-[var(--separator)] bg-[var(--fill-quaternary)] flex items-center justify-between">
             <p className="text-sm text-[var(--label-secondary)]">
                 Showing <span className="font-bold text-[var(--label-primary)]">{totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-{Math.min(currentPage * itemsPerPage, totalItems)}</span> of {totalItems} items
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-[8px]">
                 <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0 border-[var(--glass-border)] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] text-[var(--label-primary)]"
+                    className="h-[32px] w-[32px] p-0 border-[var(--glass-border)] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] text-[var(--label-primary)]"
                     onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
                 >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-[16px] w-[16px]" />
                 </Button>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-[4px]">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;
                         if (totalPages <= 5) pageNum = i + 1;
@@ -422,7 +422,7 @@ function PaginationFooter({ totalItems, currentPage, itemsPerPage, onPageChange 
                                 key={pageNum}
                                 variant={isActive ? "default" : "outline"}
                                 size="sm"
-                                className={`h-8 w-8 p-0 text-xs ${isActive ? "bg-[var(--blue)] text-white hover:bg-[var(--blue)]/90" : "border-[var(--glass-border)] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] text-[var(--label-primary)]"}`}
+                                className={`h-[32px] w-[32px] p-0 text-xs ${isActive ? "bg-[var(--blue)] text-white hover:bg-[var(--blue)]/90" : "border-[var(--glass-border)] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] text-[var(--label-primary)]"}`}
                                 onClick={() => onPageChange(pageNum)}
                             >
                                 {pageNum}
@@ -433,11 +433,11 @@ function PaginationFooter({ totalItems, currentPage, itemsPerPage, onPageChange 
                 <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 p-0 border-[var(--glass-border)] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] text-[var(--label-primary)]"
+                    className="h-[32px] w-[32px] p-0 border-[var(--glass-border)] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] text-[var(--label-primary)]"
                     onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage >= totalPages}
                 >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-[16px] w-[16px]" />
                 </Button>
             </div>
         </div>

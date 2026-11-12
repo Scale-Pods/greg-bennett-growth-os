@@ -55,8 +55,8 @@ export default function CredentialsPage() {
     const router = useRouter();
 
     return (
-        <div className="space-y-6 relative min-h-[500px]">
-            <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-[24px] relative min-h-[500px]">
+            <div className="grid gap-[24px] md:grid-cols-2">
                 {/* Email Section */}
                 <CredentialSection
                     title="Email Integration"
@@ -64,14 +64,14 @@ export default function CredentialsPage() {
                     icon={Mail}
                     className="md:col-span-2"
                 >
-                    <div className="space-y-5">
+                    <div className="space-y-[20px]">
                         {loading ? (
                             <div className="text-sm animate-pulse" style={{ color: 'var(--label-tertiary)' }}>Detecting active email accounts...</div>
                         ) : (
                             emailGroups.map((group) => (
                                 <div key={group.business}>
-                                    <p className="text-xs font-semibold mb-2" style={{ color: 'var(--label-secondary)' }}>{group.business}</p>
-                                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    <p className="text-xs font-semibold mb-[8px]" style={{ color: 'var(--label-secondary)' }}>{group.business}</p>
+                                    <div className="grid gap-[12px] sm:grid-cols-2 lg:grid-cols-3">
                                         {group.emails.map((email, idx) => (
                                             <ReadOnlyField key={email} label={`Sender ${idx + 1}`} value={email} />
                                         ))}
@@ -89,7 +89,7 @@ export default function CredentialsPage() {
                     icon={Phone}
                     className="md:col-span-2"
                 >
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-[12px] sm:grid-cols-2">
                         {provisionedNumbers.map((entry) => (
                             <PhoneNumberField key={entry.number} number={entry.number} label={entry.label} note={entry.note} />
                         ))}
@@ -103,26 +103,26 @@ export default function CredentialsPage() {
                     icon={Mic}
                     className="md:col-span-2"
                     action={
-                        <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" className="border-[var(--glass-border)] text-[var(--blue)] hover:bg-[var(--fill-secondary)] text-xs h-8 px-3" onClick={() => router.push('/dashboard/voice/logs')}>
+                        <div className="flex items-center gap-[8px]">
+                            <Button size="sm" variant="outline" className="border-[var(--glass-border)] text-[var(--blue)] hover:bg-[var(--fill-secondary)] text-xs h-[32px] px-[12px]" onClick={() => router.push('/dashboard/voice/logs')}>
                                 <BarChart3 className="h-3.5 w-3.5" />
                                 Cost Analysis
                             </Button>
-                            <Button size="sm" className="bg-[var(--blue)] hover:opacity-90 text-white gap-1.5 text-xs h-8 px-3" onClick={() => window.open('https://dashboard.vapi.ai/login', '_blank')}>
+                            <Button size="sm" className="bg-[var(--blue)] hover:opacity-90 text-white gap-[6px] text-xs h-[32px] px-[12px]" onClick={() => window.open('https://dashboard.vapi.ai/login', '_blank')}>
                                 <Wallet className="h-3.5 w-3.5" />
                                 Vapi Wallet
                             </Button>
                         </div>
                     }
                 >
-                    <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
-                        <div className="flex items-center gap-3">
-                            <div className="p-1.5 rounded-md" style={{ background: 'var(--fill-secondary)', border: '1px solid var(--glass-border)' }}>
-                                <Mic className="h-4 w-4" style={{ color: 'var(--blue)' }} />
+                    <div className="flex items-center justify-between p-[16px] rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
+                        <div className="flex items-center gap-[12px]">
+                            <div className="p-[6px] rounded-md" style={{ background: 'var(--fill-secondary)', border: '1px solid var(--glass-border)' }}>
+                                <Mic className="h-[16px] w-[16px]" style={{ color: 'var(--blue)' }} />
                             </div>
                             <div>
                                 <p className="text-sm font-semibold" style={{ color: 'var(--label-primary)' }}>Vapi Credits Used</p>
-                                <span className="inline-block mt-1 text-[10px] font-semibold px-2.5 py-0.5 rounded-full" style={{ background: 'rgba(10,132,255,0.10)', color: 'var(--blue)', border: '1px solid rgba(10,132,255,0.20)' }}>
+                                <span className="inline-block mt-[4px] text-[10px] font-semibold px-2.5 py-[2px] rounded-full" style={{ background: 'rgba(10,132,255,0.10)', color: 'var(--blue)', border: '1px solid rgba(10,132,255,0.20)' }}>
                                     Total Lifetime Consumption
                                 </span>
                             </div>
@@ -143,17 +143,17 @@ export default function CredentialsPage() {
                     icon={Smartphone}
                     className="md:col-span-2"
                     action={
-                        <Button size="sm" className="bg-[var(--red)] hover:opacity-90 text-white gap-1.5 text-xs h-8 px-3" onClick={() => window.open('https://console.twilio.com', '_blank')}>
+                        <Button size="sm" className="bg-[var(--red)] hover:opacity-90 text-white gap-[6px] text-xs h-[32px] px-[12px]" onClick={() => window.open('https://console.twilio.com', '_blank')}>
                             <ExternalLink className="h-3.5 w-3.5" />
                             Twilio Console
                         </Button>
                     }
                 >
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
-                            <div className="flex items-center gap-3">
-                                <div className="p-1.5 rounded-md" style={{ background: 'var(--fill-secondary)', border: '1px solid var(--glass-border)' }}>
-                                    <Smartphone className="h-4 w-4" style={{ color: 'var(--red)' }} />
+                    <div className="space-y-[12px]">
+                        <div className="flex items-center justify-between p-[12px] rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
+                            <div className="flex items-center gap-[12px]">
+                                <div className="p-[6px] rounded-md" style={{ background: 'var(--fill-secondary)', border: '1px solid var(--glass-border)' }}>
+                                    <Smartphone className="h-[16px] w-[16px]" style={{ color: 'var(--red)' }} />
                                 </div>
                                 <div>
                                     <p className="text-sm font-semibold" style={{ color: 'var(--label-primary)' }}>Twilio Account</p>
@@ -168,16 +168,16 @@ export default function CredentialsPage() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="p-3 rounded-xl text-center" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
+                        <div className="grid grid-cols-2 gap-[12px]">
+                            <div className="p-[12px] rounded-xl text-center" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
                                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--label-tertiary)' }}>Total Recharge</p>
-                                <p className="text-base font-bold mt-0.5" style={{ color: 'var(--label-primary)' }}>
+                                <p className="text-base font-bold mt-[2px]" style={{ color: 'var(--label-primary)' }}>
                                     {twilioBalance?.total_recharge !== undefined ? `$${twilioBalance.total_recharge.toFixed(2)}` : '---'}
                                 </p>
                             </div>
-                            <div className="p-3 rounded-xl text-center" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
+                            <div className="p-[12px] rounded-xl text-center" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
                                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--label-tertiary)' }}>Used</p>
-                                <p className="text-base font-bold mt-0.5" style={{ color: 'var(--label-secondary)' }}>
+                                <p className="text-base font-bold mt-[2px]" style={{ color: 'var(--label-secondary)' }}>
                                     {twilioBalance?.used !== undefined ? `$${twilioBalance.used.toFixed(2)}` : '---'}
                                 </p>
                             </div>
@@ -193,10 +193,10 @@ function CredentialSection({ title, description, icon: Icon, children, action, c
     return (
         <div className={`liquid-card ${className || ""}`} style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--separator)' }}>
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--fill-tertiary)' }}>
-                            <Icon className="h-4 w-4" style={{ color: 'var(--label-secondary)' }} />
+                <div className="flex items-center justify-between gap-[12px]">
+                    <div className="flex items-center gap-[12px] min-w-0">
+                        <div className="w-[32px] h-[32px] rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--fill-tertiary)' }}>
+                            <Icon className="h-[16px] w-[16px]" style={{ color: 'var(--label-secondary)' }} />
                         </div>
                         <div className="min-w-0">
                             <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--label-primary)' }}>{title}</h2>
@@ -215,21 +215,21 @@ function CredentialSection({ title, description, icon: Icon, children, action, c
 
 function PhoneNumberField({ number, label, note }: { number: string; label: string; note?: string }) {
     return (
-        <div className="p-3 rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
-            <div className="flex items-start justify-between gap-2">
+        <div className="p-[12px] rounded-xl" style={{ background: 'var(--fill-quaternary)', border: '1px solid var(--glass-border)' }}>
+            <div className="flex items-start justify-between gap-[8px]">
                 <div className="min-w-0">
                     <p className="text-sm font-semibold" style={{ color: 'var(--label-primary)' }}>{label}</p>
-                    <p className="text-base font-bold font-mono mt-1 tabular-nums" style={{ color: 'var(--blue)' }}>+{number}</p>
+                    <p className="text-base font-bold font-mono mt-[4px] tabular-nums" style={{ color: 'var(--blue)' }}>+{number}</p>
                     {note && (
-                        <p className="text-[11px] mt-1.5 leading-snug" style={{ color: 'var(--label-tertiary)' }}>{note}</p>
+                        <p className="text-[11px] mt-[6px] leading-snug" style={{ color: 'var(--label-tertiary)' }}>{note}</p>
                     )}
                 </div>
                 <button
                     onClick={() => navigator.clipboard.writeText(`+${number}`)}
-                    className="h-6 w-6 flex items-center justify-center rounded-md shrink-0"
+                    className="h-[24px] w-[24px] flex items-center justify-center rounded-md shrink-0"
                     style={{ color: 'var(--label-tertiary)', border: '1px solid var(--glass-border)' }}
                 >
-                    <Copy className="h-3 w-3" />
+                    <Copy className="h-[12px] w-[12px]" />
                 </button>
             </div>
         </div>
@@ -245,20 +245,20 @@ function ReadOnlyField({ label, value, isPassword }: { label: string, value: str
 
     return (
         <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--label-tertiary)' }}>{label}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-[4px]" style={{ color: 'var(--label-tertiary)' }}>{label}</p>
             <div className="relative group">
-                <div className="flex items-center w-full rounded-md px-2.5 py-1.5 text-xs" style={{ border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-primary)' }}>
+                <div className="flex items-center w-full rounded-md px-2.5 py-[6px] text-xs" style={{ border: '1px solid var(--glass-border)', background: 'var(--fill-tertiary)', color: 'var(--label-primary)' }}>
                     <span className={`flex-1 truncate ${isPassword && !show ? 'font-mono tracking-widest' : ''}`}>
                         {displayValue}
                     </span>
-                    <div className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-[2px] ml-[4px] opacity-0 group-hover:opacity-100 transition-opacity">
                         {isPassword && (
-                            <button onClick={() => setShow(!show)} className="h-5 w-5 flex items-center justify-center" style={{ color: 'var(--label-tertiary)' }}>
-                                {show ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            <button onClick={() => setShow(!show)} className="h-[20px] w-[20px] flex items-center justify-center" style={{ color: 'var(--label-tertiary)' }}>
+                                {show ? <EyeOff className="h-[12px] w-[12px]" /> : <Eye className="h-[12px] w-[12px]" />}
                             </button>
                         )}
-                        <button onClick={() => navigator.clipboard.writeText(value)} className="h-5 w-5 flex items-center justify-center" style={{ color: 'var(--label-tertiary)' }}>
-                            <Copy className="h-3 w-3" />
+                        <button onClick={() => navigator.clipboard.writeText(value)} className="h-[20px] w-[20px] flex items-center justify-center" style={{ color: 'var(--label-tertiary)' }}>
+                            <Copy className="h-[12px] w-[12px]" />
                         </button>
                     </div>
                 </div>
