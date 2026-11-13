@@ -50,7 +50,7 @@ export function DateRangePicker({
     }, [open, date])
 
     if (!isMounted) {
-        return <div className={cn("h-8 w-[190px] rounded-[8px] animate-pulse", className)} style={{ background: 'var(--fill-tertiary)' }}></div>
+        return <div className={cn("h-7 w-[170px] rounded-[7px] animate-pulse", className)} style={{ background: 'var(--fill-tertiary)' }}></div>
     }
 
     const presets = [
@@ -156,9 +156,9 @@ export function DateRangePicker({
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <button
-                        className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-[8px] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] border border-[var(--glass-border)] text-[var(--label-primary)] text-[12px] font-medium leading-none transition-colors whitespace-nowrap"
+                        className="inline-flex items-center gap-1 h-7 px-2 rounded-[7px] bg-[var(--fill-tertiary)] hover:bg-[var(--fill-secondary)] border border-[var(--glass-border)] text-[var(--label-primary)] text-[11px] font-medium leading-none transition-colors whitespace-nowrap"
                     >
-                        <CalendarIcon className="w-3 h-3 text-[var(--blue)] shrink-0" />
+                        <CalendarIcon className="w-[11px] h-[11px] text-[var(--blue)] shrink-0" />
                         <span className="tabular-nums">
                             {date?.from ? (
                                 date.to ? (
@@ -175,7 +175,7 @@ export function DateRangePicker({
                     </button>
                 </PopoverTrigger>
                 <PopoverContent
-                    className="w-auto max-w-[calc(100vw-16px)] p-0 border border-[var(--glass-border)] bg-[var(--bg-layer1)] rounded-[10px] shadow-lg overflow-hidden"
+                    className="date-range-popover w-auto max-w-[calc(100vw-16px)] p-0 border border-[var(--glass-border)] bg-[var(--bg-layer1)] rounded-[10px] shadow-lg overflow-hidden"
                     align="end"
                     sideOffset={6}
                 >

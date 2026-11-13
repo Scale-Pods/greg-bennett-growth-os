@@ -936,6 +936,16 @@
   border: none !important;
 }
 
+/* Date range picker panel: must be fully opaque so page content never bleeds
+   through the calendar dates (overrides the translucent glass popover above). */
+.date-range-popover.date-range-popover {
+  background: var(--bg-layer1) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
+}
+
 [data-slot="dropdown-menu-item"] {
   font-size: 13px !important;
   font-weight: 500 !important;
