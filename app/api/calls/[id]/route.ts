@@ -1,37 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CALL_LOG_AGENTS } from '@/app/api/calls/route';
 import { getProjectClient, PROJECT_PREFIXES } from '@/lib/supabase-projects';
+import { buildVoiceSlots, VoiceSlot } from '@/lib/voice-slots';
 
 function normalizePhone(phone: unknown): string {
     return typeof phone === 'string' ? phone.replace(/\D/g, '') : '';
 }
 
+function findSlot(slots: VoiceSlot[], n: number) {
+    return slots.find(s => s.slot === n) ?? null;
+}
+
 /**
- * Resolves outreach-matched sentiment/masterLeadId for a given agent+phone via
- * the targeted get_outreach_match_by_phone RPC (indexed single-phone lookup),
- * instead of pulling the entire all-time get_calls() result set just to find
- * one row -- that previously made every call-detail page load take 5-8s.
+ * Resolves the full outreach row (all 10 voice{N}_sentiment/call{N}_note
+ * slots, not just 1-2) matching an agent+phone, by querying the outreach
+ * table directly instead of the old get_outreach_match_by_phone RPC -- that
+ * RPC only ever selected/returned voice1/voice2, which is why the "Voice
+ * Analysis" panel and share-link page could never show calls 3-10.
  */
 async function lookupOutreachSentiment(agentKey: string, phone: string) {
     const cfg = CALL_LOG_AGENTS.find(a => a.key === agentKey);
     if (!cfg?.outreachTable) return null;
     const targetPhone = normalizePhone(phone);
-    if (!targetPhone) return null;
+    const last10 = targetPhone.slice(-10);
+    if (last10.length < 7) return null;
 
     try {
         const client = getProjectClient(cfg.envPrefix);
-        const { data, error } = await client.rpc('get_outreach_match_by_phone', {
-            p_agent: agentKey,
-            p_phone: targetPhone,
-        });
+        const { data, error } = await client
+            .from(cfg.outreachTable)
+            .select('*')
+            .ilike('personal_phone', `%${last10}%`)
+            .limit(1)
+            .maybeSingle();
         if (error || !data) return null;
 
         return {
-            master_lead_id: data.masterLeadId ?? null,
-            voice1_sentiment: data.voice1Sentiment ?? null,
-            call1_note: data.call1Note ?? null,
-            voice2_sentiment: data.voice2Sentiment ?? null,
-            call2_note: data.call2Note ?? null,
+            outreach_id: data.id ?? null,
+            personal_phone: data.personal_phone ?? null,
+            master_lead_id: data.master_lead_id ?? null,
+            voice_slots: buildVoiceSlots(data),
         };
     } catch (e) {
         return null;
@@ -158,10 +166,13 @@ export async function GET(
                         source: 'vapi',
                         audio_url: data.recordingUrl,
                         masterLeadId: outreachMatch?.master_lead_id ?? null,
-                        voice1Sentiment: outreachMatch?.voice1_sentiment ?? inboundSentiment ?? null,
-                        call1Note: outreachMatch?.call1_note ?? null,
-                        voice2Sentiment: outreachMatch?.voice2_sentiment ?? null,
-                        call2Note: outreachMatch?.call2_note ?? null,
+                        outreachId: outreachMatch?.outreach_id ?? null,
+                        personal_phone: outreachMatch?.personal_phone ?? null,
+                        voiceSlots: outreachMatch?.voice_slots ?? [],
+                        voice1Sentiment: findSlot(outreachMatch?.voice_slots ?? [], 1)?.sentiment ?? inboundSentiment ?? null,
+                        call1Note: findSlot(outreachMatch?.voice_slots ?? [], 1)?.note ?? null,
+                        voice2Sentiment: findSlot(outreachMatch?.voice_slots ?? [], 2)?.sentiment ?? null,
+                        call2Note: findSlot(outreachMatch?.voice_slots ?? [], 2)?.note ?? null,
                     });
                 }
             } catch (err) { }
@@ -205,10 +216,13 @@ export async function GET(
                     type: call.agent === 'inbound' ? 'inbound' : undefined,
                     note: call.note ?? null,
                     masterLeadId: outreachMatch?.master_lead_id ?? null,
-                    voice1Sentiment: outreachMatch?.voice1_sentiment ?? call.callSentiment ?? null,
-                    call1Note: outreachMatch?.call1_note ?? null,
-                    voice2Sentiment: outreachMatch?.voice2_sentiment ?? null,
-                    call2Note: outreachMatch?.call2_note ?? null,
+                    outreachId: outreachMatch?.outreach_id ?? null,
+                    personal_phone: outreachMatch?.personal_phone ?? null,
+                    voiceSlots: outreachMatch?.voice_slots ?? [],
+                    voice1Sentiment: findSlot(outreachMatch?.voice_slots ?? [], 1)?.sentiment ?? call.callSentiment ?? null,
+                    call1Note: findSlot(outreachMatch?.voice_slots ?? [], 1)?.note ?? null,
+                    voice2Sentiment: findSlot(outreachMatch?.voice_slots ?? [], 2)?.sentiment ?? null,
+                    call2Note: findSlot(outreachMatch?.voice_slots ?? [], 2)?.note ?? null,
                 });
             }
         } catch (e) { }

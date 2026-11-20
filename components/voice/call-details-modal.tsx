@@ -147,8 +147,12 @@ export function CallDetailsModal({ open, onOpenChange, call }: CallDetailsModalP
 
     if (!call) return null;
 
+    const outreachId = details.displayCall?.outreachId || call.outreachId;
+    const sharePhone = details.displayCall?.personal_phone || call.personal_phone;
     const masterLeadId = details.displayCall?.masterLeadId || call.masterLeadId || call.id;
-    const shareHref = `/call/${encodeURIComponent(masterLeadId)}`;
+    const shareHref = (outreachId && sharePhone)
+        ? `/call/${encodeURIComponent(sharePhone)}/${encodeURIComponent(outreachId)}`
+        : `/call/${encodeURIComponent(masterLeadId)}`;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -371,35 +375,49 @@ export function CallDetailsCard({
                         </>
                     )}
 
-                    {(displayCall.voice1Sentiment || displayCall.call1Note || displayCall.voice2Sentiment || displayCall.call2Note) && (
-                        <>
-                            <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0' }}>Voice Analysis</p>
-                            <div className="glass-panel" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {(displayCall.voice1Sentiment || displayCall.call1Note) && (
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Call 1</span>
-                                            {displayCall.voice1Sentiment && <SentimentBadge value={displayCall.voice1Sentiment} />}
+                    {(() => {
+                        // Prefer the full voiceSlots array (all 10 calls) when the API
+                        // provides it; fall back to the legacy 2-slot fields for any
+                        // older cached response shape that doesn't have it yet.
+                        const slots: { slot: number; sentiment: string | null; note: string | null; date?: string | null }[] =
+                            Array.isArray(displayCall.voiceSlots) && displayCall.voiceSlots.length > 0
+                                ? displayCall.voiceSlots
+                                : [1, 2]
+                                    .map(n => ({
+                                        slot: n,
+                                        sentiment: n === 1 ? displayCall.voice1Sentiment : displayCall.voice2Sentiment,
+                                        note: n === 1 ? displayCall.call1Note : displayCall.call2Note,
+                                    }))
+                                    .filter(s => s.sentiment || s.note);
+
+                        if (slots.length === 0) return null;
+
+                        return (
+                            <>
+                                <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--label-tertiary)', margin: '8px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <span>Voice Analysis</span>
+                                    <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: 'var(--fill-secondary)', color: 'var(--label-secondary)', border: '1px solid var(--hairline)', textTransform: 'none', letterSpacing: 0 }}>
+                                        {slots.length} of 10 calls
+                                    </span>
+                                </p>
+                                <div className="glass-panel" style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    {slots.map((s, idx) => (
+                                        <div key={s.slot} style={{ borderTop: idx > 0 ? '1px solid var(--hairline)' : undefined, paddingTop: idx > 0 ? 10 : 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                                                    Call {s.slot}{s.date ? ` · ${new Date(s.date).toLocaleDateString()}` : ''}
+                                                </span>
+                                                {s.sentiment && <SentimentBadge value={s.sentiment} />}
+                                            </div>
+                                            {s.note && (
+                                                <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{s.note}</p>
+                                            )}
                                         </div>
-                                        {displayCall.call1Note && (
-                                            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{displayCall.call1Note}</p>
-                                        )}
-                                    </div>
-                                )}
-                                {(displayCall.voice2Sentiment || displayCall.call2Note) && (
-                                    <div style={{ borderTop: (displayCall.voice1Sentiment || displayCall.call1Note) ? '1px solid var(--hairline)' : undefined, paddingTop: (displayCall.voice1Sentiment || displayCall.call1Note) ? 10 : 0 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <span style={{ fontSize: 10, color: 'var(--label-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Call 2</span>
-                                            {displayCall.voice2Sentiment && <SentimentBadge value={displayCall.voice2Sentiment} />}
-                                        </div>
-                                        {displayCall.call2Note && (
-                                            <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--label-primary)', margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{displayCall.call2Note}</p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    )}
+                                    ))}
+                                </div>
+                            </>
+                        );
+                    })()}
                 </div>
             </div>
         </>
